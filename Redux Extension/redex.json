@@ -1,0 +1,28 @@
+{
+   "dbcon":{
+      "dbhostname":"IP",
+      "dbuser":"DB USERNAME",
+      "dbpassword":"DB USERPASSWORD",
+      "database":"desolationredux",
+      "dbport":0,
+      "whitelistonly":"false",
+      "allowsteamapi":"false",
+      "vaccheckban":"false",
+      "vacignoredays":365,
+      "vacmaxcount":1
+   },
+   "fileio":{
+      "readonce":[
+         "someSecretFile.txt",
+         "evenMoreSecretFile.txt"
+      ],
+      "read":[
+         "someOtherFile.txt",
+         "KatzenMinze.txt"
+      ],
+      "write":[
+         "some.log",
+         "another.log"
+      ]
+   }
+}
