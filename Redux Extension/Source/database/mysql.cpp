@@ -1160,6 +1160,7 @@ std::vector< std::vector<std::string> > mysql_db_handler::dumpObjects() {
 						"LEFT JOIN `player` "
 						" ON `player_is_friend_with_player`.`player2_uuid` = `player`.`uuid` "
 						"WHERE `world_has_objects`.`world_uuid` = CAST(0x%s AS BINARY) "
+						"AND `world_has_objects`.`killinfo_uuid` IS NULL "
 						"GROUP BY `object`.`uuid` "
 						"ORDER BY `object`.priority ASC, `world_has_objects`.`parentobject_uuid` ASC"} % worlduuid);
 
