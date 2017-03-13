@@ -31,32 +31,32 @@ int main(int argc, char *argv[])
 	std::string functionstring;
     char output[size];
 
-    const char function[] = "{ 'dllFunction': 'rlcall', 'dllArguments': {  'extFunction': 'addDiscreteItemList', 'extArguments': { 'listName': 'testlist', 'weights': [20, 5, 3, 2], 'items': ['Cat', 'Dog', 'Bird', 'Mouse'] } } }";
+    const char function[] = "{ 'extFunction': 'rlcall', 'extArguments': {  'extFunction': 'addDiscreteItemList', 'extArguments': { 'listName': 'testlist', 'weights': [20, 5, 3, 2], 'items': ['Cat', 'Dog', 'Bird', 'Mouse'] } } }";
     std::cout << "SENT: " << function << std::endl;
     RVExtension(output, size, function);
     std::cout << "OUTPUT: " << output << std::endl;
 
-    const char function2[] = "{ 'dllFunction': 'rlcall', 'dllArguments': {  'extFunction': 'getDiscreteItemList', 'extArguments': { 'listName': 'testlist', 'itemAmount': 1 } } }";
+    const char function2[] = "{ 'extFunction': 'rlcall', 'extArguments': {  'extFunction': 'getDiscreteItemList', 'extArguments': { 'listName': 'testlist', 'itemAmount': 1 } } }";
 	std::cout << "SENT: " << function2 << std::endl;
 	RVExtension(output, size, function2);
 	std::cout << "OUTPUT: " << output << std::endl;
 
-	const char function3[] = "{ 'dllFunction': 'rlcall', 'dllArguments': {  'extFunction': 'getDiscreteItemList', 'extArguments': { 'listName': 'testlist', 'itemAmount': 20 } } }";
+	const char function3[] = "{ 'extFunction': 'rlcall', 'extArguments': {  'extFunction': 'getDiscreteItemList', 'extArguments': { 'listName': 'testlist', 'itemAmount': 20 } } }";
 	std::cout << "SENT: " << function3 << std::endl;
 	RVExtension(output, size, function3);
 	std::cout << "OUTPUT: " << output << std::endl;
 
-	const char function4[] = "{ 'dllFunction': 'rlcall', 'dllArguments': {  'extFunction': 'addDiscreteItemList', 'extArguments': { 'listName': 'testlist2', 'weights': [20, 5, 3, 2], 'items': [] } } }";
+	const char function4[] = "{ 'extFunction': 'rlcall', 'extArguments': {  'extFunction': 'addDiscreteItemList', 'extArguments': { 'listName': 'testlist2', 'weights': [20, 5, 3, 2], 'items': [] } } }";
 	std::cout << "SENT: " << function4 << std::endl;
 	RVExtension(output, size, function4);
 	std::cout << "OUTPUT: " << output << std::endl;
 
-	const char function5[] = "{ 'dllFunction': 'rlcall', 'dllArguments': {  'extFunction': 'addDiscreteItemList', 'extArguments': { 'listName': 'testlist3', 'weights': [], 'items': ['Cat', 'Dog', 'Bird', 'Mouse'] } } }";
+	const char function5[] = "{ 'extFunction': 'rlcall', 'extArguments': {  'extFunction': 'addDiscreteItemList', 'extArguments': { 'listName': 'testlist3', 'weights': [], 'items': ['Cat', 'Dog', 'Bird', 'Mouse'] } } }";
 	std::cout << "SENT: " << function5 << std::endl;
 	RVExtension(output, size, function5);
 	std::cout << "OUTPUT: " << output << std::endl;
 
-	const char function6[] = "{ 'dllFunction': 'rlcall', 'dllArguments': {  'extFunction': 'addDiscreteItemList', 'extArguments': { 'listName': 'testlist4', 'weights': [20, 5, 3, 2], 'items': ['Cat', 'Dog', 'Bird'] } } }";
+	const char function6[] = "{ 'extFunction': 'rlcall', 'extArguments': {  'extFunction': 'addDiscreteItemList', 'extArguments': { 'listName': 'testlist4', 'weights': [20, 5, 3, 2], 'items': ['Cat', 'Dog', 'Bird'] } } }";
 	std::cout << "SENT: " << function6 << std::endl;
 	RVExtension(output, size, function6);
 	std::cout << "OUTPUT: " << output << std::endl;

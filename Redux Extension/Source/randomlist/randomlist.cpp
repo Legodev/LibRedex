@@ -30,13 +30,13 @@
 #include <fstream>
 
 
-randomlist::randomlist() {
+randomlist::randomlist(EXT_FUNCTIONS &extFunctions) {
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_RANDOM_FUNCTION_ADD_DISCRETE_LIST),
-					boost::bind(&randomlist::addDiscreteItemList, this, _1)));
+					boost::bind(&randomlist::addDiscreteItemList, this, _1, _2)));
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_RANDOM_FUNCTION_GET_DISCRETE_LIST),
-					boost::bind(&randomlist::getDiscreteItemList, this, _1)));
+					boost::bind(&randomlist::getDiscreteItemList, this, _1, _2)));
 
     boost::property_tree::ptree configtree;
     boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);
@@ -48,10 +48,10 @@ randomlist::~randomlist() {
 	return;
 }
 
-std::string randomlist::addDiscreteItemList(boost::property_tree::ptree &extArguments) {
+std::string randomlist::addDiscreteItemList(std::string &extFunction, ext_arguments &extArguments) {
 	std::string returnString = "";
 	std::string listName = extArguments.get<std::string>("listName");
-	//boost::property_tree::ptree &extArguments = extArguments.get_child("extArguments");
+	//ext_arguments &extArguments = extArguments.get_child("extArguments");
 
 	DISCRETE_LIST_MAP::iterator it = DiscreteItemList.find(listName);
 	if (it != DiscreteItemList.end()) {
@@ -60,15 +60,8 @@ std::string randomlist::addDiscreteItemList(boost::property_tree::ptree &extArgu
 		std::list<int> weights;
 		std::list<std::string> items;
 
-		for (auto& item : extArguments.get_child("weights")) {
-			int itemWeight = item.second.get_value<int>();
-			weights.push_back(itemWeight);
-		}
-
-		for (auto& item : extArguments.get_child("items")) {
-			std::string itemClass = item.second.get_value<std::string>();
-			items.push_back(itemClass);
-		}
+		weights = extArguments.get_simplelist<int>("weights");
+		items = extArguments.get_simplelist<std::string>("items");
 
 		if (weights.empty()) {
 				throw std::runtime_error("The weights array is empty!");
@@ -89,7 +82,7 @@ std::string randomlist::addDiscreteItemList(boost::property_tree::ptree &extArgu
 	return returnString;
 }
 
-std::string randomlist::getDiscreteItemList(boost::property_tree::ptree &extArguments) {
+std::string randomlist::getDiscreteItemList(std::string &extFunction, ext_arguments &extArguments) {
 	std::string returnString = "";
 	std::string listName = extArguments.get<std::string>("listName");
 	unsigned int itemAmount = extArguments.get<unsigned int>("itemAmount");

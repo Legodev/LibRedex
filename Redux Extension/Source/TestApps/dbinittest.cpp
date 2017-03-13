@@ -33,7 +33,7 @@ std::string receivemsg(std::string msguuid) {
 	char output[cachesize];
 
 	std::cout << "receiving msg information of " << msguuid << std::endl;
-	functionstring = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'chkasmsg', 'dbarguments': { 'msguuid': '";
+	functionstring = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'chkasmsg', 'extArgument': { 'msguuid': '";
 	functionstring += msguuid + "' } } }";
 
 	while (loop) {
@@ -45,7 +45,7 @@ std::string receivemsg(std::string msguuid) {
 		}
 	}
 
-	functionstring = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'rcvasmsg', 'dbarguments': { 'msguuid': '";
+	functionstring = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'rcvasmsg', 'extArgument': { 'msguuid': '";
 	functionstring += msguuid + "' } } }";
 	std::cout << "receiving msg " << msguuid << std::endl;
 	std::cout << "JSON: " << functionstring.c_str() << std::endl;
@@ -61,17 +61,17 @@ int main(int argc, char *argv[])
 	std::queue<std::string> msgqueue;
 
     char output[cachesize];
-    const char function[] = "{ 'dllFunction': 'initdb', 'dllArguments': {  'poolsize': 4, 'worlduuid': '11e66ac33a4ccd1c82c510bf48883ace' } }";
-    const char function2[] = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'dbVersion', 'dbarguments': {  } } }";
-    const char function3[] = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'dbgCall', 'dbarguments': {  } } }";
-    const char function4[] = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'dumpObjects', 'dbarguments': {  } } }";
-    const char function5[] = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'loadPlayer', 'dbarguments': { 'nickname': 'Lego', 'steamid': '76561198025362180'  } } }";
-    const char function6[] = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'loadAvChars', 'dbarguments': { 'playeruuid': '11e66abc1942138d82c510bf48883ace' } } }";
-    const char function7[] = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'loadChar', 'dbarguments': { 'playeruuid': '11e66abc1942138d82c510bf48883ace' } } }";
-    const char function8[] = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'updateChar', 'dbarguments': { 'charuuid': '11e66ac3076d214682c510bf48883ace', 'animationstate': 'VAR_ANIMATIONSTATE',  'direction': '23.5', 'positiontype': '0', 'positionx': '21.42', 'positiony': '666.9', 'positionz': '133.7', 'classname': 'sampleclass', 'hitpoints': '[]', 'variables': '[]', 'persistentvariables': '[]', 'textures': '[]', 'inventoryuniform': '[]', 'inventoryvest': '[]', 'inventorybackpack': '[]', 'uniform': 'someuniform', 'vest': 'somevest', 'backpack': 'somebackpack', 'headgear': 'someheadgear', 'googles': 'somegoogles', 'primaryweapon': '[\"someprimaryweapon\", [\"someattachment\"]]', 'secondaryweapon': '[\"somesecondaryweapon\", [\"someattachment\"]]', 'handgun': '[\"somehandgunweapon\", [\"someattachment\"]]', 'tools': '[]', 'currentweapon': 'someprimaryweapon' } } }";
-    const char function9[] = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'locupdateChar', 'dbarguments': { 'charuuid': '11e66ac3076d25dc82c510bf48883ace', 'animationstate': 'VAR_ANIMATIONSTATE',  'direction': '23.5', 'positiontype': '0', 'positionx': '21.42', 'positiony': '666.9', 'positionz': '133.7'  } } }";
-    const char function10[] = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'loadObject', 'dbarguments': { 'objectuuid': '11e66b045d8ced8aab0c10bf48883ace' } } }";
-    const char function11[] = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'updateObject', 'dbarguments': { 'objectuuid': '11e66b045d8ced8aab0c10bf48883ace' } } }";
+    const char function[] = "{ 'extFunction': 'initdb', 'extArguments': {  'poolsize': 4, 'worlduuid': '11e66ac33a4ccd1c82c510bf48883ace' } }";
+    const char function2[] = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'dbVersion', 'extArgument': {  } } }";
+    const char function3[] = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'dbgCall', 'extArgument': {  } } }";
+    const char function4[] = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'dumpObjects', 'extArgument': {  } } }";
+    const char function5[] = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'loadPlayer', 'extArgument': { 'nickname': 'Lego', 'steamid': '76561198025362180'  } } }";
+    const char function6[] = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'loadAvChars', 'extArgument': { 'playeruuid': '11e66abc1942138d82c510bf48883ace' } } }";
+    const char function7[] = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'loadChar', 'extArgument': { 'playeruuid': '11e66abc1942138d82c510bf48883ace' } } }";
+    const char function8[] = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'updateChar', 'extArgument': { 'charuuid': '11e66ac3076d214682c510bf48883ace', 'animationstate': 'VAR_ANIMATIONSTATE',  'direction': '23.5', 'positiontype': '0', 'positionx': '21.42', 'positiony': '666.9', 'positionz': '133.7', 'classname': 'sampleclass', 'hitpoints': '[]', 'variables': '[]', 'persistentvariables': '[]', 'textures': '[]', 'inventoryuniform': '[]', 'inventoryvest': '[]', 'inventorybackpack': '[]', 'uniform': 'someuniform', 'vest': 'somevest', 'backpack': 'somebackpack', 'headgear': 'someheadgear', 'googles': 'somegoogles', 'primaryweapon': '[\"someprimaryweapon\", [\"someattachment\"]]', 'secondaryweapon': '[\"somesecondaryweapon\", [\"someattachment\"]]', 'handgun': '[\"somehandgunweapon\", [\"someattachment\"]]', 'tools': '[]', 'currentweapon': 'someprimaryweapon' } } }";
+    const char function9[] = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'locupdateChar', 'extArgument': { 'charuuid': '11e66ac3076d25dc82c510bf48883ace', 'animationstate': 'VAR_ANIMATIONSTATE',  'direction': '23.5', 'positiontype': '0', 'positionx': '21.42', 'positiony': '666.9', 'positionz': '133.7'  } } }";
+    const char function10[] = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'loadObject', 'extArgument': { 'objectuuid': '11e66b045d8ced8aab0c10bf48883ace' } } }";
+    const char function11[] = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'updateObject', 'extArgument': { 'objectuuid': '11e66b045d8ced8aab0c10bf48883ace' } } }";
     std::cout << "trying to spawn 4 threads" << std::endl;
     std::cout << "JSON: " << function << std::endl;
     RVExtension(output, cachesize, function);

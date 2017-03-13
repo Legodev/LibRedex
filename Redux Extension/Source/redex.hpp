@@ -20,11 +20,13 @@
 
 #include <string>
 #include <map>
+#include <vector>
 #include <queue>
 #include <mutex>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/function.hpp>
 #include "constants.hpp"
+#include "extbase.hpp"
 #include "database/dbcon.hpp"
 #include "fileio/fileio.hpp"
 #include "datetime/datetime.hpp"
@@ -34,33 +36,22 @@ class redex {
 public:
 	redex();
 	~redex();
-	std::string processCallExtension(const char *function, int outputSize);
+	std::string processCallExtension(const char *function, const char **args, int argsCnt, int outputSize);
 	void terminate();
 
 private:
-	typedef boost::function<
-			std::string(boost::property_tree::ptree &dbarguments)> DLL_FUNCTION;
-	typedef std::map<std::string, DLL_FUNCTION> DLL_FUNCTIONS;
-	DLL_FUNCTIONS dllFunctions;
+	EXT_FUNCTIONS extFunctions;
 
-	dbcon dbconnection;
-	fileio fileinputoutput;
-	datetime datetimeobj;
-	randomlist randomlistobj;
+	typedef std::vector<std::unique_ptr<ext_base>> extModulesType;
+	extModulesType extModules;
 
 	std::mutex msgmutex;
 	typedef std::map<PROTOCOL_IDENTIFIER_DATATYPE, std::queue<std::string>> MESSAGE_MAP;
 	MESSAGE_MAP msgmap;
 
-	std::string initdb(boost::property_tree::ptree &dllArguments);
-	std::string termdb(boost::property_tree::ptree &dllArguments);
-	std::string dbcall(boost::property_tree::ptree &dllArguments);
-	std::string iocall(boost::property_tree::ptree &dllArguments);
-	std::string dtcall(boost::property_tree::ptree &dllArguments);
-	std::string rlcall(boost::property_tree::ptree &dllArguments);
-	std::string rcvmsg(boost::property_tree::ptree &dllArguments);
-	std::string chkmsg(boost::property_tree::ptree &dllArguments);
-
+	std::string terminateAll(std::string extFunction, ext_arguments &extArguments);
+	std::string rcvmsg(std::string extFunction, ext_arguments &extArguments);
+	std::string chkmsg(std::string extFunction, ext_arguments &extArguments);
 	std::string multipartMSGGenerator(std::string returnString, int outputSize);
 };
 

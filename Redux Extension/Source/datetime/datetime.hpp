@@ -30,12 +30,12 @@
 
 class datetime: public ext_base {
 public:
-	datetime();
+	datetime(EXT_FUNCTIONS &extFunctions);
 	~datetime();
 
 private:
-	std::string getDateTimeArray(boost::property_tree::ptree &extArguments);
-	std::string getEpochTime(boost::property_tree::ptree &extArguments);
+	std::string getDateTimeArray(std::string &extFunction, ext_arguments &extArguments);
+	std::string getEpochTime(std::string &extFunction, ext_arguments &extArguments);
 };
 
 

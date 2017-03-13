@@ -24,7 +24,7 @@ void RVExtension(char *output, int outputSize, const char *function);
 int main(int argc, char *argv[])
 {
     char output[1024];
-    const char function[] = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'getUUID', 'dbarguments': {  } } }";
+    const char function[] = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'getUUID', 'extArgument': {  } } }";
     RVExtension(output, 1024, function);
     std::cout << output << std::endl;
 

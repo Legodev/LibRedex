@@ -26,16 +26,16 @@
 
 #include "datetime/datetime.hpp"
 
-datetime::datetime() {
+datetime::datetime(EXT_FUNCTIONS &extFunctions) {
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DTCALL_FUNCTION_GET_DATE_TIME_Array),
-					boost::bind(&datetime::getDateTimeArray, this, _1)));
+					boost::bind(&datetime::getDateTimeArray, this, _1, _2)));
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DTCALL_FUNCTION_GET_EPOCH_TIME),
-					boost::bind(&datetime::getEpochTime, this, _1)));
+					boost::bind(&datetime::getEpochTime, this, _1, _2)));
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DTCALL_FUNCTION_GET_UNIX_TIME),
-					boost::bind(&datetime::getEpochTime, this, _1)));
+					boost::bind(&datetime::getEpochTime, this, _1, _2)));
 	return;
 }
 
@@ -43,7 +43,7 @@ datetime::~datetime() {
 	return;
 }
 
-std::string datetime::getDateTimeArray(boost::property_tree::ptree &extArguments) {
+std::string datetime::getDateTimeArray(std::string &extFunction, ext_arguments &extArguments) {
 	std::stringstream returnString;
 	std::time_t now = std::time(0);
 
@@ -59,7 +59,7 @@ std::string datetime::getDateTimeArray(boost::property_tree::ptree &extArguments
 	return returnString.str();
 }
 
-std::string datetime::getEpochTime(boost::property_tree::ptree &extArguments) {
+std::string datetime::getEpochTime(std::string &extFunction, ext_arguments &extArguments) {
 	std::stringstream returnString;
 	std::time_t now = std::time(0);
 	returnString << now;

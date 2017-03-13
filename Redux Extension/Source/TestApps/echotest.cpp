@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 	std::string uuid;
 	std::string functionstring;
     char output[128];
-    const char function[] = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'echo', 'dbarguments': {  'echostring': 'The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.' } } }";
+    const char function[] = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'echo', 'extArgument': {  'echostring': 'The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.' } } }";
     std::cout << "SENDING JOSN: " << function << std::endl;
     RVExtension(output, 128, function);
 
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     std::cout << output << std::endl;
 
     while (strncmp(output, PROTOCOL_MESSAGE_TRANSMIT_FINISHED_MSG, 20) != 0) {
-    	functionstring = "{ 'dllFunction': 'rcvmsg', 'dllArguments': {  'msguuid': '";
+    	functionstring = "{ 'extFunction': 'rcvmsg', 'extArguments': {  'msguuid': '";
     	functionstring += uuid;
 		functionstring += "' } }";
 		std::cout << "SENDING JOSN: " << functionstring << std::endl;

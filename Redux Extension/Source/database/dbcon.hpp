@@ -33,20 +33,22 @@
 
 #include "database/base.hpp"
 #include "database/mysql.hpp"
+#include "extbase.hpp"
 #include "constants.hpp"
 
 #include <stdio.h>
 
-class dbcon {
+class dbcon: public ext_base {
 public:
-	dbcon();
+	dbcon(EXT_FUNCTIONS &extFunctions);
 	~dbcon();
-	int spawnHandler(unsigned int poolsize, std::string worlduuid);
+	std::string spawnHandler(std::string &extFunction, ext_arguments &extArgument);
 	void terminateHandler();
-	std::string processDBCall(boost::property_tree::ptree &dbcall);
+	std::string terminateHandler(std::string &extFunction, ext_arguments &extArgument);
+	std::string processDBCall(std::string &extFunction, ext_arguments &extArgument);
 
 private:
-	typedef boost::function<std::string(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler)> DB_FUNCTION;
+	typedef boost::function<std::string(ext_arguments &extArgument, base_db_handler *dbhandler)> DB_FUNCTION;
 	typedef std::tuple<DB_FUNCTION, int> DB_FUNCTION_INFO;
 	typedef std::map<std::string, DB_FUNCTION_INFO> DB_FUNCTIONS;
 	DB_FUNCTIONS dbfunctions;
@@ -63,39 +65,39 @@ private:
 	typedef std::map<PROTOCOL_IDENTIFIER_DATATYPE, std::string> SINGLE_MESSAGE_MAP;
 	SINGLE_MESSAGE_MAP msgmap;
 
-	std::string getUUID(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string echo(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string rcvasmsg(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string chkasmsg(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string dbVersion(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string debugCall(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
+	std::string getUUID(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string echo(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string rcvasmsg(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string chkasmsg(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string dbVersion(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string debugCall(ext_arguments &extArgument, base_db_handler *dbhandler);
 
-	std::string loadPlayer(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string loadAvChars(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string linkChars(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string loadChar(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string createChar(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string updateChar(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string locupdateChar(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string killChar(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
+	std::string loadPlayer(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string loadAvChars(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string linkChars(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string loadChar(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string createChar(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string updateChar(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string locupdateChar(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string killChar(ext_arguments &extArgument, base_db_handler *dbhandler);
 
-	std::string loadObject(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string createObject(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string qcreateObject(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string updateObject(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string killObject(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
-	std::string dumpObjects(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler);
+	std::string loadObject(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string createObject(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string qcreateObject(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string updateObject(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string killObject(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string dumpObjects(ext_arguments &extArgument, base_db_handler *dbhandler);
 
 
 	//base_db_handler tempsyncdbhandler;
 	//boost::lockfree::queue<intptr_t, boost::lockfree::capacity<10>> syncdbhandlerpool;
 	boost::lockfree::queue<intptr_t, boost::lockfree::fixed_sized<false>> syncdbhandlerpool{1};
 
-	std::string syncCall(DB_FUNCTION_INFO funcinfo, boost::property_tree::ptree &dbarguments);
-	std::string asyncCall(DB_FUNCTION_INFO funcinfo, boost::property_tree::ptree &dbarguments);
-	std::string quietCall(DB_FUNCTION_INFO funcinfo, boost::property_tree::ptree &dbarguments);
-	void asyncCallProcessor(DB_FUNCTION_INFO funcinfo, boost::property_tree::ptree dbarguments, PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier);
-	std::string handlelessCall(DB_FUNCTION_INFO funcinfo, boost::property_tree::ptree &dbarguments);
+	std::string syncCall(DB_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
+	std::string asyncCall(DB_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
+	std::string quietCall(DB_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
+	void asyncCallProcessor(DB_FUNCTION_INFO funcinfo, ext_arguments extArgument, PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier);
+	std::string handlelessCall(DB_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
 };
 
 

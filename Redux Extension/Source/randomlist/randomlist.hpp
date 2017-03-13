@@ -31,15 +31,15 @@
 
 class randomlist: public ext_base {
 public:
-	randomlist();
+	randomlist(EXT_FUNCTIONS &extFunctions);
 	~randomlist();
 
 private:
 	typedef std::map<std::string, discrete_list> DISCRETE_LIST_MAP;
 	DISCRETE_LIST_MAP DiscreteItemList;
 
-	std::string addDiscreteItemList(boost::property_tree::ptree &extArguments);
-	std::string getDiscreteItemList(boost::property_tree::ptree &extArguments);
+	std::string addDiscreteItemList(std::string &extFunction, ext_arguments &extArguments);
+	std::string getDiscreteItemList(std::string &extFunction, ext_arguments &extArguments);
 };
 
 
