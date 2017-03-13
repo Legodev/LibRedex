@@ -36,6 +36,9 @@ void RVExtensionArgs(char *output, int outputSize, const char *function, const c
 	try {
 #ifdef DEBUG
 		testfile << "REQUEST " << function << std::endl;
+		for (int i = 0; i < argsCnt; i++) {
+			testfile << "Argument " << i << ": " << args[i] << std::endl;
+		}
 #endif
 		std::string returnString = extension->processCallExtension(function, args, argsCnt, outputSize);
 #ifdef DEBUG
