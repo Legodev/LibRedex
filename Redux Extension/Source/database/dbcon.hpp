@@ -65,10 +65,11 @@ private:
 	typedef std::map<PROTOCOL_IDENTIFIER_DATATYPE, std::string> SINGLE_MESSAGE_MAP;
 	SINGLE_MESSAGE_MAP msgmap;
 
-	std::string getUUID(ext_arguments &extArgument, base_db_handler *dbhandler);
-	std::string echo(ext_arguments &extArgument, base_db_handler *dbhandler);
-	std::string rcvasmsg(ext_arguments &extArgument, base_db_handler *dbhandler);
-	std::string chkasmsg(ext_arguments &extArgument, base_db_handler *dbhandler);
+	std::string getUUID(std::string &extFunction, ext_arguments &extArgument);
+	std::string echo(std::string &extFunction, ext_arguments &extArgument);
+	std::string rcvasmsg(std::string &extFunction, ext_arguments &extArgument);
+	std::string chkasmsg(std::string &extFunction, ext_arguments &extArgument);
+
 	std::string dbVersion(ext_arguments &extArgument, base_db_handler *dbhandler);
 	std::string debugCall(ext_arguments &extArgument, base_db_handler *dbhandler);
 
@@ -97,7 +98,6 @@ private:
 	std::string asyncCall(DB_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
 	std::string quietCall(DB_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
 	void asyncCallProcessor(DB_FUNCTION_INFO funcinfo, ext_arguments extArgument, PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier);
-	std::string handlelessCall(DB_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
 };
 
 

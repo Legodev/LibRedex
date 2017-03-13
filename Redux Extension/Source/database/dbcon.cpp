@@ -31,45 +31,29 @@ dbcon::dbcon(EXT_FUNCTIONS &extFunctions) {
 			std::make_pair(
 					std::string(PROTOCOL_DBCALL_FUNCTION_EXECUTE_INIT_DB),
 					boost::bind(&dbcon::spawnHandler, this, _1, _2)));
-//	extFunctions.insert(
-//			std::make_pair(
-//					std::string(PROTOCOL_DBCALL_FUNCTION_EXECUTE_TERMINATE_DB),
-//					boost::bind(&dbcon::terminateHandler, this, _1, _2)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_EXECUTE_TERMINATE_DB),
+					boost::bind(&dbcon::terminateHandler, this, _1, _2)));
 
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_UUID),
-					boost::bind(&dbcon::processDBCall, this, _1, _2)));
-	dbfunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_UUID),
-					std::make_tuple(boost::bind(&dbcon::getUUID, this, _1, _2),
-							HANDLELESS_MAGIC)));
+					boost::bind(&dbcon::getUUID, this, _1, _2)));
+
 	extFunctions.insert(
 			std::make_pair(
 					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ECHO_STRING),
-					boost::bind(&dbcon::processDBCall, this, _1, _2)));
-	dbfunctions.insert(
-			std::make_pair(
-					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ECHO_STRING),
-					std::make_tuple(boost::bind(&dbcon::echo, this, _1, _2),
-							HANDLELESS_MAGIC)));
+					boost::bind(&dbcon::echo, this, _1, _2)));
+
 	extFunctions.insert(
 			std::make_pair(
 					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ASYNC_MSG),
-					boost::bind(&dbcon::processDBCall, this, _1, _2)));
-	dbfunctions.insert(
-			std::make_pair(
-					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ASYNC_MSG),
-					std::make_tuple(boost::bind(&dbcon::rcvasmsg, this, _1, _2),
-							HANDLELESS_MAGIC)));
+					boost::bind(&dbcon::rcvasmsg, this, _1, _2)));
+
 	extFunctions.insert(
 			std::make_pair(
 					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ASYNC_SATE),
-					boost::bind(&dbcon::processDBCall, this, _1, _2)));
-	dbfunctions.insert(
-			std::make_pair(
-					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ASYNC_SATE),
-					std::make_tuple(boost::bind(&dbcon::chkasmsg, this, _1, _2),
-							HANDLELESS_MAGIC)));
+					boost::bind(&dbcon::chkasmsg, this, _1, _2)));
 
 	extFunctions.insert(
 			std::make_pair(
@@ -353,34 +337,29 @@ std::string dbcon::processDBCall(std::string &extFunction, ext_arguments &extArg
 	if (it != dbfunctions.end()) {
 		DB_FUNCTION_INFO funcinfo = it->second;
 
-		if (std::get<1>(funcinfo) == HANDLELESS_MAGIC) {
-			returnString = handlelessCall(funcinfo, extArgument);
-		} else {
+		if (!poolinitialized) {
+			throw std::runtime_error("db handler pool not initialized");
+		}
 
-			if (!poolinitialized) {
-				throw std::runtime_error("db handler pool not initialized");
-			}
+		if (poolcleanup) {
+			throw std::runtime_error("db handler pool is about to be terminated, will not add an new request");
+		}
 
-			if (poolcleanup) {
-				throw std::runtime_error("db handler pool is about to be terminated, will not add an new request");
-			}
+		switch (std::get<1>(funcinfo)) {
+		case SYNC_MAGIC:
+			returnString = syncCall(funcinfo, extArgument);
+			break;
 
-			switch (std::get<1>(funcinfo)) {
-			case SYNC_MAGIC:
-				returnString = syncCall(funcinfo, extArgument);
-				break;
+		case ASYNC_MAGIC:
+			returnString = asyncCall(funcinfo, extArgument);
+			break;
 
-			case ASYNC_MAGIC:
-				returnString = asyncCall(funcinfo, extArgument);
-				break;
+		case QUIET_MAGIC:
+			returnString = quietCall(funcinfo, extArgument);
+			break;
 
-			case QUIET_MAGIC:
-				returnString = quietCall(funcinfo, extArgument);
-				break;
-
-			default:
-				throw std::runtime_error("unknown function class");
-			}
+		default:
+			throw std::runtime_error("unknown function class");
 		}
 	} else {
 		throw std::runtime_error("Don't know extFunction: " + extFunction);
@@ -464,21 +443,16 @@ void dbcon::asyncCallProcessor(DB_FUNCTION_INFO funcinfo, ext_arguments extArgum
 	return;
 }
 
-std::string dbcon::handlelessCall(DB_FUNCTION_INFO funcinfo, ext_arguments &extArgument) {
-	const DB_FUNCTION &func(std::get<0>(funcinfo));
-	return func(extArgument, NULL);
-}
-
-std::string dbcon::getUUID(ext_arguments &extArgument, base_db_handler *dbhandler) {
+std::string dbcon::getUUID(std::string &extFunction, ext_arguments &extArgument) {
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + orderedUUID() + "\"]";
 }
 
-std::string dbcon::echo(ext_arguments &extArgument, base_db_handler *dbhandler) {
+std::string dbcon::echo(std::string &extFunction, ext_arguments &extArgument) {
 	std::string echostring = extArgument.get<std::string>("echostring");
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + echostring + "\"]";
 }
 
-std::string dbcon::chkasmsg(ext_arguments &extArgument, base_db_handler *dbhandler) {
+std::string dbcon::chkasmsg(std::string &extFunction, ext_arguments &extArgument) {
 	PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier = extArgument.get<PROTOCOL_IDENTIFIER_DATATYPE>(PROTOCOL_IDENTIFIER_NAME);
 	std::string returnString;
 
@@ -496,7 +470,7 @@ std::string dbcon::chkasmsg(ext_arguments &extArgument, base_db_handler *dbhandl
 	return returnString;
 }
 
-std::string dbcon::rcvasmsg(ext_arguments &extArgument, base_db_handler *dbhandler) {
+std::string dbcon::rcvasmsg(std::string &extFunction, ext_arguments &extArgument) {
 	PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier = extArgument.get<PROTOCOL_IDENTIFIER_DATATYPE>(PROTOCOL_IDENTIFIER_NAME);
 	std::string returnString;
 

@@ -29,7 +29,6 @@
 #define QUIET_MAGIC 4
 #define ASYNC_MAGIC 0
 #define SYNC_MAGIC 1
-#define HANDLELESS_MAGIC 2
 
 /*
  * Magic Strings for the Arma 3 Call Extension API
