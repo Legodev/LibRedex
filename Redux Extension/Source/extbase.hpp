@@ -25,11 +25,19 @@
 
 class ext_arguments {
 public:
-	void add(const char **args, int argsCnt) {
+	void add(std::string key, std::string value) {
+		argmap.insert(std::make_pair(key,value));
 		return;
 	}
 
 	int addargs(const char **args, int argsCnt) {
+		if (argsCnt % 2 == 0) {
+			for (int i = 0; i < argsCnt; i += 2) {
+				argmap.insert(std::make_pair(args[i],args[i+1]));
+			}
+		} else {
+			throw std::runtime_error("the amount of items in the array is not even");
+		}
 		return 0;
 	}
 
