@@ -136,6 +136,4 @@ protected:
 typedef boost::function<std::string(std::string &extFunction, ext_arguments &extArgument)> EXT_FUNCTION;
 typedef std::map<std::string, EXT_FUNCTION> EXT_FUNCTIONS;
 
-extern EXT_FUNCTIONS extFunctionsTest;
-
 #endif /* SOURCE_EXTBASE_HPP_ */

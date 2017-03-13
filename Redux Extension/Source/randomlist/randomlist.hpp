@@ -22,7 +22,6 @@
 #include <string>
 #include <map>
 #include <tuple>
-#include <boost/property_tree/ptree.hpp>
 #include <boost/function.hpp>
 
 #include "extbase.hpp"
