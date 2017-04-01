@@ -22,7 +22,7 @@ void RVExtension(char *output, int outputSize, const char *function)
 #ifdef DEBUG
 		testfile << "REQUEST " << function << std::endl;
 #endif
-		std::string errstr = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\",\"";
+		std::string errstr = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\", \"";
 		errstr += "Sorry RVExtension is not supported anymore";
 		errstr += "\"]";
 		strncpy(output, errstr.c_str(), outputSize);
@@ -53,7 +53,7 @@ void RVExtensionArgs(char *output, int outputSize, const char *function, const c
 			error.insert(i, "\"");
 			i += 2;
 		}
-		std::string errstr = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\",\"";
+		std::string errstr = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\", \"";
 		errstr += error;
 		errstr += "\"]";
 		strncpy(output, errstr.c_str(), outputSize);

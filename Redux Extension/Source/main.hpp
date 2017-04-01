@@ -48,25 +48,25 @@ redex * extension = 0;
 #ifdef DEBUG
 std::mutex ThreadMutex;
 int attachedThreadCount = 0;
-std::ofstream testfile;
+std::ofstream testfile("LibRedExLogFile.txt", std::ios::out | std::ios::trunc);
 #endif
 
 static void init(void)
 {
-#ifdef DEBUG
-    testfile.open("LibRedExLogFile.txt", std::ios::out | std::ios::trunc);
-    testfile << "starting init" << std::endl;
-    testfile.flush();
-#endif
+//#ifdef DEBUG
+//    testfile.open("LibRedExLogFile.txt", std::ios::out | std::ios::trunc);
+//    testfile << "starting init" << std::endl;
+//    testfile.flush();
+//#endif
 
     if (extension == 0) {
         extension = new redex();
     }
 
-#ifdef DEBUG
-    testfile << "done init" << std::endl;
-    testfile.flush();
-#endif
+//#ifdef DEBUG
+//    testfile << "done init" << std::endl;
+//    testfile.flush();
+//#endif
 }
 
 static void destroy(void)

@@ -20,32 +20,53 @@
 #include <string>
 #include <string.h>
 #include "../constants.hpp"
+#include "TestApps/helper.hpp"
 
-void RVExtension(char *output, int outputSize, const char *function);
+#define maxoutputlength 128
+
+void RVExtensionArgs(char *output, int outputSize, const char *function, const char **args, int argsCnt);
 
 int main(int argc, char *argv[])
 {
 	std::string uuid;
 	std::string functionstring;
-    char output[128];
-    const char function[] = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'echo', 'extArgument': {  'echostring': 'The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.' } } }";
-    std::cout << "SENDING JOSN: " << function << std::endl;
-    RVExtension(output, 128, function);
+	std::list<std::string> stringList;
+	const char ** StringArray;
+    char output[maxoutputlength];
+
+    stringList.clear();
+    stringList.push_back("echostring");
+    stringList.push_back("The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.");
+    StringArray = UseListOfStringToArrayofCharArray(stringList);
+
+    std::cout << "SENDING stringList: " << std::endl;
+    for(std::string stringItem : stringList) {
+    	std::cout << "Item: " << stringItem << std::endl;
+    }
+    std::cout << std::endl << std::endl;
+
+    RVExtensionArgs(output, maxoutputlength, "echo", StringArray, stringList.size());
+    delete [] StringArray;
+
 
     uuid = output;
-    uuid = uuid.substr(11, 32);
+    uuid = uuid.substr(10, 32);
     std::cout << "FOUND UUID: " << uuid << std::endl;
 
     std::cout << output << std::endl;
 
     while (strncmp(output, PROTOCOL_MESSAGE_TRANSMIT_FINISHED_MSG, 20) != 0) {
-    	functionstring = "{ 'extFunction': 'rcvmsg', 'extArguments': {  'msguuid': '";
-    	functionstring += uuid;
-		functionstring += "' } }";
+    	stringList.clear();
+    	stringList.push_back("msguuid");
+    	stringList.push_back(uuid);
+    	StringArray = UseListOfStringToArrayofCharArray(stringList);
+
 		std::cout << "SENDING JOSN: " << functionstring << std::endl;
-		RVExtension(output, 128, functionstring.c_str());
+		RVExtensionArgs(output, maxoutputlength, "rcvmsg", StringArray, stringList.size());
 		std::cout << output << std::endl;
 	}
 
+
+    delete [] StringArray;
     return 0;
 }

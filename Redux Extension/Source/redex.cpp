@@ -65,23 +65,6 @@ std::string redex::processCallExtension(const char *function, const char **args,
 	// NEEDED to make sure there is room for the last '\0'
 	outputSize -= 1;
 
-	for (unsigned int i = 0; function[i] != 0; i++) {
-		switch(function[i]) {
-			case '-': if (function[i+1] > '0' && function[i+1] < '9') { functionstream << "-"; }; break;
-			case ';': break;
-			case '#': break;
-			case '"': functionstream << "\\\\\\\""; break;
-			case '\'': functionstream << "\""; break;
-			case '\\': functionstream << "\\\\\\\\"; break;
-			default: functionstream << function[i]; break;
-		}
-	}
-
-	printf("INPUT: %s\n", functionstream.str().c_str());
-
-	boost::property_tree::ptree pt;
-	boost::property_tree::read_json(functionstream, pt);
-
 	std::string extFunction = function;
 	ext_arguments extArguments;
 	extArguments.addargs(args, argsCnt);
