@@ -68,11 +68,6 @@ dbcon::dbcon(EXT_FUNCTIONS &extFunctions) {
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DEBUG_CALL),
 					boost::bind(&dbcon::processDBCall, this, _1, _2)));
-	dbfunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DEBUG_CALL),
-					std::make_tuple(
-							boost::bind(&dbcon::debugCall, this, _1, _2),
-							ASYNC_MAGIC)));
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_PLAYER),
 					boost::bind(&dbcon::processDBCall, this, _1, _2)));
@@ -492,37 +487,6 @@ std::string dbcon::rcvasmsg(std::string &extFunction, ext_arguments &extArgument
 	return returnString;
 }
 
-std::string dbcon::debugCall(ext_arguments &extArgument, base_db_handler *dbhandler) {
-	std::string matrix;
-	bool placecommaone = false;
-	bool placecommatwo = false;
-
-	//std::vector< std::vector<std::string> > resultmatrix = dbhandler->verbosetest("SELECT hex(uuid), classname, priority, timelastused, timecreated, visible, accesscode, locked, hex(player_uuid), hitpoints, damage, fuel, fuelcargo, repaircargo, items, magazines, weapons, backpacks, magazinesturret, variables, animationstate, textures, direction, positiontype, positionx, positiony, positionz FROM `object` WHERE player_uuid = CAST(0x11E66B045F432626B28510BF48883ACE AS BINARY) OR player_uuid = CAST(0x11E66ABC1942138D82C510BF48883ACE AS BINARY)");
-	std::vector< std::vector<std::string> > resultmatrix = dbhandler->verbosetest("SELECT hex(uuid), classname, priority, UNIX_TIMESTAMP(timelastused), UNIX_TIMESTAMP(timecreated), visible, accesscode, locked, hex(player_uuid), hitpoints, damage, fuel, fuelcargo, repaircargo, items, magazines, weapons, backpacks, magazinesturret, variables, animationstate, textures, direction, positiontype, positionx, positiony, positionz FROM `object`");
-	matrix = "[";
-	for (auto& row : resultmatrix) {
-		matrix += "[";
-		if (placecommaone) {
-			matrix += ",";
-		}
-		placecommatwo = false;
-		for (auto& value : row) {
-			if (placecommatwo) {
-				matrix += ",";
-			}
-			//matrix += "\"" + value + "\"";
-			matrix += value;
-			placecommatwo = true;
-		}
-		matrix += "]";
-		placecommaone = true;
-	}
-	matrix += "]";
-
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + matrix + "]";
-}
-
-
 std::string dbcon::dbVersion(ext_arguments &extArgument, base_db_handler *dbhandler) {
 	std::string version;
 
@@ -790,7 +754,6 @@ std::string dbcon::dumpObjects(ext_arguments &extArgument, base_db_handler *dbha
         bool placecommaone = false;
         bool placecommatwo = false;
 
-        //std::vector< std::vector<std::string> > resultmatrix = dbhandler->verbosetest("SELECT hex(uuid), classname, priority, timelastused, timecreated, visible, accesscode, locked, hex(player_uuid), hitpoints, damage, fuel, fuelcargo, repaircargo, items, magazines, weapons, backpacks, magazinesturret, variables, animationstate, textures, direction, positiontype, positionx, positiony, positionz FROM `object` WHERE player_uuid = CAST(0x11E66B045F432626B28510BF48883ACE AS BINARY) OR player_uuid = CAST(0x11E66ABC1942138D82C510BF48883ACE AS BINARY)");
         std::vector< std::vector<std::string> > resultmatrix = dbhandler->dumpObjects();
         matrix = "[";
         for (auto& row : resultmatrix) {

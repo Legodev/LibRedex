@@ -22,17 +22,18 @@
 #include "../constants.hpp"
 #include "TestApps/helper.hpp"
 
-#define maxoutputlength 128
+#define range 10, 32
+#define cachesize 128
 
 void RVExtensionArgs(char *output, int outputSize, const char *function, const char **args, int argsCnt);
 
 int main(int argc, char *argv[])
 {
 	std::string uuid;
-	std::string functionstring;
+
 	std::list<std::string> stringList;
 	const char ** StringArray;
-    char output[maxoutputlength];
+    char output[cachesize];
 
     stringList.clear();
     stringList.push_back("echostring");
@@ -45,7 +46,7 @@ int main(int argc, char *argv[])
     }
     std::cout << std::endl << std::endl;
 
-    RVExtensionArgs(output, maxoutputlength, "echo", StringArray, stringList.size());
+    RVExtensionArgs(output, cachesize, "echo", StringArray, stringList.size());
     delete [] StringArray;
 
 
@@ -61,8 +62,8 @@ int main(int argc, char *argv[])
     	stringList.push_back(uuid);
     	StringArray = UseListOfStringToArrayofCharArray(stringList);
 
-		std::cout << "SENDING JOSN: " << functionstring << std::endl;
-		RVExtensionArgs(output, maxoutputlength, "rcvmsg", StringArray, stringList.size());
+		std::cout << "receiving msg " << uuid << std::endl;
+		RVExtensionArgs(output, cachesize, "rcvmsg", StringArray, stringList.size());
 		std::cout << output << std::endl;
 	}
 

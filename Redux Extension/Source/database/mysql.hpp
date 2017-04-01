@@ -40,7 +40,6 @@ public:
 	void rawquery(std::string query, MYSQL_RES **result);
 
 	std::string querydbversion();
-	std::vector<std::vector<std::string> > verbosetest(std::string query);
 
 	std::string loadPlayer(std::string nickname, std::string steamid);
 	std::string loadAvChars(std::string playeruuid);

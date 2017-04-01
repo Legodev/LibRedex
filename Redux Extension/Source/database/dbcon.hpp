@@ -71,7 +71,6 @@ private:
 	std::string chkasmsg(std::string &extFunction, ext_arguments &extArgument);
 
 	std::string dbVersion(ext_arguments &extArgument, base_db_handler *dbhandler);
-	std::string debugCall(ext_arguments &extArgument, base_db_handler *dbhandler);
 
 	std::string loadPlayer(ext_arguments &extArgument, base_db_handler *dbhandler);
 	std::string loadAvChars(ext_arguments &extArgument, base_db_handler *dbhandler);

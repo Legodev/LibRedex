@@ -26,14 +26,14 @@
 class ext_arguments {
 public:
 	void add(std::string key, std::string value) {
-		argmap.insert(std::make_pair(key,value));
+		argmap.insert(std::make_pair(key,escapeChars(value)));
 		return;
 	}
 
 	int addargs(const char **args, int argsCnt) {
 		if (argsCnt % 2 == 0) {
 			for (int i = 0; i < argsCnt; i += 2) {
-				argmap.insert(std::make_pair(args[i],args[i+1]));
+				argmap.insert(std::make_pair(args[i],escapeChars(args[i+1])));
 			}
 		} else {
 			throw std::runtime_error("the amount of items in the array is not even");
@@ -122,6 +122,23 @@ public:
 protected:
 	typedef std::map<std::string, std::string> ARGUMENT_MAP;
 	ARGUMENT_MAP argmap;
+
+	std::string escapeChars(std::string input) {
+		std::stringstream outputstream;
+
+		for (unsigned int i = 0; i < input.length(); i++) {
+			switch(input[i]) {
+				case '-': if (input[i+1] > '0' && input[i+1] < '9') { outputstream << "-"; }; break;
+				case ';': break;
+				case '#': break;
+				case '"': outputstream << "\\\""; break;
+				case '\\': outputstream << "\\\\"; break;
+				default: outputstream << input[i]; break;
+			}
+		}
+
+		return outputstream.str();
+	}
 };
 
 class ext_base {
