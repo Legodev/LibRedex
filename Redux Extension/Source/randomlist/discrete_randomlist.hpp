@@ -49,7 +49,7 @@ public:
 			int number = distribution(generator);
 
 			if (insertSeperator) {
-				returnString += ", ";
+				returnString += ",";
 			}
 
 			returnString += "\"" + items[number] + "\"";

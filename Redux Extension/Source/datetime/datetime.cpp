@@ -50,11 +50,11 @@ std::string datetime::getDateTimeArray(std::string &extFunction, ext_arguments &
 	std::tm *ltm = std::localtime(&now);
 
 	returnString << "[" << 1900 + ltm->tm_year
-				<< ", " << 1 + ltm->tm_mon
-				<< ", " << ltm->tm_mday
-				<< ", " << ltm->tm_hour
-				<< ", " << ltm->tm_min
-				<< ", " << ltm->tm_sec << "]";
+				<< "," << 1 + ltm->tm_mon
+				<< "," << ltm->tm_mday
+				<< "," << ltm->tm_hour
+				<< "," << ltm->tm_min
+				<< "," << ltm->tm_sec << "]";
 
 	return returnString.str();
 }

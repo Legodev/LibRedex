@@ -99,7 +99,7 @@ std::string redex::processCallExtension(const char *function, const char **args,
 				error.insert(i, "\"");
 				i += 2;
 			}
-			returnString = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR)+ "\", \"";
+			returnString = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR)+ "\",\"";
 			returnString += error;
 			returnString += "\"]";
 		}
@@ -156,7 +156,7 @@ std::string redex::multipartMSGGenerator(std::string returnString, int outputSiz
 	msgmap.insert(std::make_pair(messageIdentifier, stringqueue));
 	msgmutex.unlock();
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MULTIPART) + "\", \"" + messageIdentifier + "\", \"" + firststring + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MULTIPART) + "\",\"" + messageIdentifier + "\",\"" + firststring + "\"]";
 }
 
 std::string redex::terminateAll(std::string extFunction, ext_arguments &extArguments) {

@@ -402,7 +402,7 @@ std::string dbcon::asyncCall(DB_FUNCTION_INFO funcinfo, ext_arguments &extArgume
 	//boost::bind(&dbcon::asyncCallProcessor, this, funcinfo, extArgument, messageIdentifier);
 	DBioService.post(boost::bind(&dbcon::asyncCallProcessor, this, funcinfo, extArgument, messageIdentifier));
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ASYNC) + "\", \"" + messageIdentifier + "\"]" ;
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ASYNC) + "\",\"" + messageIdentifier + "\"]" ;
 }
 
 std::string dbcon::quietCall(DB_FUNCTION_INFO funcinfo, ext_arguments &extArgument) {
@@ -411,7 +411,7 @@ std::string dbcon::quietCall(DB_FUNCTION_INFO funcinfo, ext_arguments &extArgume
 
 	DBioService.post(boost::bind(&dbcon::asyncCallProcessor, this, funcinfo, extArgument, messageIdentifier));
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_QUIET) + "\", \"\"]" ;
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_QUIET) + "\",\"\"]" ;
 }
 
 void dbcon::asyncCallProcessor(DB_FUNCTION_INFO funcinfo, ext_arguments extArgument, PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier) {
@@ -429,7 +429,7 @@ void dbcon::asyncCallProcessor(DB_FUNCTION_INFO funcinfo, ext_arguments extArgum
 			error.insert(i, "\"");
 			i += 2;
 		}
-		returnString = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\", \"";
+		returnString = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\",\"";
 		returnString += error;
 		returnString += "\"]";
 	}
@@ -444,12 +444,12 @@ void dbcon::asyncCallProcessor(DB_FUNCTION_INFO funcinfo, ext_arguments extArgum
 }
 
 std::string dbcon::getUUID(std::string &extFunction, ext_arguments &extArgument) {
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + orderedUUID() + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + orderedUUID() + "\"]";
 }
 
 std::string dbcon::echo(std::string &extFunction, ext_arguments &extArgument) {
 	std::string echostring = extArgument.get<std::string>("echostring");
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + echostring + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + echostring + "\"]";
 }
 
 std::string dbcon::chkasmsg(std::string &extFunction, ext_arguments &extArgument) {
@@ -508,7 +508,7 @@ std::string dbcon::debugCall(ext_arguments &extArgument, base_db_handler *dbhand
 		placecommatwo = false;
 		for (auto& value : row) {
 			if (placecommatwo) {
-				matrix += ", ";
+				matrix += ",";
 			}
 			//matrix += "\"" + value + "\"";
 			matrix += value;
@@ -519,7 +519,7 @@ std::string dbcon::debugCall(ext_arguments &extArgument, base_db_handler *dbhand
 	}
 	matrix += "]";
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + matrix + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + matrix + "]";
 }
 
 
@@ -528,7 +528,7 @@ std::string dbcon::dbVersion(ext_arguments &extArgument, base_db_handler *dbhand
 
 	version = dbhandler->querydbversion();
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + version + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + version + "\"]";
 }
 
 
@@ -538,7 +538,7 @@ std::string dbcon::loadPlayer(ext_arguments &extArgument, base_db_handler *dbhan
 	std::string steamid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_STEAMID);
 	std::string playerinfo = dbhandler->loadPlayer(nickname, steamid);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + playerinfo + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + playerinfo + "]";
 }
 
 std::string dbcon::loadAvChars(ext_arguments &extArgument, base_db_handler *dbhandler) {
@@ -546,7 +546,7 @@ std::string dbcon::loadAvChars(ext_arguments &extArgument, base_db_handler *dbha
 
 	std::string result = dbhandler->loadAvChars(playeruuid);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + result + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + result + "]";
 }
 
 std::string dbcon::linkChars(ext_arguments &extArgument, base_db_handler *dbhandler) {
@@ -555,7 +555,7 @@ std::string dbcon::linkChars(ext_arguments &extArgument, base_db_handler *dbhand
 
 	std::string result = dbhandler->linkChars(playeruuid, variabuuid);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + result + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + result + "]";
 }
 
 std::string dbcon::loadChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
@@ -563,7 +563,7 @@ std::string dbcon::loadChar(ext_arguments &extArgument, base_db_handler *dbhandl
 
 	std::string result = dbhandler->loadChar(playeruuid);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + result + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + result + "]";
 }
 
 std::string dbcon::createChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
@@ -598,7 +598,7 @@ std::string dbcon::createChar(ext_arguments &extArgument, base_db_handler *dbhan
 			inventoryvest, inventorybackpack, uniform, vest, backpack, headgear, googles, primaryweapon,
 			secondaryweapon, handgun, tools, currentweapon);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
 std::string dbcon::updateChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
@@ -633,7 +633,7 @@ std::string dbcon::updateChar(ext_arguments &extArgument, base_db_handler *dbhan
 				inventoryvest, inventorybackpack, uniform, vest, backpack, headgear, googles, primaryweapon,
 				secondaryweapon, handgun, tools, currentweapon);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
 std::string dbcon::locupdateChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
@@ -648,7 +648,7 @@ std::string dbcon::locupdateChar(ext_arguments &extArgument, base_db_handler *db
 	std::string result = dbhandler->locupdateChar(charuuid, animationstate, direction, positiontype, positionx,
 					positiony, positionz);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
 std::string dbcon::killChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
@@ -660,7 +660,7 @@ std::string dbcon::killChar(ext_arguments &extArgument, base_db_handler *dbhandl
 
 	std::string result = dbhandler->killChar(charuuid, attackeruuid, type, weapon, distance);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
 std::string dbcon::loadObject(ext_arguments &extArgument, base_db_handler *dbhandler) {
@@ -668,7 +668,7 @@ std::string dbcon::loadObject(ext_arguments &extArgument, base_db_handler *dbhan
 
 	std::string result = dbhandler->loadObject(objectuuid);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + result + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + result + "]";
 }
 
 std::string dbcon::createObject(ext_arguments &extArgument, base_db_handler *dbhandler) {
@@ -701,7 +701,7 @@ std::string dbcon::createObject(ext_arguments &extArgument, base_db_handler *dbh
 			hitpoints, damage, fuel, fuelcargo, repaircargo, items, magazines, weapons, backpacks, magazinesturret,
 			variables, animationstate, textures, direction, positiontype, positionx, positiony, positionz);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
 std::string dbcon::qcreateObject(ext_arguments &extArgument, base_db_handler *dbhandler) {
@@ -735,7 +735,7 @@ std::string dbcon::qcreateObject(ext_arguments &extArgument, base_db_handler *db
 			hitpoints, damage, fuel, fuelcargo, repaircargo, items, magazines, weapons, backpacks, magazinesturret,
 			variables, animationstate, textures, direction, positiontype, positionx, positiony, positionz);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
 std::string dbcon::updateObject(ext_arguments &extArgument, base_db_handler *dbhandler) {
@@ -770,7 +770,7 @@ std::string dbcon::updateObject(ext_arguments &extArgument, base_db_handler *dbh
 			magazinesturret, variables, animationstate, textures, direction, positiontype, positionx, positiony,
 			positionz);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
 std::string dbcon::killObject(ext_arguments &extArgument, base_db_handler *dbhandler) {
@@ -782,7 +782,7 @@ std::string dbcon::killObject(ext_arguments &extArgument, base_db_handler *dbhan
 
 	std::string result = dbhandler->killObject(charuuid, attackeruuid, type, weapon, distance);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
 std::string dbcon::dumpObjects(ext_arguments &extArgument, base_db_handler *dbhandler) {
@@ -801,7 +801,7 @@ std::string dbcon::dumpObjects(ext_arguments &extArgument, base_db_handler *dbha
                 placecommatwo = false;
                 for (auto& value : row) {
                         if (placecommatwo) {
-                                matrix += ", ";
+                                matrix += ",";
                         }
                         //matrix += "\"" + value + "\"";
                         matrix += value;
@@ -812,5 +812,5 @@ std::string dbcon::dumpObjects(ext_arguments &extArgument, base_db_handler *dbha
         }
         matrix += "]";
 
-        return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + matrix + "]";
+        return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + matrix + "]";
 }

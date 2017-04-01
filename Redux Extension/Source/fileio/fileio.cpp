@@ -246,13 +246,13 @@ std::string fileio::readFile(std::string &extFunction, ext_arguments &extArgumen
 			throw std::runtime_error("cannot read file: " + filename);
 		}
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + filename + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + filename + "]";
 }
 
 std::string fileio::writeFile(std::string &extFunction, ext_arguments &extArguments) {
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + "not implemented" + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + "not implemented" + "\"]";
 }
 
 std::string fileio::appendFile(std::string &extFunction, ext_arguments &extArguments) {
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + "not implemented" + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + "not implemented" + "\"]";
 }
