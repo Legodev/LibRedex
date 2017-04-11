@@ -58,6 +58,7 @@
 // Random Call Functions
 #define PROTOCOL_RANDOM_FUNCTION_ADD_DISCRETE_LIST "addDiscreteItemList"
 #define PROTOCOL_RANDOM_FUNCTION_GET_DISCRETE_LIST "getDiscreteItemList"
+#define PROTOCOL_RANDOM_FUNCTION_GET_RANDOMNUMBER_LIST "getRandomNumberList"
 
 // Database Call Functions
 #define PROTOCOL_DBCALL_FUNCTION_EXECUTE_INIT_DB "initdb"

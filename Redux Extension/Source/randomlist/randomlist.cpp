@@ -24,6 +24,7 @@
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/regex.hpp>
+#include <boost/algorithm/string.hpp>
 #include <cassert>
 #include <exception>
 #include <stdexcept>
@@ -37,6 +38,9 @@ randomlist::randomlist(EXT_FUNCTIONS &extFunctions) {
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_RANDOM_FUNCTION_GET_DISCRETE_LIST),
 					boost::bind(&randomlist::getDiscreteItemList, this, _1, _2)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_RANDOM_FUNCTION_GET_RANDOMNUMBER_LIST),
+					boost::bind(&randomlist::getRandomNumberList, this, _1, _2)));
 
     boost::property_tree::ptree configtree;
     boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);
@@ -94,5 +98,52 @@ std::string randomlist::getDiscreteItemList(std::string &extFunction, ext_argume
 		throw std::runtime_error("could not find list: " + listName);
 	}
 
+	return returnString;
+}
+
+std::string randomlist::getRandomNumberList(std::string &extFunction, ext_arguments &extArguments) {
+	std::string returnString = "[";
+	bool insertSeperator = false;
+
+	std::string type = extArguments.get<std::string>("type");
+	unsigned int amount = extArguments.get<unsigned int>("amount");
+
+	std::default_random_engine generator;
+	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	generator.seed(seed);
+
+	if (boost::iequals(type, "int")) {
+		std::uniform_int_distribution<int> distribution(
+				extArguments.get<int>("start"), extArguments.get<int>("end"));
+
+		for (int i = 0; i < amount; ++i) {
+			int number = distribution(generator);
+
+			if (insertSeperator) {
+				returnString += ",";
+			}
+
+			returnString += std::to_string(number);
+
+			insertSeperator = true;
+		}
+	} else {
+		std::uniform_real_distribution<float> distribution(
+				extArguments.get<float>("start"), extArguments.get<float>("end"));
+
+		for (int i = 0; i < amount; ++i) {
+			float number = distribution(generator);
+
+			if (insertSeperator) {
+				returnString += ",";
+			}
+
+			returnString += std::to_string(number);
+
+			insertSeperator = true;
+		}
+	}
+
+	returnString += "]";
 	return returnString;
 }

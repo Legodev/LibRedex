@@ -39,6 +39,7 @@ private:
 
 	std::string addDiscreteItemList(std::string &extFunction, ext_arguments &extArguments);
 	std::string getDiscreteItemList(std::string &extFunction, ext_arguments &extArguments);
+	std::string getRandomNumberList(std::string &extFunction, ext_arguments &extArguments);
 };
 
 
