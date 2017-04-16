@@ -648,9 +648,6 @@ std::string dbcon::createObject(ext_arguments &extArgument, base_db_handler *dbh
 	float fuelcargo = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUELCARGO);
 	float repaircargo = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_REPAIRCARGO);
 	std::string items = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ITEMS);
-	std::string magazines = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_MAGAZINES);
-	std::string weapons = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPONS);
-	std::string backpacks = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_BACKPACKS);
 	std::string magazinesturret = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_MAGAZINESTURRET);
 	std::string variables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
 	std::string animationstate = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
@@ -660,10 +657,15 @@ std::string dbcon::createObject(ext_arguments &extArgument, base_db_handler *dbh
 	float positionx = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
 	float positiony = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
 	float positionz = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
+	std::string positionadvanced = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_POSITIONADVANCED);
+	std::string reservedone = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_RESERVEDONE);
+	std::string reservedtwo = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_RESERVEDTWO);
 
-	std::string result = dbhandler->createObject(classname, priority, visible, accesscode, locked, player_uuid,
-			hitpoints, damage, fuel, fuelcargo, repaircargo, items, magazines, weapons, backpacks, magazinesturret,
-			variables, animationstate, textures, direction, positiontype, positionx, positiony, positionz);
+	std::string result = dbhandler->createObject(classname, priority, visible,
+			accesscode, locked, player_uuid, hitpoints, damage, fuel, fuelcargo,
+			repaircargo, items, magazinesturret, variables, animationstate,
+			textures, direction, positiontype, positionx, positiony, positionz,
+			positionadvanced, reservedone, reservedtwo);
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
@@ -682,9 +684,6 @@ std::string dbcon::qcreateObject(ext_arguments &extArgument, base_db_handler *db
 	float fuelcargo = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUELCARGO);
 	float repaircargo = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_REPAIRCARGO);
 	std::string items = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ITEMS);
-	std::string magazines = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_MAGAZINES);
-	std::string weapons = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPONS);
-	std::string backpacks = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_BACKPACKS);
 	std::string magazinesturret = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_MAGAZINESTURRET);
 	std::string variables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
 	std::string animationstate = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
@@ -694,10 +693,16 @@ std::string dbcon::qcreateObject(ext_arguments &extArgument, base_db_handler *db
 	float positionx = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
 	float positiony = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
 	float positionz = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
+	std::string positionadvanced = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_POSITIONADVANCED);
+	std::string reservedone = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_RESERVEDONE);
+	std::string reservedtwo = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_RESERVEDTWO);
 
-	std::string result = dbhandler->createObject(objectuuid, classname, priority, visible, accesscode, locked, player_uuid,
-			hitpoints, damage, fuel, fuelcargo, repaircargo, items, magazines, weapons, backpacks, magazinesturret,
-			variables, animationstate, textures, direction, positiontype, positionx, positiony, positionz);
+	std::string result = dbhandler->createObject(objectuuid, classname,
+			priority, visible, accesscode, locked, player_uuid, hitpoints,
+			damage, fuel, fuelcargo, repaircargo, items, magazinesturret,
+			variables, animationstate, textures, direction, positiontype,
+			positionx, positiony, positionz, positionadvanced, reservedone,
+			reservedtwo);
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
@@ -716,9 +721,6 @@ std::string dbcon::updateObject(ext_arguments &extArgument, base_db_handler *dbh
 	float fuelcargo = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUELCARGO);
 	float repaircargo = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_REPAIRCARGO);
 	std::string items = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ITEMS);
-	std::string magazines = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_MAGAZINES);
-	std::string weapons = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPONS);
-	std::string backpacks = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_BACKPACKS);
 	std::string magazinesturret = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_MAGAZINESTURRET);
 	std::string variables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
 	std::string animationstate = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
@@ -728,11 +730,16 @@ std::string dbcon::updateObject(ext_arguments &extArgument, base_db_handler *dbh
 	float positionx = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
 	float positiony = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
 	float positionz = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
+	std::string positionadvanced = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_POSITIONADVANCED);
+	std::string reservedone = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_RESERVEDONE);
+	std::string reservedtwo = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_RESERVEDTWO);
 
-	std::string result = dbhandler->updateObject(objectuuid, classname, priority, visible, accesscode, locked,
-			player_uuid, hitpoints, damage, fuel, fuelcargo, repaircargo, items, magazines, weapons, backpacks,
-			magazinesturret, variables, animationstate, textures, direction, positiontype, positionx, positiony,
-			positionz);
+	std::string result = dbhandler->updateObject(objectuuid, classname,
+			priority, visible, accesscode, locked, player_uuid, hitpoints,
+			damage, fuel, fuelcargo, repaircargo, items, magazinesturret,
+			variables, animationstate, textures, direction, positiontype,
+			positionx, positiony, positionz, positionadvanced, reservedone,
+			reservedtwo);
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }

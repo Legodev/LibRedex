@@ -64,23 +64,24 @@ public:
 			float distance) { return "none"; }
 
 	virtual std::string loadObject(std::string objectuuid) { return "none"; }
-	virtual std::string createObject(std::string classname, int priority, int visible, std::string accesscode,
-			int locked, std::string player_uuid, std::string hitpoints, float damage, float fuel, float fuelcargo,
-			float repaircargo, std::string items, std::string magazines, std::string weapons, std::string backpacks,
-			std::string magazinesturret, std::string variables, std::string animationstate, std::string textures,
-			float direction, int positiontype, float positionx, float positiony, float positionz) { return "none"; }
+	virtual std::string createObject(std::string classname, int priority, int visible,
+			std::string accesscode, int locked, std::string player_uuid, std::string hitpoints, float damage,
+			float fuel, float fuelcargo, float repaircargo, std::string items, std::string magazinesturret,
+			std::string variables, std::string animationstate, std::string textures, float direction,
+			int positiontype, float positionx, float positiony, float positionz, std::string positionadvanced,
+			std::string reservedone, std::string reservedtwo) { return "none"; }
 	virtual std::string createObject(std::string objectuuid, std::string classname, int priority, int visible,
 			std::string accesscode, int locked, std::string player_uuid, std::string hitpoints, float damage,
-			float fuel, float fuelcargo, float repaircargo, std::string items, std::string magazines,
-			std::string weapons, std::string backpacks, std::string magazinesturret, std::string variables,
-			std::string animationstate, std::string textures, float direction, int positiontype, float positionx,
-			float positiony, float positionz) { return "none"; }
+			float fuel, float fuelcargo, float repaircargo, std::string items, std::string magazinesturret,
+			std::string variables, std::string animationstate, std::string textures, float direction,
+			int positiontype, float positionx, float positiony, float positionz, std::string positionadvanced,
+			std::string reservedone, std::string reservedtwo) { return "none"; }
 	virtual std::string updateObject(std::string objectuuid, std::string classname, int priority, int visible,
 			std::string accesscode, int locked, std::string player_uuid, std::string hitpoints, float damage,
-			float fuel, float fuelcargo, float repaircargo, std::string items, std::string magazines,
-			std::string weapons, std::string backpacks, std::string magazinesturret, std::string variables,
-			std::string animationstate, std::string textures, float direction, int positiontype, float positionx,
-			float positiony, float positionz) { return "none"; }
+			float fuel, float fuelcargo, float repaircargo, std::string items, std::string magazinesturret,
+			std::string variables, std::string animationstate, std::string textures, float direction,
+			int positiontype, float positionx, float positiony, float positionz, std::string positionadvanced,
+			std::string reservedone, std::string reservedtwo) { return "none"; }
 	virtual std::string killObject(std::string objectuuid, std::string attackeruuid, std::string type,
 			std::string weapon, float distance) { return "none"; }
 	virtual std::vector<std::vector<std::string> > dumpObjects() { return {{"none"}}; };
