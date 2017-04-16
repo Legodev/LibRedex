@@ -25,7 +25,9 @@
 #define range 10, 32
 #define cachesize 128
 
+extern "C" {
 void RVExtensionArgs(char *output, int outputSize, const char *function, const char **args, int argsCnt);
+}
 
 int main(int argc, char *argv[])
 {

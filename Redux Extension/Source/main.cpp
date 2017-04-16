@@ -16,6 +16,10 @@
  */
 
 #include "main.hpp"
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 void RVExtension(char *output, int outputSize, const char *function)
 {
@@ -30,6 +34,13 @@ void RVExtension(char *output, int outputSize, const char *function)
 		testfile << "ERROR " << errstr << std::endl;
 #endif
 }
+
+#ifdef __cplusplus
+}
+
+extern "C"
+{
+#endif
 
 void RVExtensionArgs(char *output, int outputSize, const char *function, const char **args, int argsCnt)
 {
@@ -62,3 +73,7 @@ void RVExtensionArgs(char *output, int outputSize, const char *function, const c
 #endif
 	}
 }
+
+#ifdef __cplusplus
+}
+#endif

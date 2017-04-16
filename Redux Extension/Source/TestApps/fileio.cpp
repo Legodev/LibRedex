@@ -23,7 +23,9 @@
 
 #define size 1024
 
+extern "C" {
 void RVExtension(char *output, int outputSize, const char *function);
+}
 
 int main(int argc, char *argv[])
 {

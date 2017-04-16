@@ -19,7 +19,9 @@
 #include <sstream>
 #include <string>
 
+extern "C" {
 void RVExtension(char *output, int outputSize, const char *function);
+}
 
 int main(int argc, char *argv[])
 {

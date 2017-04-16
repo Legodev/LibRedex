@@ -19,7 +19,7 @@
 #include <sstream>
 #include <string>
 #include <string.h>
-#include "../constants.hpp"
+#include "constants.hpp"
 #include "utils/uuid.hpp"
 #include <unistd.h>
 #include <boost/random/random_device.hpp>
@@ -27,7 +27,9 @@
 #define range 11, 32
 #define cachesize 1024
 
+extern "C" {
 void RVExtension(char *output, int outputSize, const char *function);
+}
 
 std::string randomstring(int length) {
 	std::stringstream returnString;

@@ -27,7 +27,9 @@
 #define range 10, 32
 #define cachesize 1024
 
+extern "C" {
 void RVExtensionArgs(char *output, int outputSize, const char *function, const char **args, int argsCnt);
+}
 
 std::string receiveAsyncMsg(std::string msguuid) {
 	bool loop = true;

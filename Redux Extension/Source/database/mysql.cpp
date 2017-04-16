@@ -1019,8 +1019,8 @@ std::string mysql_db_handler::updateObject(std::string objectuuid, std::string c
 									% classname % priority % visible % accesscode % locked
 									% hitpoints % damage % fuel % fuelcargo % repaircargo % items
 									% magazinesturret % variables % animationstate % textures % direction
-									% positiontype % positionx % positiony % positionz % objectuuid
-									% positionadvanced % reservedone % reservedtwo);
+									% positiontype % positionx % positiony % positionz
+									% positionadvanced % reservedone % reservedtwo % objectuuid);
 		} else {
 			query = str(
 					boost::format { "UPDATE `object` "
@@ -1052,8 +1052,8 @@ std::string mysql_db_handler::updateObject(std::string objectuuid, std::string c
 									% classname % priority % visible % accesscode % locked
 									% player_uuid % hitpoints % damage % fuel % fuelcargo % repaircargo % items
 									% magazinesturret % variables % animationstate % textures % direction
-									% positiontype % positionx % positiony % positionz % objectuuid
-									% positionadvanced % reservedone % reservedtwo);
+									% positiontype % positionx % positiony % positionz
+									% positionadvanced % reservedone % reservedtwo % objectuuid);
 		}
 
 
