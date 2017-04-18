@@ -26,68 +26,166 @@
 #include "database/dbcon.hpp"
 #include "utils/uuid.hpp"
 
-dbcon::dbcon() {
-	dbfunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_UUID),
-					std::make_tuple(boost::bind(&dbcon::getUUID, this, _1, _2), HANDLELESS_MAGIC)));
-	dbfunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ECHO_STRING),
-					std::make_tuple(boost::bind(&dbcon::echo, this, _1, _2), HANDLELESS_MAGIC)));
-	dbfunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ASYNC_MSG),
-					std::make_tuple(boost::bind(&dbcon::rcvasmsg, this, _1, _2), HANDLELESS_MAGIC)));
-	dbfunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ASYNC_SATE),
-					std::make_tuple(boost::bind(&dbcon::chkasmsg, this, _1, _2), HANDLELESS_MAGIC)));
+dbcon::dbcon(EXT_FUNCTIONS &extFunctions) {
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_EXECUTE_INIT_DB),
+					boost::bind(&dbcon::spawnHandler, this, _1, _2)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_EXECUTE_TERMINATE_DB),
+					boost::bind(&dbcon::terminateHandler, this, _1, _2)));
 
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_UUID),
+					boost::bind(&dbcon::getUUID, this, _1, _2)));
+
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ECHO_STRING),
+					boost::bind(&dbcon::echo, this, _1, _2)));
+
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ASYNC_MSG),
+					boost::bind(&dbcon::rcvasmsg, this, _1, _2)));
+
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ASYNC_SATE),
+					boost::bind(&dbcon::chkasmsg, this, _1, _2)));
+
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_DB_VERSION),
+					boost::bind(&dbcon::processDBCall, this, _1, _2)));
 	dbfunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_DB_VERSION),
-					std::make_tuple(boost::bind(&dbcon::dbVersion, this, _1, _2), SYNC_MAGIC)));
-	dbfunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_DB_VERSION),
+					std::make_tuple(
+							boost::bind(&dbcon::dbVersion, this, _1, _2),
+							SYNC_MAGIC)));
+	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DEBUG_CALL),
-					std::make_tuple(boost::bind(&dbcon::debugCall, this, _1, _2), ASYNC_MAGIC)));
+					boost::bind(&dbcon::processDBCall, this, _1, _2)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_PLAYER),
+					boost::bind(&dbcon::processDBCall, this, _1, _2)));
 	dbfunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_PLAYER),
-					std::make_tuple(boost::bind(&dbcon::loadPlayer, this, _1, _2), ASYNC_MAGIC)));
+					std::make_tuple(
+							boost::bind(&dbcon::loadPlayer, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_AV_CHARS),
+					boost::bind(&dbcon::processDBCall, this, _1, _2)));
 	dbfunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_AV_CHARS),
-					std::make_tuple(boost::bind(&dbcon::loadAvChars, this, _1, _2), ASYNC_MAGIC)));
+					std::make_tuple(
+							boost::bind(&dbcon::loadAvChars, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_LINK_CHARS),
+					boost::bind(&dbcon::processDBCall, this, _1, _2)));
 	dbfunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_LINK_CHARS),
-					std::make_tuple(boost::bind(&dbcon::linkChars, this, _1, _2), ASYNC_MAGIC)));
+					std::make_tuple(
+							boost::bind(&dbcon::linkChars, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_CHAR),
+					boost::bind(&dbcon::processDBCall, this, _1, _2)));
 	dbfunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_CHAR),
-					std::make_tuple(boost::bind(&dbcon::loadChar, this, _1, _2), ASYNC_MAGIC)));
+					std::make_tuple(boost::bind(&dbcon::loadChar, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_CHAR),
+					boost::bind(&dbcon::processDBCall, this, _1, _2)));
 	dbfunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_CHAR),
-					std::make_tuple(boost::bind(&dbcon::createChar, this, _1, _2), ASYNC_MAGIC)));
+					std::make_tuple(
+							boost::bind(&dbcon::createChar, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_CHAR),
+					boost::bind(&dbcon::processDBCall, this, _1, _2)));
 	dbfunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_CHAR),
-					std::make_tuple(boost::bind(&dbcon::updateChar, this, _1, _2), ASYNC_MAGIC)));
+					std::make_tuple(
+							boost::bind(&dbcon::updateChar, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_LOCATIONUPDATE_CHAR),
+					boost::bind(&dbcon::processDBCall, this, _1, _2)));
 	dbfunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_LOCATIONUPDATE_CHAR),
-					std::make_tuple(boost::bind(&dbcon::locupdateChar, this, _1, _2), ASYNC_MAGIC)));
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_LOCATIONUPDATE_CHAR),
+					std::make_tuple(
+							boost::bind(&dbcon::locupdateChar, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_DECLARE_CHAR_DEATH),
+					boost::bind(&dbcon::processDBCall, this, _1, _2)));
 	dbfunctions.insert(
-				std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DECLARE_CHAR_DEATH),
-						std::make_tuple(boost::bind(&dbcon::killChar, this, _1, _2), ASYNC_MAGIC)));
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_DECLARE_CHAR_DEATH),
+					std::make_tuple(boost::bind(&dbcon::killChar, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_OBJECT),
+					boost::bind(&dbcon::processDBCall, this, _1, _2)));
 	dbfunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_OBJECT),
-					std::make_tuple(boost::bind(&dbcon::loadObject, this, _1, _2), ASYNC_MAGIC)));
+					std::make_tuple(
+							boost::bind(&dbcon::loadObject, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_OBJECT),
+					boost::bind(&dbcon::processDBCall, this, _1, _2)));
 	dbfunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_OBJECT),
-					std::make_tuple(boost::bind(&dbcon::createObject, this, _1, _2), ASYNC_MAGIC)));
+					std::make_tuple(
+							boost::bind(&dbcon::createObject, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_QUIET_CREATE_OBJECT),
+					boost::bind(&dbcon::processDBCall, this, _1, _2)));
 	dbfunctions.insert(
-				std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_QUIET_CREATE_OBJECT),
-						std::make_tuple(boost::bind(&dbcon::qcreateObject, this, _1, _2), QUIET_MAGIC)));
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_QUIET_CREATE_OBJECT),
+					std::make_tuple(
+							boost::bind(&dbcon::qcreateObject, this, _1, _2),
+							QUIET_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_OBJECT),
+					boost::bind(&dbcon::processDBCall, this, _1, _2)));
 	dbfunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_OBJECT),
-					std::make_tuple(boost::bind(&dbcon::updateObject, this, _1, _2), ASYNC_MAGIC)));
+					std::make_tuple(
+							boost::bind(&dbcon::updateObject, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_DECLARE_OBJECT_DEATH),
+					boost::bind(&dbcon::processDBCall, this, _1, _2)));
 	dbfunctions.insert(
-				std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DECLARE_OBJECT_DEATH),
-						std::make_tuple(boost::bind(&dbcon::killObject, this, _1, _2), ASYNC_MAGIC)));
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_DECLARE_OBJECT_DEATH),
+					std::make_tuple(
+							boost::bind(&dbcon::killObject, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DUMP_OBJECTS),
+					boost::bind(&dbcon::processDBCall, this, _1, _2)));
 	dbfunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DUMP_OBJECTS),
-					std::make_tuple(boost::bind(&dbcon::dumpObjects, this, _1, _2), ASYNC_MAGIC)));
+					std::make_tuple(
+							boost::bind(&dbcon::dumpObjects, this, _1, _2),
+							ASYNC_MAGIC)));
 
 	// spawn some idle work
 	DBioServiceWork.reset( new boost::asio::io_service::work(DBioService) );
@@ -114,7 +212,10 @@ dbcon::~dbcon() {
 	return;
 }
 
-int dbcon::spawnHandler(unsigned int poolsize, std::string worlduuid) {
+std::string dbcon::spawnHandler(std::string &extFunction, ext_arguments &extArgument) {
+	unsigned int poolsize = extArgument.get<unsigned int>("poolsize");
+	std::string worlduuid = extArgument.get<std::string>("worlduuid");
+
 	if (poolsize < 1) {
 		poolsize = 1;
 	}
@@ -185,7 +286,12 @@ int dbcon::spawnHandler(unsigned int poolsize, std::string worlduuid) {
 		throw std::runtime_error("Threads already spawned");
 	}
 
-	return asyncthreadpool.size();
+	return std::to_string(asyncthreadpool.size());
+}
+
+std::string dbcon::terminateHandler(std::string &extFunction, ext_arguments &extArgument) {
+	this->terminateHandler();
+	return "DONE";
 }
 
 void dbcon::terminateHandler() {
@@ -219,53 +325,45 @@ void dbcon::terminateHandler() {
 	return;
 }
 
-std::string dbcon::processDBCall(boost::property_tree::ptree &dbcall) {
+std::string dbcon::processDBCall(std::string &extFunction, ext_arguments &extArgument) {
 	std::string returnString;
 
-	std::string dbfunction = dbcall.get<std::string>("dbfunction");
-	boost::property_tree::ptree &dbarguments = dbcall.get_child("dbarguments");
-
-	DB_FUNCTIONS::iterator it = dbfunctions.find(dbfunction);
+	DB_FUNCTIONS::iterator it = dbfunctions.find(extFunction);
 	if (it != dbfunctions.end()) {
 		DB_FUNCTION_INFO funcinfo = it->second;
 
-		if (std::get<1>(funcinfo) == HANDLELESS_MAGIC) {
-			returnString = handlelessCall(funcinfo, dbarguments);
-		} else {
+		if (!poolinitialized) {
+			throw std::runtime_error("db handler pool not initialized");
+		}
 
-			if (!poolinitialized) {
-				throw std::runtime_error("db handler pool not initialized");
-			}
+		if (poolcleanup) {
+			throw std::runtime_error("db handler pool is about to be terminated, will not add an new request");
+		}
 
-			if (poolcleanup) {
-				throw std::runtime_error("db handler pool is about to be terminated, will not add an new request");
-			}
+		switch (std::get<1>(funcinfo)) {
+		case SYNC_MAGIC:
+			returnString = syncCall(funcinfo, extArgument);
+			break;
 
-			switch (std::get<1>(funcinfo)) {
-			case SYNC_MAGIC:
-				returnString = syncCall(funcinfo, dbarguments);
-				break;
+		case ASYNC_MAGIC:
+			returnString = asyncCall(funcinfo, extArgument);
+			break;
 
-			case ASYNC_MAGIC:
-				returnString = asyncCall(funcinfo, dbarguments);
-				break;
+		case QUIET_MAGIC:
+			returnString = quietCall(funcinfo, extArgument);
+			break;
 
-			case QUIET_MAGIC:
-				returnString = quietCall(funcinfo, dbarguments);
-				break;
-
-			default:
-				throw std::runtime_error("unknown function class");
-			}
+		default:
+			throw std::runtime_error("unknown function class");
 		}
 	} else {
-		throw std::runtime_error("Don't know dbfunction: " + dbfunction);
+		throw std::runtime_error("Don't know extFunction: " + extFunction);
 	}
 
 	return returnString;
 }
 
-std::string dbcon::syncCall(DB_FUNCTION_INFO funcinfo, boost::property_tree::ptree &dbarguments) {
+std::string dbcon::syncCall(DB_FUNCTION_INFO funcinfo, ext_arguments &extArgument) {
 	const DB_FUNCTION &func(std::get<0>(funcinfo));
 	std::string returnString;
 
@@ -279,7 +377,7 @@ std::string dbcon::syncCall(DB_FUNCTION_INFO funcinfo, boost::property_tree::ptr
 	try {
 		syncdbhandler = (base_db_handler*) syncdbhandlerpointer;
 
-		returnString = func(dbarguments, syncdbhandler);
+		returnString = func(extArgument, syncdbhandler);
 
 		// return handler to the pool
 		syncdbhandlerpool.bounded_push(syncdbhandlerpointer);
@@ -292,33 +390,33 @@ std::string dbcon::syncCall(DB_FUNCTION_INFO funcinfo, boost::property_tree::ptr
 	return returnString;
 }
 
-std::string dbcon::asyncCall(DB_FUNCTION_INFO funcinfo, boost::property_tree::ptree &dbarguments) {
-	boost::property_tree::ptree copydbarguments = dbarguments;
+std::string dbcon::asyncCall(DB_FUNCTION_INFO funcinfo, ext_arguments &extArgument) {
+	ext_arguments copyextArgument = extArgument;
 	PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier = PROTOCOL_IDENTIFIER_GENERATOR;
 
-	//boost::bind(&dbcon::asyncCallProcessor, this, funcinfo, dbarguments, messageIdentifier);
-	DBioService.post(boost::bind(&dbcon::asyncCallProcessor, this, funcinfo, dbarguments, messageIdentifier));
+	//boost::bind(&dbcon::asyncCallProcessor, this, funcinfo, extArgument, messageIdentifier);
+	DBioService.post(boost::bind(&dbcon::asyncCallProcessor, this, funcinfo, extArgument, messageIdentifier));
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ASYNC) + "\", \"" + messageIdentifier + "\"]" ;
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ASYNC) + "\",\"" + messageIdentifier + "\"]" ;
 }
 
-std::string dbcon::quietCall(DB_FUNCTION_INFO funcinfo, boost::property_tree::ptree &dbarguments) {
-	boost::property_tree::ptree copydbarguments = dbarguments;
+std::string dbcon::quietCall(DB_FUNCTION_INFO funcinfo, ext_arguments &extArgument) {
+	ext_arguments copyextArgument = extArgument;
 	PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier = "";
 
-	DBioService.post(boost::bind(&dbcon::asyncCallProcessor, this, funcinfo, dbarguments, messageIdentifier));
+	DBioService.post(boost::bind(&dbcon::asyncCallProcessor, this, funcinfo, extArgument, messageIdentifier));
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_QUIET) + "\", \"\"]" ;
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_QUIET) + "\",\"\"]" ;
 }
 
-void dbcon::asyncCallProcessor(DB_FUNCTION_INFO funcinfo, boost::property_tree::ptree dbarguments, PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier) {
+void dbcon::asyncCallProcessor(DB_FUNCTION_INFO funcinfo, ext_arguments extArgument, PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier) {
 	const DB_FUNCTION &func(std::get<0>(funcinfo));
 
 	std::string returnString;
 
 	try {
-		returnString = this->syncCall(funcinfo, dbarguments);
-		//func(dbarguments, syncdbhandler);
+		returnString = this->syncCall(funcinfo, extArgument);
+		//func(extArgument, syncdbhandler);
 	} catch (std::exception const& e) {
 		std::string error = e.what();
 		int i = 0;
@@ -326,7 +424,7 @@ void dbcon::asyncCallProcessor(DB_FUNCTION_INFO funcinfo, boost::property_tree::
 			error.insert(i, "\"");
 			i += 2;
 		}
-		returnString = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\", \"";
+		returnString = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\",\"";
 		returnString += error;
 		returnString += "\"]";
 	}
@@ -340,22 +438,17 @@ void dbcon::asyncCallProcessor(DB_FUNCTION_INFO funcinfo, boost::property_tree::
 	return;
 }
 
-std::string dbcon::handlelessCall(DB_FUNCTION_INFO funcinfo, boost::property_tree::ptree &dbarguments) {
-	const DB_FUNCTION &func(std::get<0>(funcinfo));
-	return func(dbarguments, NULL);
+std::string dbcon::getUUID(std::string &extFunction, ext_arguments &extArgument) {
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + orderedUUID() + "\"]";
 }
 
-std::string dbcon::getUUID(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + orderedUUID() + "\"]";
+std::string dbcon::echo(std::string &extFunction, ext_arguments &extArgument) {
+	std::string echostring = extArgument.get<std::string>("echostring");
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + echostring + "\"]";
 }
 
-std::string dbcon::echo(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	std::string echostring = dbarguments.get<std::string>("echostring");
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + echostring + "\"]";
-}
-
-std::string dbcon::chkasmsg(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier = dbarguments.get<PROTOCOL_IDENTIFIER_DATATYPE>(PROTOCOL_IDENTIFIER_NAME);
+std::string dbcon::chkasmsg(std::string &extFunction, ext_arguments &extArgument) {
+	PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier = extArgument.get<PROTOCOL_IDENTIFIER_DATATYPE>(PROTOCOL_IDENTIFIER_NAME);
 	std::string returnString;
 
 	msgmutex.lock();
@@ -372,8 +465,8 @@ std::string dbcon::chkasmsg(boost::property_tree::ptree &dbarguments, base_db_ha
 	return returnString;
 }
 
-std::string dbcon::rcvasmsg(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier = dbarguments.get<PROTOCOL_IDENTIFIER_DATATYPE>(PROTOCOL_IDENTIFIER_NAME);
+std::string dbcon::rcvasmsg(std::string &extFunction, ext_arguments &extArgument) {
+	PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier = extArgument.get<PROTOCOL_IDENTIFIER_DATATYPE>(PROTOCOL_IDENTIFIER_NAME);
 	std::string returnString;
 
 	msgmutex.lock();
@@ -394,305 +487,280 @@ std::string dbcon::rcvasmsg(boost::property_tree::ptree &dbarguments, base_db_ha
 	return returnString;
 }
 
-std::string dbcon::debugCall(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	std::string matrix;
-	bool placecommaone = false;
-	bool placecommatwo = false;
-
-	//std::vector< std::vector<std::string> > resultmatrix = dbhandler->verbosetest("SELECT hex(uuid), classname, priority, timelastused, timecreated, visible, accesscode, locked, hex(player_uuid), hitpoints, damage, fuel, fuelcargo, repaircargo, items, magazines, weapons, backpacks, magazinesturret, variables, animationstate, textures, direction, positiontype, positionx, positiony, positionz FROM `object` WHERE player_uuid = CAST(0x11E66B045F432626B28510BF48883ACE AS BINARY) OR player_uuid = CAST(0x11E66ABC1942138D82C510BF48883ACE AS BINARY)");
-	std::vector< std::vector<std::string> > resultmatrix = dbhandler->verbosetest("SELECT hex(uuid), classname, priority, UNIX_TIMESTAMP(timelastused), UNIX_TIMESTAMP(timecreated), visible, accesscode, locked, hex(player_uuid), hitpoints, damage, fuel, fuelcargo, repaircargo, items, magazines, weapons, backpacks, magazinesturret, variables, animationstate, textures, direction, positiontype, positionx, positiony, positionz FROM `object`");
-	matrix = "[";
-	for (auto& row : resultmatrix) {
-		matrix += "[";
-		if (placecommaone) {
-			matrix += ",";
-		}
-		placecommatwo = false;
-		for (auto& value : row) {
-			if (placecommatwo) {
-				matrix += ", ";
-			}
-			//matrix += "\"" + value + "\"";
-			matrix += value;
-			placecommatwo = true;
-		}
-		matrix += "]";
-		placecommaone = true;
-	}
-	matrix += "]";
-
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + matrix + "]";
-}
-
-
-std::string dbcon::dbVersion(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
+std::string dbcon::dbVersion(ext_arguments &extArgument, base_db_handler *dbhandler) {
 	std::string version;
 
 	version = dbhandler->querydbversion();
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + version + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + version + "\"]";
 }
 
 
 
-std::string dbcon::loadPlayer(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	std::string nickname = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_NICKNAME);
-	std::string steamid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_STEAMID);
+std::string dbcon::loadPlayer(ext_arguments &extArgument, base_db_handler *dbhandler) {
+	std::string nickname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_NICKNAME);
+	std::string steamid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_STEAMID);
 	std::string playerinfo = dbhandler->loadPlayer(nickname, steamid);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + playerinfo + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + playerinfo + "]";
 }
 
-std::string dbcon::loadAvChars(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	std::string playeruuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+std::string dbcon::loadAvChars(ext_arguments &extArgument, base_db_handler *dbhandler) {
+	std::string playeruuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 
 	std::string result = dbhandler->loadAvChars(playeruuid);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + result + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + result + "]";
 }
 
-std::string dbcon::linkChars(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	std::string playeruuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
-	std::string variabuuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABUUID);
+std::string dbcon::linkChars(ext_arguments &extArgument, base_db_handler *dbhandler) {
+	std::string playeruuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string variabuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABUUID);
 
 	std::string result = dbhandler->linkChars(playeruuid, variabuuid);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + result + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + result + "]";
 }
 
-std::string dbcon::loadChar(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	std::string playeruuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+std::string dbcon::loadChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
+	std::string playeruuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 
 	std::string result = dbhandler->loadChar(playeruuid);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + result + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + result + "]";
 }
 
-std::string dbcon::createChar(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	std::string playeruuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
-	std::string animationstate = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
-	float direction = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
-	int positiontype = dbarguments.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
-	float positionx = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
-	float positiony = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
-	float positionz = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
-	std::string classname = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
-	std::string hitpoints = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS);
-	std::string variables = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
-	std::string persistentvariables = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABLES);
-	std::string textures = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TEXTURES);
-	std::string inventoryuniform = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYUNIFORM);
-	std::string inventoryvest = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYVEST);
-	std::string inventorybackpack = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYBACKPACK);
-	std::string uniform = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_UNIFORM);
-	std::string vest = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VEST);
-	std::string backpack = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_BACKPACK);
-	std::string headgear = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HEADGEAR);
-	std::string googles = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_GOOGLES);
-	std::string primaryweapon = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PRIMARYWEAPON);
-	std::string secondaryweapon = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_SECONDARYWEAPON);
-	std::string handgun = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HANDGUN);
-	std::string tools = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TOOLS);
-	std::string currentweapon = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CURRENTWEAPON);
+std::string dbcon::createChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
+	std::string playeruuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string animationstate = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
+	float direction = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
+	int positiontype = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
+	float positionx = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
+	float positiony = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
+	float positionz = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
+	std::string classname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
+	std::string hitpoints = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS);
+	std::string variables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
+	std::string persistentvariables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABLES);
+	std::string textures = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TEXTURES);
+	std::string inventoryuniform = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYUNIFORM);
+	std::string inventoryvest = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYVEST);
+	std::string inventorybackpack = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYBACKPACK);
+	std::string uniform = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_UNIFORM);
+	std::string vest = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VEST);
+	std::string backpack = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_BACKPACK);
+	std::string headgear = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HEADGEAR);
+	std::string googles = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_GOOGLES);
+	std::string primaryweapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PRIMARYWEAPON);
+	std::string secondaryweapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_SECONDARYWEAPON);
+	std::string handgun = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HANDGUN);
+	std::string tools = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TOOLS);
+	std::string currentweapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CURRENTWEAPON);
 
 	std::string result = dbhandler->createChar(playeruuid, animationstate, direction, positiontype, positionx,
 			positiony, positionz, classname, hitpoints, variables, persistentvariables, textures, inventoryuniform,
 			inventoryvest, inventorybackpack, uniform, vest, backpack, headgear, googles, primaryweapon,
 			secondaryweapon, handgun, tools, currentweapon);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
-std::string dbcon::updateChar(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	std::string charuuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
-	std::string animationstate = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
-	float direction = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
-	int positiontype = dbarguments.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
-	float positionx = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
-	float positiony = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
-	float positionz = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
-	std::string classname = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
-	std::string hitpoints = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS);
-	std::string variables = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
-	std::string persistentvariables = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABLES);
-	std::string textures = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TEXTURES);
-	std::string inventoryuniform = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYUNIFORM);
-	std::string inventoryvest = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYVEST);
-	std::string inventorybackpack = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYBACKPACK);
-	std::string uniform = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_UNIFORM);
-	std::string vest = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VEST);
-	std::string backpack = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_BACKPACK);
-	std::string headgear = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HEADGEAR);
-	std::string googles = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_GOOGLES);
-	std::string primaryweapon = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PRIMARYWEAPON);
-	std::string secondaryweapon = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_SECONDARYWEAPON);
-	std::string handgun = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HANDGUN);
-	std::string tools = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TOOLS);
-	std::string currentweapon = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CURRENTWEAPON);
+std::string dbcon::updateChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
+	std::string charuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
+	std::string animationstate = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
+	float direction = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
+	int positiontype = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
+	float positionx = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
+	float positiony = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
+	float positionz = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
+	std::string classname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
+	std::string hitpoints = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS);
+	std::string variables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
+	std::string persistentvariables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABLES);
+	std::string textures = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TEXTURES);
+	std::string inventoryuniform = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYUNIFORM);
+	std::string inventoryvest = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYVEST);
+	std::string inventorybackpack = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYBACKPACK);
+	std::string uniform = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_UNIFORM);
+	std::string vest = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VEST);
+	std::string backpack = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_BACKPACK);
+	std::string headgear = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HEADGEAR);
+	std::string googles = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_GOOGLES);
+	std::string primaryweapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PRIMARYWEAPON);
+	std::string secondaryweapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_SECONDARYWEAPON);
+	std::string handgun = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HANDGUN);
+	std::string tools = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TOOLS);
+	std::string currentweapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CURRENTWEAPON);
 
 	std::string result = dbhandler->updateChar(charuuid, animationstate, direction, positiontype, positionx,
 				positiony, positionz, classname, hitpoints, variables, persistentvariables, textures, inventoryuniform,
 				inventoryvest, inventorybackpack, uniform, vest, backpack, headgear, googles, primaryweapon,
 				secondaryweapon, handgun, tools, currentweapon);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
-std::string dbcon::locupdateChar(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	std::string charuuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
-	std::string animationstate = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
-	float direction = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
-	int positiontype = dbarguments.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
-	float positionx = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
-	float positiony = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
-	float positionz = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
+std::string dbcon::locupdateChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
+	std::string charuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
+	std::string animationstate = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
+	float direction = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
+	int positiontype = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
+	float positionx = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
+	float positiony = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
+	float positionz = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
 
 	std::string result = dbhandler->locupdateChar(charuuid, animationstate, direction, positiontype, positionx,
 					positiony, positionz);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
-std::string dbcon::killChar(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	std::string charuuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
-	std::string attackeruuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
-	std::string type = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TYPE);
-	std::string weapon = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
-	float distance = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_DISTANCE);
+std::string dbcon::killChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
+	std::string charuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
+	std::string attackeruuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
+	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TYPE);
+	std::string weapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
+	float distance = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DISTANCE);
 
 	std::string result = dbhandler->killChar(charuuid, attackeruuid, type, weapon, distance);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
-std::string dbcon::loadObject(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	std::string objectuuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+std::string dbcon::loadObject(ext_arguments &extArgument, base_db_handler *dbhandler) {
+	std::string objectuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 
 	std::string result = dbhandler->loadObject(objectuuid);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + result + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + result + "]";
 }
 
-std::string dbcon::createObject(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	std::string classname = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
-	int priority = dbarguments.get<int>(PROTOCOL_DBCALL_ARGUMENT_PRIORITY);
-	int visible = dbarguments.get<int>(PROTOCOL_DBCALL_ARGUMENT_VISIBLE);
-	std::string accesscode = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ACCESSCODE);
-	int locked = dbarguments.get<int>(PROTOCOL_DBCALL_ARGUMENT_LOCKED);
-	std::string player_uuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
-	std::string hitpoints = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS);
-	float damage = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_DAMAGE);
-	float fuel = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUEL);
-	float fuelcargo = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUELCARGO);
-	float repaircargo = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_REPAIRCARGO);
-	std::string items = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ITEMS);
-	std::string magazines = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_MAGAZINES);
-	std::string weapons = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPONS);
-	std::string backpacks = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_BACKPACKS);
-	std::string magazinesturret = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_MAGAZINESTURRET);
-	std::string variables = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
-	std::string animationstate = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
-	std::string textures = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TEXTURES);
-	float direction = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
-	int positiontype = dbarguments.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
-	float positionx = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
-	float positiony = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
-	float positionz = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
+std::string dbcon::createObject(ext_arguments &extArgument, base_db_handler *dbhandler) {
+	std::string classname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
+	int priority = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_PRIORITY);
+	int visible = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_VISIBLE);
+	std::string accesscode = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ACCESSCODE);
+	int locked = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_LOCKED);
+	std::string player_uuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string hitpoints = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS);
+	float damage = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DAMAGE);
+	float fuel = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUEL);
+	float fuelcargo = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUELCARGO);
+	float repaircargo = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_REPAIRCARGO);
+	std::string items = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ITEMS);
+	std::string magazinesturret = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_MAGAZINESTURRET);
+	std::string variables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
+	std::string animationstate = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
+	std::string textures = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TEXTURES);
+	float direction = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
+	int positiontype = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
+	float positionx = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
+	float positiony = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
+	float positionz = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
+	std::string positionadvanced = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_POSITIONADVANCED);
+	std::string reservedone = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_RESERVEDONE);
+	std::string reservedtwo = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_RESERVEDTWO);
 
-	std::string result = dbhandler->createObject(classname, priority, visible, accesscode, locked, player_uuid,
-			hitpoints, damage, fuel, fuelcargo, repaircargo, items, magazines, weapons, backpacks, magazinesturret,
-			variables, animationstate, textures, direction, positiontype, positionx, positiony, positionz);
+	std::string result = dbhandler->createObject(classname, priority, visible,
+			accesscode, locked, player_uuid, hitpoints, damage, fuel, fuelcargo,
+			repaircargo, items, magazinesturret, variables, animationstate,
+			textures, direction, positiontype, positionx, positiony, positionz,
+			positionadvanced, reservedone, reservedtwo);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
-std::string dbcon::qcreateObject(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	std::string objectuuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
-	std::string classname = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
-	int priority = dbarguments.get<int>(PROTOCOL_DBCALL_ARGUMENT_PRIORITY);
-	int visible = dbarguments.get<int>(PROTOCOL_DBCALL_ARGUMENT_VISIBLE);
-	std::string accesscode = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ACCESSCODE);
-	int locked = dbarguments.get<int>(PROTOCOL_DBCALL_ARGUMENT_LOCKED);
-	std::string player_uuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
-	std::string hitpoints = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS);
-	float damage = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_DAMAGE);
-	float fuel = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUEL);
-	float fuelcargo = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUELCARGO);
-	float repaircargo = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_REPAIRCARGO);
-	std::string items = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ITEMS);
-	std::string magazines = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_MAGAZINES);
-	std::string weapons = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPONS);
-	std::string backpacks = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_BACKPACKS);
-	std::string magazinesturret = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_MAGAZINESTURRET);
-	std::string variables = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
-	std::string animationstate = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
-	std::string textures = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TEXTURES);
-	float direction = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
-	int positiontype = dbarguments.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
-	float positionx = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
-	float positiony = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
-	float positionz = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
+std::string dbcon::qcreateObject(ext_arguments &extArgument, base_db_handler *dbhandler) {
+	std::string objectuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+	std::string classname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
+	int priority = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_PRIORITY);
+	int visible = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_VISIBLE);
+	std::string accesscode = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ACCESSCODE);
+	int locked = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_LOCKED);
+	std::string player_uuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string hitpoints = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS);
+	float damage = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DAMAGE);
+	float fuel = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUEL);
+	float fuelcargo = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUELCARGO);
+	float repaircargo = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_REPAIRCARGO);
+	std::string items = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ITEMS);
+	std::string magazinesturret = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_MAGAZINESTURRET);
+	std::string variables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
+	std::string animationstate = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
+	std::string textures = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TEXTURES);
+	float direction = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
+	int positiontype = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
+	float positionx = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
+	float positiony = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
+	float positionz = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
+	std::string positionadvanced = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_POSITIONADVANCED);
+	std::string reservedone = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_RESERVEDONE);
+	std::string reservedtwo = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_RESERVEDTWO);
 
-	std::string result = dbhandler->createObject(objectuuid, classname, priority, visible, accesscode, locked, player_uuid,
-			hitpoints, damage, fuel, fuelcargo, repaircargo, items, magazines, weapons, backpacks, magazinesturret,
-			variables, animationstate, textures, direction, positiontype, positionx, positiony, positionz);
+	std::string result = dbhandler->createObject(objectuuid, classname,
+			priority, visible, accesscode, locked, player_uuid, hitpoints,
+			damage, fuel, fuelcargo, repaircargo, items, magazinesturret,
+			variables, animationstate, textures, direction, positiontype,
+			positionx, positiony, positionz, positionadvanced, reservedone,
+			reservedtwo);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
-std::string dbcon::updateObject(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	std::string objectuuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
-	std::string classname = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
-	int priority = dbarguments.get<int>(PROTOCOL_DBCALL_ARGUMENT_PRIORITY);
-	int visible = dbarguments.get<int>(PROTOCOL_DBCALL_ARGUMENT_VISIBLE);
-	std::string accesscode = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ACCESSCODE);
-	int locked = dbarguments.get<int>(PROTOCOL_DBCALL_ARGUMENT_LOCKED);
-	std::string player_uuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
-	std::string hitpoints = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS);
-	float damage = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_DAMAGE);
-	float fuel = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUEL);
-	float fuelcargo = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUELCARGO);
-	float repaircargo = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_REPAIRCARGO);
-	std::string items = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ITEMS);
-	std::string magazines = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_MAGAZINES);
-	std::string weapons = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPONS);
-	std::string backpacks = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_BACKPACKS);
-	std::string magazinesturret = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_MAGAZINESTURRET);
-	std::string variables = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
-	std::string animationstate = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
-	std::string textures = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TEXTURES);
-	float direction = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
-	int positiontype = dbarguments.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
-	float positionx = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
-	float positiony = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
-	float positionz = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
+std::string dbcon::updateObject(ext_arguments &extArgument, base_db_handler *dbhandler) {
+	std::string objectuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+	std::string classname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
+	int priority = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_PRIORITY);
+	int visible = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_VISIBLE);
+	std::string accesscode = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ACCESSCODE);
+	int locked = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_LOCKED);
+	std::string player_uuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string hitpoints = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS);
+	float damage = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DAMAGE);
+	float fuel = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUEL);
+	float fuelcargo = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUELCARGO);
+	float repaircargo = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_REPAIRCARGO);
+	std::string items = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ITEMS);
+	std::string magazinesturret = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_MAGAZINESTURRET);
+	std::string variables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
+	std::string animationstate = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
+	std::string textures = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TEXTURES);
+	float direction = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
+	int positiontype = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
+	float positionx = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
+	float positiony = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
+	float positionz = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
+	std::string positionadvanced = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_POSITIONADVANCED);
+	std::string reservedone = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_RESERVEDONE);
+	std::string reservedtwo = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_RESERVEDTWO);
 
-	std::string result = dbhandler->updateObject(objectuuid, classname, priority, visible, accesscode, locked,
-			player_uuid, hitpoints, damage, fuel, fuelcargo, repaircargo, items, magazines, weapons, backpacks,
-			magazinesturret, variables, animationstate, textures, direction, positiontype, positionx, positiony,
-			positionz);
+	std::string result = dbhandler->updateObject(objectuuid, classname,
+			priority, visible, accesscode, locked, player_uuid, hitpoints,
+			damage, fuel, fuelcargo, repaircargo, items, magazinesturret,
+			variables, animationstate, textures, direction, positiontype,
+			positionx, positiony, positionz, positionadvanced, reservedone,
+			reservedtwo);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
-std::string dbcon::killObject(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
-	std::string charuuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
-	std::string attackeruuid = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
-	std::string type = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TYPE);
-	std::string weapon = dbarguments.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
-	float distance = dbarguments.get<float>(PROTOCOL_DBCALL_ARGUMENT_DISTANCE);
+std::string dbcon::killObject(ext_arguments &extArgument, base_db_handler *dbhandler) {
+	std::string charuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+	std::string attackeruuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
+	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TYPE);
+	std::string weapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
+	float distance = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DISTANCE);
 
 	std::string result = dbhandler->killObject(charuuid, attackeruuid, type, weapon, distance);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
-std::string dbcon::dumpObjects(boost::property_tree::ptree &dbarguments, base_db_handler *dbhandler) {
+std::string dbcon::dumpObjects(ext_arguments &extArgument, base_db_handler *dbhandler) {
         std::string matrix;
         bool placecommaone = false;
         bool placecommatwo = false;
 
-        //std::vector< std::vector<std::string> > resultmatrix = dbhandler->verbosetest("SELECT hex(uuid), classname, priority, timelastused, timecreated, visible, accesscode, locked, hex(player_uuid), hitpoints, damage, fuel, fuelcargo, repaircargo, items, magazines, weapons, backpacks, magazinesturret, variables, animationstate, textures, direction, positiontype, positionx, positiony, positionz FROM `object` WHERE player_uuid = CAST(0x11E66B045F432626B28510BF48883ACE AS BINARY) OR player_uuid = CAST(0x11E66ABC1942138D82C510BF48883ACE AS BINARY)");
         std::vector< std::vector<std::string> > resultmatrix = dbhandler->dumpObjects();
         matrix = "[";
         for (auto& row : resultmatrix) {
@@ -703,7 +771,7 @@ std::string dbcon::dumpObjects(boost::property_tree::ptree &dbarguments, base_db
                 placecommatwo = false;
                 for (auto& value : row) {
                         if (placecommatwo) {
-                                matrix += ", ";
+                                matrix += ",";
                         }
                         //matrix += "\"" + value + "\"";
                         matrix += value;
@@ -714,5 +782,5 @@ std::string dbcon::dumpObjects(boost::property_tree::ptree &dbarguments, base_db
         }
         matrix += "]";
 
-        return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + matrix + "]";
+        return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + matrix + "]";
 }

@@ -17,31 +17,54 @@
 
 #include "main.hpp"
 
-void RVExtension(char *output, int outputSize, const char *function)
+extern "C"
 {
-	try {
+	void RVExtension(char *output, int outputSize, const char *function)
+	{
 #ifdef DEBUG
-		testfile << "REQUEST " << function << std::endl;
+			testfile << "REQUEST " << function << std::endl;
 #endif
-		std::string returnString = extension->processCallExtension(function, outputSize);
+			std::string errstr = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\", \"";
+			errstr += "Sorry RVExtension is not supported anymore";
+			errstr += "\"]";
+			strncpy(output, errstr.c_str(), outputSize);
 #ifdef DEBUG
-		testfile << "RETURN " << returnString << std::endl;
+			testfile << "ERROR " << errstr << std::endl;
 #endif
-		strncpy(output, returnString.c_str(), outputSize);
-		return;
-	} catch (std::exception const& e) {
-		std::string error = e.what();
-		int i = 0;
-		while ((i = error.find("\"", i)) != std::string::npos) {
-			error.insert(i, "\"");
-			i += 2;
+	}
+}
+
+extern "C"
+{
+	void RVExtensionArgs(char *output, int outputSize, const char *function, const char **args, int argsCnt)
+	{
+		try {
+#ifdef DEBUG
+			testfile << "REQUEST " << function << std::endl;
+			for (int i = 0; i < argsCnt; i++) {
+				testfile << "Argument " << i << ": " << args[i] << " - Escaped: " << escapeChars(args[i]) << std::endl;
+			}
+#endif
+			std::string returnString = extension->processCallExtension(function, args, argsCnt, outputSize);
+#ifdef DEBUG
+			testfile << "RETURN " << returnString << std::endl;
+#endif
+			strncpy(output, returnString.c_str(), outputSize);
+			return;
+		} catch (std::exception const& e) {
+			std::string error = e.what();
+			int i = 0;
+			while ((i = error.find("\"", i)) != std::string::npos) {
+				error.insert(i, "\"");
+				i += 2;
+			}
+			std::string errstr = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\", \"";
+			errstr += error;
+			errstr += "\"]";
+			strncpy(output, errstr.c_str(), outputSize);
+#ifdef DEBUG
+			testfile << "ERROR " << errstr << std::endl;
+#endif
 		}
-		std::string errstr = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\", \"";
-		errstr += error;
-		errstr += "\"]";
-		strncpy(output, errstr.c_str(), outputSize);
-#ifdef DEBUG
-		testfile << "ERROR " << errstr << std::endl;
-#endif
 	}
 }

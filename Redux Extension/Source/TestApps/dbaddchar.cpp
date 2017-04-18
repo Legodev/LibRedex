@@ -19,7 +19,7 @@
 #include <sstream>
 #include <string>
 #include <string.h>
-#include "../constants.hpp"
+#include "constants.hpp"
 #include "utils/uuid.hpp"
 #include <unistd.h>
 #include <boost/random/random_device.hpp>
@@ -27,7 +27,9 @@
 #define range 11, 32
 #define cachesize 1024
 
+extern "C" {
 void RVExtension(char *output, int outputSize, const char *function);
+}
 
 std::string randomstring(int length) {
 	std::stringstream returnString;
@@ -61,7 +63,7 @@ std::string receivemsg(std::string msguuid) {
 	char output[cachesize];
 
 	std::cout << "receiving msg information of " << msguuid << std::endl;
-	functionstring = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'chkasmsg', 'dbarguments': { 'msguuid': '";
+	functionstring = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'chkasmsg', 'extArgument': { 'msguuid': '";
 	functionstring += msguuid + "' } } }";
 
 	while (loop) {
@@ -75,7 +77,7 @@ std::string receivemsg(std::string msguuid) {
 		}
 	}
 
-	functionstring = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'rcvasmsg', 'dbarguments': { 'msguuid': '";
+	functionstring = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'rcvasmsg', 'extArgument': { 'msguuid': '";
 	functionstring += msguuid + "' } } }";
 	std::cout << "receiving msg " << msguuid << std::endl;
 	// std::cout << "JSON: " << functionstring.c_str() << std::endl;
@@ -102,7 +104,7 @@ int main(int argc, char *argv[])
 	std::string objectuuid;
     char output[1024];
     std::string stringoutput;
-    const char function[] = "{ 'dllFunction': 'initdb', 'dllArguments': {  'poolsize': 4, 'worlduuid': '11e66ac33a4ccd1c82c510bf48883ace' } }";
+    const char function[] = "{ 'extFunction': 'initdb', 'extArguments': {  'poolsize': 4, 'worlduuid': '11e66ac33a4ccd1c82c510bf48883ace' } }";
 
     std::cout << "trying to spawn 4 threads" << std::endl;
     // std::cout << "JSON: " << function << std::endl;
@@ -111,7 +113,7 @@ int main(int argc, char *argv[])
 
     usleep(500);
 
-    functionstring = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'loadPlayer', 'dbarguments': { 'nickname': '";
+    functionstring = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'loadPlayer', 'extArgument': { 'nickname': '";
     functionstring += randomstring(6) + "', 'steamid': '";
     functionstring += randomsteamid() + "'  } } }";
 
@@ -126,7 +128,7 @@ int main(int argc, char *argv[])
 
 	usleep(500);
 
-	functionstring = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'createChar', 'dbarguments': { 'playeruuid': '";
+	functionstring = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'createChar', 'extArgument': { 'playeruuid': '";
 	functionstring += playeruuid + "', 'animationstate': 'VAR_ANIMATIONSTATE',  'direction': '-23.5', 'positiontype': '0', 'positionx': '21.42', 'positiony': '666.9', 'positionz': '-133.7', 'classname': 'sampleclass', 'hitpoints': '[]', 'variables': '[]', 'persistentvariables': '[]', 'textures': '[]', 'inventoryuniform': '[]', 'inventoryvest': '[]', 'inventorybackpack': '[]', 'uniform': 'someuniform', 'vest': 'somevest', 'backpack': 'somebackpack', 'headgear': 'someheadgear', 'googles': 'somegoogles', 'primaryweapon': '[\"someprimaryweapon\", [\"someattachment\"]]', 'secondaryweapon': '[\"somesecondaryweapon\", [\"someattachment\"]]', 'handgun': '[\"somehandgunweapon\", [\"someattachment\"]]', 'tools': '[]', 'currentweapon': 'someprimaryweapon' } } }";
 
 	std::cout << "creating character data" << std::endl;
@@ -137,7 +139,7 @@ int main(int argc, char *argv[])
 
 	usleep(500);
 
-	functionstring = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'createObject', 'dbarguments': { 'classname': '";
+	functionstring = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'createObject', 'extArgument': { 'classname': '";
 	functionstring += randomstring(8) + "', 'priority': 2, 'visible': 1, 'accesscode': '', 'locked': 0, 'playeruuid': '";
 	functionstring += playeruuid + "', 'hitpoints': '[]',  'damage': 0.1, 'fuel': 0.9, 'fuelcargo': 0.0, 'repaircargo': 0.0, ";
 	functionstring += "'items': '[]', 'magazines': '[]', 'weapons': '[]', 'backpacks': '[]', 'magazinesturret': '[]', 'variables': '[]', ";
@@ -154,7 +156,7 @@ int main(int argc, char *argv[])
 
 	usleep(500);
 
-	functionstring = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'updateObject', 'dbarguments': { 'objectuuid': '";
+	functionstring = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'updateObject', 'extArgument': { 'objectuuid': '";
 	functionstring += objectuuid + "', 'classname': '";
 	functionstring += randomstring(8) + "', 'priority': 2, 'visible': 1, 'accesscode': '', 'locked': 0, 'playeruuid': '";
 	functionstring += playeruuid + "', 'hitpoints': '[]',  'damage': 0.1, 'fuel': 0.9, 'fuelcargo': 0.0, 'repaircargo': 0.0, ";
@@ -169,7 +171,7 @@ int main(int argc, char *argv[])
 
 	usleep(500);
 
-	functionstring = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'createObject', 'dbarguments': { 'classname': '";
+	functionstring = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'createObject', 'extArgument': { 'classname': '";
 	functionstring += randomstring(8) + "', 'priority': 2, 'visible': 1, 'accesscode': '', 'locked': 0, 'playeruuid': '";
 	functionstring += "', 'hitpoints': '[]',  'damage': 0.1, 'fuel': 0.9, 'fuelcargo': 0.0, 'repaircargo': 0.0, ";
 	functionstring += "'items': '[]', 'magazines': '[]', 'weapons': '[]', 'backpacks': '[]', 'magazinesturret': '[]', 'variables': '[]', ";

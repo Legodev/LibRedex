@@ -19,16 +19,18 @@
 #include <sstream>
 #include <string>
 
+extern "C" {
 void RVExtension(char *output, int outputSize, const char *function);
+}
 
 int main(int argc, char *argv[])
 {
     char output[1024];
-    const char function[] = "{ 'dllFunction': 'dbcall', 'dllArguments': {  'dbfunction': 'uid', 'dbarguments': {  'lool': 'lustig' } } }";
+    const char function[] = "{ 'extFunction': 'dbcall', 'extArguments': {  'dbfunction': 'uid', 'extArgument': {  'lool': 'lustig' } } }";
     RVExtension(output, 1024, function);
     std::cout << output << std::endl;
 
-    const char function2[] = "{ 'dllFunction': 'dall', 'dllArguments': {  'dbfunction': 'uid', 'dbarguments': {  'lool': 'lustig' } } }";
+    const char function2[] = "{ 'extFunction': 'dall', 'extArguments': {  'dbfunction': 'uid', 'extArgument': {  'lool': 'lustig' } } }";
     RVExtension(output, 1024, function2);
     std::cout << output << std::endl;
 

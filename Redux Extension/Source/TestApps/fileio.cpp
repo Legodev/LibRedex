@@ -23,7 +23,9 @@
 
 #define size 1024
 
+extern "C" {
 void RVExtension(char *output, int outputSize, const char *function);
+}
 
 int main(int argc, char *argv[])
 {
@@ -31,11 +33,11 @@ int main(int argc, char *argv[])
 	std::string functionstring;
     char output[size];
 
-    const char function[] = "{ 'dllFunction': 'iocall', 'dllArguments': {  'extFunction': 'GetInitOrder', 'extArguments': {  } } }";
+    const char function[] = "{ 'extFunction': 'iocall', 'extArguments': {  'extFunction': 'GetInitOrder', 'extArguments': {  } } }";
     RVExtension(output, size, function);
     std::cout << "OUTPUT: " << output << std::endl;
 
-    const char function2[] = "{ 'dllFunction': 'iocall', 'dllArguments': {  'extFunction': 'GetCfgFile', 'extArguments': { 'configfiles': ['PluginManager','DesoDB','Desolation','Realism','AntiSideChat','Jump','TimeModify','EarPlugs','AdminTools'] } } }";
+    const char function2[] = "{ 'extFunction': 'iocall', 'extArguments': {  'extFunction': 'GetCfgFile', 'extArguments': { 'configfiles': ['PluginManager','DesoDB','Desolation','Realism','AntiSideChat','Jump','TimeModify','EarPlugs','AdminTools'] } } }";
     RVExtension(output, size, function2);
     uuid = output;
     uuid = uuid.substr(11, 32);
@@ -43,7 +45,7 @@ int main(int argc, char *argv[])
     std::cout << "OUTPUT: " << output << std::endl;
 
     while (strncmp(output, PROTOCOL_MESSAGE_TRANSMIT_FINISHED_MSG, 20) != 0) {
-        	functionstring = "{ 'dllFunction': 'rcvmsg', 'dllArguments': {  'msguuid': '";
+        	functionstring = "{ 'extFunction': 'rcvmsg', 'extArguments': {  'msguuid': '";
         	functionstring += uuid;
     		functionstring += "' } }";
 

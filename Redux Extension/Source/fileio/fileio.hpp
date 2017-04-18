@@ -23,7 +23,6 @@
 #include <string>
 #include <map>
 #include <tuple>
-#include <boost/property_tree/ptree.hpp>
 #include <boost/function.hpp>
 
 #include "extbase.hpp"
@@ -31,7 +30,7 @@
 
 class fileio: public ext_base {
 public:
-	fileio();
+	fileio(EXT_FUNCTIONS &extFunctions);
 	~fileio();
 
 private:
@@ -40,11 +39,11 @@ private:
 	FILE_IO_MAP readlist;
 	FILE_IO_MAP writelist;
 
-	std::string readFile(boost::property_tree::ptree &extArguments);
-	std::string writeFile(boost::property_tree::ptree &extArguments);
-	std::string appendFile(boost::property_tree::ptree &extArguments);
-	std::string GetInitOrder(boost::property_tree::ptree &extArguments);
-	std::string GetCfgFile(boost::property_tree::ptree &extArguments);
+	std::string readFile(std::string &extFunction, ext_arguments &extArguments);
+	std::string writeFile(std::string &extFunction, ext_arguments &extArguments);
+	std::string appendFile(std::string &extFunction, ext_arguments &extArguments);
+	std::string GetInitOrder(std::string &extFunction, ext_arguments &extArguments);
+	std::string GetCfgFile(std::string &extFunction, ext_arguments &extArguments);
 };
 
 

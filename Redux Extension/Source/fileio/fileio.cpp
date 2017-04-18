@@ -29,22 +29,22 @@
 
 #include "fileio/fileio.hpp"
 
-fileio::fileio() {
+fileio::fileio(EXT_FUNCTIONS &extFunctions) {
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_READ_FILE),
-					boost::bind(&fileio::readFile, this, _1)));
+					boost::bind(&fileio::readFile, this, _1, _2)));
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_WRITE_FILE),
-					boost::bind(&fileio::writeFile, this, _1)));
+					boost::bind(&fileio::writeFile, this, _1, _2)));
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_APPEND_FILE),
-					boost::bind(&fileio::appendFile, this, _1)));
+					boost::bind(&fileio::appendFile, this, _1, _2)));
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_PLUGINSYSTEM_GETINITORDER),
-					boost::bind(&fileio::GetInitOrder, this, _1)));
+					boost::bind(&fileio::GetInitOrder, this, _1, _2)));
 	extFunctions.insert(
 				std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_PLUGINSYSTEM_GETCFGFILE),
-						boost::bind(&fileio::GetCfgFile, this, _1)));
+						boost::bind(&fileio::GetCfgFile, this, _1, _2)));
 
     boost::property_tree::ptree configtree;
     boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);
@@ -69,7 +69,7 @@ fileio::~fileio() {
 	return;
 }
 
-std::string fileio::GetInitOrder(boost::property_tree::ptree &extArguments) {
+std::string fileio::GetInitOrder(std::string &extFunction, ext_arguments &extArguments) {
 #if defined(__linux__)
 	std::string filename = "@DesolationServer/Config/PluginList.cfg";
 	if (access(filename.c_str(), F_OK) == -1) {
@@ -132,7 +132,7 @@ std::string fileio::GetInitOrder(boost::property_tree::ptree &extArguments) {
 	return "";
 }
 
-std::string fileio::GetCfgFile(boost::property_tree::ptree &extArguments) {
+std::string fileio::GetCfgFile(std::string &extFunction, ext_arguments &extArguments) {
 #if defined(__linux__)
 	std::string path = "@DesolationServer/Config/";
 #else
@@ -142,8 +142,7 @@ std::string fileio::GetCfgFile(boost::property_tree::ptree &extArguments) {
 	int filenum = 0;
 	int itemnum = 0;
 
-	for (auto& item : extArguments.get_child("configfiles")) {
-		std::string filename = item.second.get_value<std::string>();
+	for (std::string& filename : extArguments.get_simplelist<std::string>("configfiles")) {
 
 		boost::regex dirupexpression("\\.\\.");
 		filename = boost::regex_replace(filename, dirupexpression, "", boost::match_default | boost::format_all);
@@ -208,7 +207,7 @@ std::string fileio::GetCfgFile(boost::property_tree::ptree &extArguments) {
 	return returnString;
 }
 
-std::string fileio::readFile(boost::property_tree::ptree &extArguments) {
+std::string fileio::readFile(std::string &extFunction, ext_arguments &extArguments) {
 	std::string filename = extArguments.get<std::string>("filename");
 
 	FILE_IO_MAP::iterator it = readlist.find(filename);
@@ -247,13 +246,13 @@ std::string fileio::readFile(boost::property_tree::ptree &extArguments) {
 			throw std::runtime_error("cannot read file: " + filename);
 		}
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + filename + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + filename + "]";
 }
 
-std::string fileio::writeFile(boost::property_tree::ptree &extArguments) {
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + "not implemented" + "\"]";
+std::string fileio::writeFile(std::string &extFunction, ext_arguments &extArguments) {
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + "not implemented" + "\"]";
 }
 
-std::string fileio::appendFile(boost::property_tree::ptree &extArguments) {
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", \"" + "not implemented" + "\"]";
+std::string fileio::appendFile(std::string &extFunction, ext_arguments &extArguments) {
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + "not implemented" + "\"]";
 }

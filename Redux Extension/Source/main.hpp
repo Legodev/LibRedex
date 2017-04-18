@@ -21,12 +21,15 @@
 #ifdef __MINGW32__
 	#if _WIN64
 			#define RVExtension __stdcall RVExtension
+			#define RVExtensionArgs __stdcall RVExtensionArgs
 	#else
 			#define RVExtension __stdcall _RVExtension
+			#define RVExtensionArgs __stdcall _RVExtensionArgs
 	#endif
 #endif
 #ifdef _MSC_VER
 		#define RVExtension __stdcall RVExtension
+		#define RVExtensionArgs __stdcall RVExtensionArgs
 #endif
 
 #ifdef DEBUG
@@ -45,25 +48,41 @@ redex * extension = 0;
 #ifdef DEBUG
 std::mutex ThreadMutex;
 int attachedThreadCount = 0;
-std::ofstream testfile;
+std::ofstream testfile("LibRedExLogFile.txt", std::ios::out | std::ios::trunc);
+std::string escapeChars(std::string input) {
+        std::stringstream outputstream;
+
+        for (unsigned int i = 0; i < input.length(); i++) {
+                switch(input[i]) {
+                        case '-': if (input[i+1] > '0' && input[i+1] < '9') { outputstream << "-"; }; break;
+                        case ';': break;
+                        case '#': break;
+                        case '"': if (i > 0 && i < input.length() - 1) { outputstream << "\\\""; }; break;
+                        case '\\': outputstream << "\\\\"; break;
+                        default: outputstream << input[i]; break;
+                }
+        }
+
+        return outputstream.str();
+}
 #endif
 
 static void init(void)
 {
-#ifdef DEBUG
-    testfile.open("LibRedExLogFile.txt", std::ios::out | std::ios::trunc);
-    testfile << "starting init" << std::endl;
-    testfile.flush();
-#endif
+//#ifdef DEBUG
+//    testfile.open("LibRedExLogFile.txt", std::ios::out | std::ios::trunc);
+//    testfile << "starting init" << std::endl;
+//    testfile.flush();
+//#endif
 
     if (extension == 0) {
         extension = new redex();
     }
 
-#ifdef DEBUG
-    testfile << "done init" << std::endl;
-    testfile.flush();
-#endif
+//#ifdef DEBUG
+//    testfile << "done init" << std::endl;
+//    testfile.flush();
+//#endif
 }
 
 static void destroy(void)
@@ -149,6 +168,7 @@ static void destroy(void)
 	#endif
 
 	__declspec (dllexport) void RVExtension(char *output, int outputSize, const char *function);
+	__declspec (dllexport) void RVExtensionArgs(char *output, int outputSize, const char *function, const char **args, int argsCnt);
 
 	#ifdef __cplusplus
 		}

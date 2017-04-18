@@ -24,19 +24,23 @@
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/regex.hpp>
+#include <boost/algorithm/string.hpp>
 #include <cassert>
 #include <exception>
 #include <stdexcept>
 #include <fstream>
 
 
-randomlist::randomlist() {
+randomlist::randomlist(EXT_FUNCTIONS &extFunctions) {
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_RANDOM_FUNCTION_ADD_DISCRETE_LIST),
-					boost::bind(&randomlist::addDiscreteItemList, this, _1)));
+					boost::bind(&randomlist::addDiscreteItemList, this, _1, _2)));
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_RANDOM_FUNCTION_GET_DISCRETE_LIST),
-					boost::bind(&randomlist::getDiscreteItemList, this, _1)));
+					boost::bind(&randomlist::getDiscreteItemList, this, _1, _2)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_RANDOM_FUNCTION_GET_RANDOMNUMBER_LIST),
+					boost::bind(&randomlist::getRandomNumberList, this, _1, _2)));
 
     boost::property_tree::ptree configtree;
     boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);
@@ -48,10 +52,10 @@ randomlist::~randomlist() {
 	return;
 }
 
-std::string randomlist::addDiscreteItemList(boost::property_tree::ptree &extArguments) {
+std::string randomlist::addDiscreteItemList(std::string &extFunction, ext_arguments &extArguments) {
 	std::string returnString = "";
 	std::string listName = extArguments.get<std::string>("listName");
-	//boost::property_tree::ptree &extArguments = extArguments.get_child("extArguments");
+	//ext_arguments &extArguments = extArguments.get_child("extArguments");
 
 	DISCRETE_LIST_MAP::iterator it = DiscreteItemList.find(listName);
 	if (it != DiscreteItemList.end()) {
@@ -60,15 +64,8 @@ std::string randomlist::addDiscreteItemList(boost::property_tree::ptree &extArgu
 		std::list<int> weights;
 		std::list<std::string> items;
 
-		for (auto& item : extArguments.get_child("weights")) {
-			int itemWeight = item.second.get_value<int>();
-			weights.push_back(itemWeight);
-		}
-
-		for (auto& item : extArguments.get_child("items")) {
-			std::string itemClass = item.second.get_value<std::string>();
-			items.push_back(itemClass);
-		}
+		weights = extArguments.get_simplelist<int>("weights");
+		items = extArguments.get_simplelist<std::string>("items");
 
 		if (weights.empty()) {
 				throw std::runtime_error("The weights array is empty!");
@@ -89,7 +86,7 @@ std::string randomlist::addDiscreteItemList(boost::property_tree::ptree &extArgu
 	return returnString;
 }
 
-std::string randomlist::getDiscreteItemList(boost::property_tree::ptree &extArguments) {
+std::string randomlist::getDiscreteItemList(std::string &extFunction, ext_arguments &extArguments) {
 	std::string returnString = "";
 	std::string listName = extArguments.get<std::string>("listName");
 	unsigned int itemAmount = extArguments.get<unsigned int>("itemAmount");
@@ -101,5 +98,52 @@ std::string randomlist::getDiscreteItemList(boost::property_tree::ptree &extArgu
 		throw std::runtime_error("could not find list: " + listName);
 	}
 
+	return returnString;
+}
+
+std::string randomlist::getRandomNumberList(std::string &extFunction, ext_arguments &extArguments) {
+	std::string returnString = "[";
+	bool insertSeperator = false;
+
+	std::string type = extArguments.get<std::string>("type");
+	unsigned int amount = extArguments.get<unsigned int>("amount");
+
+	std::default_random_engine generator;
+	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	generator.seed(seed);
+
+	if (boost::iequals(type, "int")) {
+		std::uniform_int_distribution<int> distribution(
+				extArguments.get<int>("start"), extArguments.get<int>("end"));
+
+		for (int i = 0; i < amount; ++i) {
+			int number = distribution(generator);
+
+			if (insertSeperator) {
+				returnString += ",";
+			}
+
+			returnString += std::to_string(number);
+
+			insertSeperator = true;
+		}
+	} else {
+		std::uniform_real_distribution<float> distribution(
+				extArguments.get<float>("start"), extArguments.get<float>("end"));
+
+		for (int i = 0; i < amount; ++i) {
+			float number = distribution(generator);
+
+			if (insertSeperator) {
+				returnString += ",";
+			}
+
+			returnString += std::to_string(number);
+
+			insertSeperator = true;
+		}
+	}
+
+	returnString += "]";
 	return returnString;
 }
