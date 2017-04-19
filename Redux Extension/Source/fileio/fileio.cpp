@@ -124,12 +124,12 @@ std::string fileio::GetInitOrder(std::string &extFunction, ext_arguments &extArg
 
 		returnString += "]";
 
-		return returnString;
+		return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + returnString + "]";
 	} else {
 		throw std::runtime_error("cannot read file " + filename);
 	}
 
-	return "";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[]]";
 }
 
 std::string fileio::GetCfgFile(std::string &extFunction, ext_arguments &extArguments) {
@@ -204,7 +204,7 @@ std::string fileio::GetCfgFile(std::string &extFunction, ext_arguments &extArgum
 		filenum++;
 	}
 	returnString += "]";
-	return returnString;
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + returnString + "]";
 }
 
 std::string fileio::readFile(std::string &extFunction, ext_arguments &extArguments) {

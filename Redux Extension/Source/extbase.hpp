@@ -59,6 +59,7 @@ public:
 	std::list<ReturnType> get_simplelist(std::string identifier) {
 		int brakedcount = 0;
 		int doublequotecount = 0;
+		bool escape = false;
 		std::list<ReturnType> returnList;
 		std::stringstream ArgumentStream;
 
@@ -73,11 +74,15 @@ public:
 
 		for (char& c : Argument) {
 			switch (c) {
+			case '\\':
+				escape = true;
+				break;
 			case '[':
 				brakedcount++;
 				if (brakedcount > 1) {
 					ArgumentStream << c;
 				}
+				escape = false;
 				break;
 			case ']':
 				brakedcount--;
@@ -92,6 +97,7 @@ public:
 				} else {
 					ArgumentStream << c;
 				}
+				escape = false;
 				break;
 			case ',':
 				// keep commas in strings
@@ -103,15 +109,18 @@ public:
 				} else {
 					ArgumentStream << c;
 				}
+				escape = false;
 				break;
 			case '"':
 				doublequotecount++;
 				if (brakedcount != 1) {
 					ArgumentStream << c;
 				}
+				escape = false;
 				break;
 			default:
 				ArgumentStream << c;
+				escape = false;
 				break;
 			}
 		}

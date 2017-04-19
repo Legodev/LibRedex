@@ -83,7 +83,7 @@ std::string randomlist::addDiscreteItemList(std::string &extFunction, ext_argume
 		returnString = "\"Done\"";
 	}
 
-	return returnString;
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + returnString + "]";
 }
 
 std::string randomlist::getDiscreteItemList(std::string &extFunction, ext_arguments &extArguments) {
@@ -98,7 +98,7 @@ std::string randomlist::getDiscreteItemList(std::string &extFunction, ext_argume
 		throw std::runtime_error("could not find list: " + listName);
 	}
 
-	return returnString;
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + returnString + "]";
 }
 
 std::string randomlist::getRandomNumberList(std::string &extFunction, ext_arguments &extArguments) {
@@ -145,5 +145,5 @@ std::string randomlist::getRandomNumberList(std::string &extFunction, ext_argume
 	}
 
 	returnString += "]";
-	return returnString;
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + returnString + "]";
 }

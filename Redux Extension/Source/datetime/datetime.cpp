@@ -56,7 +56,7 @@ std::string datetime::getDateTimeArray(std::string &extFunction, ext_arguments &
 				<< "," << ltm->tm_min
 				<< "," << ltm->tm_sec << "]";
 
-	return returnString.str();
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + returnString.str() + "]";
 }
 
 std::string datetime::getEpochTime(std::string &extFunction, ext_arguments &extArguments) {
@@ -64,5 +64,5 @@ std::string datetime::getEpochTime(std::string &extFunction, ext_arguments &extA
 	std::time_t now = std::time(0);
 	returnString << now;
 
-	return returnString.str();
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + returnString.str() + "]";
 }
