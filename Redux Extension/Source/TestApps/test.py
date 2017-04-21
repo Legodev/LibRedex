@@ -116,10 +116,10 @@ out= instance.ExecuteAndPrint("getDateTimeArray", [])
 print(out)
 
 
-# out= instance.ExecuteAndPrint("initdb", [
-#                                "poolsize", "4",
-#                                "worlduuid", "11e66ac33a4ccd1c82c510bf48883ace"])
-# print(out)
+out= instance.ExecuteAndPrint("initdb", [
+                               "poolsize", "4",
+                               "worlduuid", "11e66ac33a4ccd1c82c510bf48883ace"])
+print(out)
 # sleep(1)
 #  
 # print("\n\n")

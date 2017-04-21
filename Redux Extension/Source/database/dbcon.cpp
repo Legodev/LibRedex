@@ -286,12 +286,12 @@ std::string dbcon::spawnHandler(std::string &extFunction, ext_arguments &extArgu
 		throw std::runtime_error("Threads already spawned");
 	}
 
-	return std::to_string(asyncthreadpool.size());
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + std::to_string(asyncthreadpool.size()) + "]";
 }
 
 std::string dbcon::terminateHandler(std::string &extFunction, ext_arguments &extArgument) {
 	this->terminateHandler();
-	return "DONE";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
 }
 
 void dbcon::terminateHandler() {
