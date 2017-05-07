@@ -21,6 +21,8 @@
 #include <boost/foreach.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
 #include <boost/regex.hpp>
 #include <cassert>
 #include <exception>
@@ -69,20 +71,52 @@ fileio::~fileio() {
 	return;
 }
 
-std::string fileio::GetInitOrder(std::string &extFunction, ext_arguments &extArguments) {
 #if defined(__linux__)
-	std::string filename = "@DesolationServer/Config/PluginList.cfg";
-	if (access(filename.c_str(), F_OK) == -1) {
-		std::transform(filename.begin(), filename.end(), filename.begin(), ::tolower);
+boost::filesystem::path fileio::ToLowerIfNeeded(boost::filesystem::path Path) {
+	boost::filesystem::path loweredPath = boost::algorithm::to_lower_copy(Path.string());
+
+	if (boost::filesystem::exists(loweredPath)) {
+		return loweredPath;
 	}
-#else
-	std::string filename = "@DesolationServer\\Config\\PluginList.cfg";
+
+	return Path;
+}
 #endif
 
-	if (access(filename.c_str(), F_OK) != -1) {
+boost::filesystem::path fileio::GetConfigPath() {
+	boost::filesystem::path configPath = "Config";
+#if defined(__linux__)
+	configPath = ToLowerIfNeeded(configPath);
+#endif
+
+	if (boost::filesystem::is_directory(configPath)) {
+		return configPath;
+	}
+
+
+	configPath = "@DesolationServer/Config";
+#if defined(__linux__)
+	configPath = ToLowerIfNeeded(configPath);
+#endif
+
+	if (boost::filesystem::is_directory(configPath)) {
+		return configPath;
+	}
+
+	throw std::runtime_error("could not find the config path try to lower all names and check the dll location");
+}
+
+std::string fileio::GetInitOrder(std::string &extFunction, ext_arguments &extArguments) {
+	boost::filesystem::path configPath = GetConfigPath();
+	configPath /= "PluginList.cfg";
+#if defined(__linux__)
+	configPath = ToLowerIfNeeded(configPath);
+#endif
+
+	if (boost::filesystem::exists(configPath)) {
 		int charpos, linenum;
 		std::string returnString = "[";
-		std::ifstream infile(filename);
+		std::ifstream infile(configPath.string());
 		std::string line;
 
 		linenum = 0;
@@ -126,18 +160,15 @@ std::string fileio::GetInitOrder(std::string &extFunction, ext_arguments &extArg
 
 		return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + returnString + "]";
 	} else {
-		throw std::runtime_error("cannot read file " + filename);
+		throw std::runtime_error("cannot read file " + configPath.string());
 	}
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[]]";
 }
 
 std::string fileio::GetCfgFile(std::string &extFunction, ext_arguments &extArguments) {
-#if defined(__linux__)
-	std::string path = "@DesolationServer/Config/";
-#else
-	std::string path = "@DesolationServer\\Config\\";
-#endif
+	boost::filesystem::path configPath = GetConfigPath();
+
 	std::string returnString = "[";
 	int filenum = 0;
 	int itemnum = 0;
@@ -147,21 +178,20 @@ std::string fileio::GetCfgFile(std::string &extFunction, ext_arguments &extArgum
 		boost::regex dirupexpression("\\.\\.");
 		filename = boost::regex_replace(filename, dirupexpression, "", boost::match_default | boost::format_all);
 
-		filename = path + filename + ".cfg";
+		boost::filesystem::path filepath = configPath / (filename + ".cfg");
 
 #if defined(__linux__)
-		if (access(filename.c_str(), F_OK) == -1) {
-			std::transform(filename.begin(), filename.end(), filename.begin(), ::tolower);
-		}
+		filepath = ToLowerIfNeeded(filepath);
 #endif
+
 		if (filenum != 0) {
 			returnString += ",";
 		}
 		returnString += "[";
 
-		if (access(filename.c_str(), F_OK) != -1) {
+		if (boost::filesystem::exists(filepath)) {
 			boost::property_tree::ptree configtree;
-			boost::property_tree::ini_parser::read_ini(filename, configtree);
+			boost::property_tree::ini_parser::read_ini(filepath.string(), configtree);
 
 			itemnum = 0;
 			BOOST_FOREACH(boost::property_tree::ptree::value_type &val, configtree) {

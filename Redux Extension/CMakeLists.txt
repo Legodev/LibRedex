@@ -56,6 +56,7 @@ FIND_PACKAGE(Boost
                         system
                         random
                         regex
+                        filesystem
              REQUIRED)
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS}) 

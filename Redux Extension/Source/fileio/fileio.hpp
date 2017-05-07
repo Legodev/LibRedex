@@ -24,6 +24,8 @@
 #include <map>
 #include <tuple>
 #include <boost/function.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 
 #include "extbase.hpp"
 #include "constants.hpp"
@@ -44,6 +46,11 @@ private:
 	std::string appendFile(std::string &extFunction, ext_arguments &extArguments);
 	std::string GetInitOrder(std::string &extFunction, ext_arguments &extArguments);
 	std::string GetCfgFile(std::string &extFunction, ext_arguments &extArguments);
+
+	boost::filesystem::path GetConfigPath();
+	#if defined(__linux__)
+	boost::filesystem::path ToLowerIfNeeded(boost::filesystem::path configPath);
+	#endif
 };
 
 
