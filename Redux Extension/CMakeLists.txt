@@ -11,17 +11,43 @@ ELSE()
     SET(BITVALUE 32)
 ENDIF()
 
+
+SET(CMAKE_C_CREATE_SHARED_LIBRARY
+    # standard rule
+    "<CMAKE_C_COMPILER> <CMAKE_SHARED_LIBRARY_C_FLAGS> <LANGUAGE_COMPILE_FLAGS> <LINK_FLAGS> <CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS> <CMAKE_SHARED_LIBRARY_SONAME_C_FLAG><TARGET_SONAME> -o <TARGET> <OBJECTS> <LINK_LIBRARIES>"
+    # now create a .debug copy
+    "${CMAKE_OBJCOPY} --only-keep-debug <TARGET> <TARGET>.debug"
+    # link original to point at .debug copy
+    # directory components are removed, so "../lib/" is fine
+    "${CMAKE_OBJCOPY} --add-gnu-debuglink=<TARGET>.debug <TARGET>"
+    # Strip all information from target binary.
+    "${CMAKE_STRIP} --strip-debug --discard-all --preserve-dates <TARGET>"
+)
+
+SET(CMAKE_CXX_CREATE_SHARED_LIBRARY
+    # standard rule
+    "<CMAKE_CXX_COMPILER> <CMAKE_SHARED_LIBRARY_CXX_FLAGS> <LANGUAGE_COMPILE_FLAGS> <LINK_FLAGS> <CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS> <CMAKE_SHARED_LIBRARY_SONAME_CXX_FLAG><TARGET_SONAME> -o <TARGET> <OBJECTS> <LINK_LIBRARIES>"
+    # now create a .debug copy
+    "${CMAKE_OBJCOPY} --only-keep-debug <TARGET> <TARGET>.debug"
+    # link original to point at .debug copy
+    # directory components are removed, so "../lib/" is fine
+    "${CMAKE_OBJCOPY} --add-gnu-debuglink=<TARGET>.debug <TARGET>"
+    # Strip all information from target binary.
+    "${CMAKE_STRIP} --strip-debug --discard-all --preserve-dates <TARGET>"
+)
+
+
 FILE(GLOB LIBSOURCES "Source/*.cpp" "Source/utils/*.cpp" "Source/database/*.cpp" "Source/fileio/*.cpp" "Source/datetime/*.cpp" "Source/randomlist/*.cpp")
 FILE(GLOB TESTSSOURCES "Source/TestApps/*.cpp")
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/Binaries)
 
 SET(CMAKE_CXX_STANDARD 11)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
+SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
+SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
+# SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
+# SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 
 IF (WIN32)
 SET(BOOST_INCLUDEDIR C:/MinGW/${BITVALUE}bit/include/boost)
