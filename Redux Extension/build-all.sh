@@ -1,31 +1,33 @@
 #!/usr/bin/env bash
-mkdir -p build
-cd build
+mkdir -p build/Release
+cd build/Release
 ####
 mkdir -p 32bit-linux
 cd 32bit-linux
-cmake ../../ -DBITVALUE=32 -DCMAKE_BUILD_TYPE=Release
+cmake ../../../ -DBITVALUE=32 -DCMAKE_BUILD_TYPE=Release
 make
+make install
 cd ..
 ####
 mkdir -p 64bit-linux
 cd 64bit-linux
-cmake ../../ -DBITVALUE=64 -DCMAKE_BUILD_TYPE=Release
+cmake ../../../ -DBITVALUE=64 -DCMAKE_BUILD_TYPE=Release
 make
+make install
 cd ..
 ####
 mkdir -p 32bit-windows
 cd 32bit-windows
-/opt/mxe/usr/bin/i686-w64-mingw32.static.posix-cmake ../../ -DBITVALUE=32 -DCMAKE_BUILD_TYPE=Release
+/opt/mxe/usr/bin/i686-w64-mingw32.static.posix-cmake ../../../ -DBITVALUE=32 -DCMAKE_BUILD_TYPE=Release
 make
-cp -f libredex.dll ../../Binaries
+make install
 cd ..
 ####
 mkdir -p 64bit-windows
 cd 64bit-windows
-/opt/mxe/usr/bin/x86_64-w64-mingw32.static.posix-cmake ../../ -DBITVALUE=64 -DCMAKE_BUILD_TYPE=Release
+/opt/mxe/usr/bin/x86_64-w64-mingw32.static.posix-cmake ../../../ -DBITVALUE=64 -DCMAKE_BUILD_TYPE=Release
 make
-cp -f libredex_x64.dll ../../Binaries
+make install
 cd ..
 ####
 cd ..
