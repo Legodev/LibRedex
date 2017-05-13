@@ -89,15 +89,18 @@ static void destroy(void)
 {
 #ifdef DEBUG
     testfile << "starting destroy" << std::endl;
+    testfile.flush();
 #endif
     
     if (extension != 0) {
 #ifdef DEBUG
         testfile << "deleting object" << std::endl;
+        testfile.flush();
 #endif
         delete extension;
 #ifdef DEBUG
         testfile << "resetting pointer" << std::endl;
+        testfile.flush();
 #endif
         extension = 0;
     }

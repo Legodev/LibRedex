@@ -23,6 +23,7 @@ extern "C"
 	{
 #ifdef DEBUG
 			testfile << "REQUEST " << function << std::endl;
+			testfile.flush();
 #endif
 			std::string errstr = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\", \"";
 			errstr += "Sorry RVExtension is not supported anymore";
@@ -30,6 +31,7 @@ extern "C"
 			strncpy(output, errstr.c_str(), outputSize);
 #ifdef DEBUG
 			testfile << "ERROR " << errstr << std::endl;
+			testfile.flush();
 #endif
 	}
 }
@@ -41,13 +43,16 @@ extern "C"
 		try {
 #ifdef DEBUG
 			testfile << "REQUEST " << function << std::endl;
+			testfile.flush();
 			for (int i = 0; i < argsCnt; i++) {
 				testfile << "Argument " << i << ": " << args[i] << " - Escaped: " << escapeChars(args[i]) << std::endl;
+				testfile.flush();
 			}
 #endif
 			std::string returnString = extension->processCallExtension(function, args, argsCnt, outputSize);
 #ifdef DEBUG
 			testfile << "RETURN " << returnString << std::endl;
+			testfile.flush();
 #endif
 			strncpy(output, returnString.c_str(), outputSize);
 			return;
@@ -64,6 +69,7 @@ extern "C"
 			strncpy(output, errstr.c_str(), outputSize);
 #ifdef DEBUG
 			testfile << "ERROR " << errstr << std::endl;
+			testfile.flush();
 #endif
 		}
 	}
