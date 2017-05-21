@@ -15,8 +15,12 @@
  * GNU General Public License for more details.
  */
 
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <boost/property_tree/ptree.hpp>
@@ -39,13 +43,22 @@ redex::redex() {
 					std::make_pair(std::string(PROTOCOL_LIBARY_FUNCTION_CHECK_MESSAGE_STATE),
 							boost::bind(&redex::chkmsg, this, _1, _2)));
 
-	extModules.emplace_back(new dbcon(extFunctions));
-	extModules.emplace_back(new fileio(extFunctions));
-	extModules.emplace_back(new datetime(extFunctions));
-	extModules.emplace_back(new randomlist(extFunctions));
+	if (access(CONFIG_FILE_NAME, F_OK) == -1) {
+		std::ofstream logfile;
+		logfile.open("LibRedExErrorLogFile.txt", std::ios::out | std::ios::trunc);
+		logfile << "cannot find config file: " << CONFIG_FILE_NAME << std::endl;
+		logfile.flush();
+		logfile.close();
+	} else {
+		extModules.emplace_back(new dbcon(extFunctions));
+		extModules.emplace_back(new fileio(extFunctions));
+		extModules.emplace_back(new datetime(extFunctions));
+		extModules.emplace_back(new randomlist(extFunctions));
+	}
 
 	return;
 }
+
 redex::~redex() {
 	return;
 }
@@ -82,13 +95,17 @@ std::string redex::processCallExtension(const char *function, const char **args,
 				error.insert(i, "\"");
 				i += 2;
 			}
-			returnString = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR)+ "\",\"";
+			returnString = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\",\"";
 			returnString += error;
 			returnString += "\"]";
 		}
 
 	} else {
-		throw std::runtime_error("Don't know extFunction: " + extFunction);
+		returnString = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\",\"Don't know extFunction: ";
+		returnString += extFunction;
+		returnString += " - maybe you are missing the config file: ";
+		returnString += CONFIG_FILE_NAME;
+		returnString += " - see: LibRedExErrorLogFile.txt\"]";
 	}
 
 	if (returnString.length() > outputSize) {

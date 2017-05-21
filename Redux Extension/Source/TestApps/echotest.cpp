@@ -50,6 +50,12 @@ int main(int argc, char *argv[])
 
 
     uuid = output;
+
+    if (uuid.std::string::find("ERROR") != std::string::npos) {
+        std::cout << "an error occured:" << uuid << '\n';
+        return 1;
+    }
+
     uuid = uuid.substr(10, 32);
     std::cout << "FOUND UUID: " << uuid << std::endl;
 
