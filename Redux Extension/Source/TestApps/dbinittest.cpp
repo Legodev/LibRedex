@@ -22,14 +22,11 @@
 #include <queue>
 #include <unistd.h>
 #include "../constants.hpp"
-#include "TestApps/helper.hpp"
+
+#include "testfileheader.hpp"
 
 #define range 10, 32
 #define cachesize 1024
-
-extern "C" {
-void RVExtensionArgs(char *output, int outputSize, const char *function, const char **args, int argsCnt);
-}
 
 std::string receiveAsyncMsg(std::string msguuid) {
 	bool loop = true;

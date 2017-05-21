@@ -15,13 +15,7 @@
  * GNU General Public License for more details.
  */
 
-#include <iostream>
-#include <sstream>
-#include <string>
-
-extern "C" {
-void RVExtension(char *output, int outputSize, const char *function);
-}
+#include "testfileheader.hpp"
 
 int main(int argc, char *argv[])
 {

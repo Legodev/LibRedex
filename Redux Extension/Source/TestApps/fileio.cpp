@@ -21,6 +21,8 @@
 #include <string.h>
 #include "../constants.hpp"
 
+#include "testfileheader.hpp"
+
 #define size 1024
 
 extern "C" {

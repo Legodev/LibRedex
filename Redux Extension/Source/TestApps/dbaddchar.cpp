@@ -24,12 +24,11 @@
 #include <unistd.h>
 #include <boost/random/random_device.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
+
+#include "testfileheader.hpp"
+
 #define range 11, 32
 #define cachesize 1024
-
-extern "C" {
-void RVExtension(char *output, int outputSize, const char *function);
-}
 
 std::string randomstring(int length) {
 	std::stringstream returnString;

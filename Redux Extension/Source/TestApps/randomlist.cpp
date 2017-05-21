@@ -21,11 +21,9 @@
 #include <string.h>
 #include "../constants.hpp"
 
-#define size 1024
+#include "testfileheader.hpp"
 
-extern "C" {
-void RVExtension(char *output, int outputSize, const char *function);
-}
+#define size 1024
 
 int main(int argc, char *argv[])
 {
