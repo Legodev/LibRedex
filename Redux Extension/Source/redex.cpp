@@ -42,6 +42,9 @@ redex::redex() {
 	extFunctions.insert(
 					std::make_pair(std::string(PROTOCOL_LIBARY_FUNCTION_CHECK_MESSAGE_STATE),
 							boost::bind(&redex::chkmsg, this, _1, _2)));
+	extFunctions.insert(
+						std::make_pair(std::string(PROTOCOL_LIBARY_FUNCTION_CHECK_VERSION),
+								boost::bind(&redex::version, this, _1, _2)));
 
 	if (access(CONFIG_FILE_NAME, F_OK) == -1) {
 		std::ofstream logfile;
@@ -225,5 +228,9 @@ std::string redex::chkmsg(std::string extFunction, ext_arguments &extArguments) 
 	}
 
 	return returnString;
+}
+
+std::string redex::version(std::string extFunction, ext_arguments &extArguments) {
+	return "[1,0,1,1]";
 }
 

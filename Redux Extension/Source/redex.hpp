@@ -52,6 +52,7 @@ private:
 	std::string terminateAll(std::string extFunction, ext_arguments &extArguments);
 	std::string rcvmsg(std::string extFunction, ext_arguments &extArguments);
 	std::string chkmsg(std::string extFunction, ext_arguments &extArguments);
+	std::string version(std::string extFunction, ext_arguments &extArguments);
 	std::string multipartMSGGenerator(std::string returnString, int outputSize);
 };
 

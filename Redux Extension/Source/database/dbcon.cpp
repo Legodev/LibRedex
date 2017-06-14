@@ -638,7 +638,7 @@ std::string dbcon::loadObject(ext_arguments &extArgument, base_db_handler *dbhan
 std::string dbcon::createObject(ext_arguments &extArgument, base_db_handler *dbhandler) {
 	std::string classname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
 	int priority = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_PRIORITY);
-	int visible = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_VISIBLE);
+	int visible = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_OBJECTTYPE);
 	std::string accesscode = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ACCESSCODE);
 	int locked = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_LOCKED);
 	std::string player_uuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
@@ -674,7 +674,7 @@ std::string dbcon::qcreateObject(ext_arguments &extArgument, base_db_handler *db
 	std::string objectuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 	std::string classname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
 	int priority = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_PRIORITY);
-	int visible = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_VISIBLE);
+	int visible = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_OBJECTTYPE);
 	std::string accesscode = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ACCESSCODE);
 	int locked = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_LOCKED);
 	std::string player_uuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
@@ -711,7 +711,7 @@ std::string dbcon::updateObject(ext_arguments &extArgument, base_db_handler *dbh
 	std::string objectuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 	std::string classname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
 	int priority = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_PRIORITY);
-	int visible = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_VISIBLE);
+	int visible = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_OBJECTTYPE);
 	std::string accesscode = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ACCESSCODE);
 	int locked = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_LOCKED);
 	std::string player_uuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
