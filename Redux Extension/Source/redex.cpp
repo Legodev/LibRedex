@@ -231,6 +231,6 @@ std::string redex::chkmsg(std::string extFunction, ext_arguments &extArguments) 
 }
 
 std::string redex::version(std::string extFunction, ext_arguments &extArguments) {
-	return "[1,0,1,1]";
+	return DLLVERSIONSTRING;
 }
 

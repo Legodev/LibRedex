@@ -137,7 +137,7 @@ protected:
 
 		for (unsigned int i = 0; i < input.length(); i++) {
 			switch(input[i]) {
-				case '-': if (input[i+1] > '0' && input[i+1] < '9') { outputstream << "-"; }; break;
+				case '-': if (input[i+1] >= '0' && input[i+1] <= '9') { outputstream << "-"; }; break;
 				case ';': break;
 				case '#': break;
 				case '"': if (i > 0 && i < input.length() - 1) { outputstream << "\\\""; }; break;

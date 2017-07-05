@@ -84,7 +84,11 @@ boost::filesystem::path fileio::ToLowerIfNeeded(boost::filesystem::path Path) {
 #endif
 
 boost::filesystem::path fileio::GetConfigPath() {
-	boost::filesystem::path configPath = "Config";
+	boost::filesystem::path configPath = "@DesolationServer";
+	configPath /= "Config";
+
+	return configPath;
+
 #if defined(__linux__)
 	configPath = ToLowerIfNeeded(configPath);
 #endif
@@ -94,7 +98,7 @@ boost::filesystem::path fileio::GetConfigPath() {
 	}
 
 
-	configPath = "@DesolationServer/Config";
+	configPath = "Config";
 #if defined(__linux__)
 	configPath = ToLowerIfNeeded(configPath);
 #endif
