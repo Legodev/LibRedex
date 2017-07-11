@@ -63,7 +63,7 @@ public:
 
 	std::string loadObject(std::string objectuuid);
 	std::string createObject(std::string classname,
-			int priority, int visible, std::string accesscode, int locked,
+			int priority, int type, std::string accesscode, int locked,
 			std::string player_uuid, std::string hitpoints, float damage,
 			float fuel, float fuelcargo, float repaircargo, std::string items,
 			std::string magazinesturret, std::string variables,
@@ -71,7 +71,7 @@ public:
 			int positiontype, float positionx, float positiony, float positionz,
 			std::string positionadvanced, std::string reservedone, std::string reservedtwo);
 	std::string createObject(std::string objectuuid, std::string classname,
-			int priority, int visible, std::string accesscode, int locked,
+			int priority, int type, std::string accesscode, int locked,
 			std::string player_uuid, std::string hitpoints, float damage,
 			float fuel, float fuelcargo, float repaircargo, std::string items,
 			std::string magazinesturret, std::string variables,
@@ -79,7 +79,7 @@ public:
 			int positiontype, float positionx, float positiony, float positionz,
 			std::string positionadvanced, std::string reservedone, std::string reservedtwo);
 	std::string updateObject(std::string objectuuid, std::string classname,
-			int priority, int visible, std::string accesscode, int locked,
+			int priority, int type, std::string accesscode, int locked,
 			std::string player_uuid, std::string hitpoints, float damage,
 			float fuel, float fuelcargo, float repaircargo, std::string items,
 			std::string magazinesturret, std::string variables,

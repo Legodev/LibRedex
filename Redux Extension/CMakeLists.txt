@@ -11,7 +11,7 @@ ELSE()
     SET(BITVALUE 32)
 ENDIF()
 
-FILE(GLOB LIBSOURCES "Source/*.cpp" "Source/utils/*.cpp" "Source/database/*.cpp" "Source/fileio/*.cpp" "Source/datetime/*.cpp" "Source/randomlist/*.cpp")
+FILE(GLOB LIBSOURCES "Source/*.cpp" "Source/utils/*.cpp" "Source/database/*.cpp" "Source/database/datacache/*.cpp" "Source/fileio/*.cpp" "Source/datetime/*.cpp" "Source/randomlist/*.cpp")
 FILE(GLOB TESTSSOURCES "Source/TestApps/*.cpp")
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/Binaries)
 

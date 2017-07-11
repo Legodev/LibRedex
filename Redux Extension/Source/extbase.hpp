@@ -22,6 +22,8 @@
 #include <string>
 #include <sstream>
 #include <boost/lexical_cast.hpp>
+#include <boost/function.hpp>
+#include <map>
 
 class ext_arguments {
 public:
@@ -39,6 +41,14 @@ public:
 			throw std::runtime_error("the amount of items in the array is not even");
 		}
 		return 0;
+	}
+
+	std::list<std::string> getKeys() {
+		std::list<std::string> keyList;
+		for(auto const &key : argmap) {
+		   keyList.push_back (key.first);
+		}
+		return keyList;
 	}
 
 	template<typename ReturnType>
@@ -169,5 +179,7 @@ protected:
 
 typedef boost::function<std::string(std::string &extFunction, ext_arguments &extArgument)> EXT_FUNCTION;
 typedef std::map<std::string, EXT_FUNCTION> EXT_FUNCTIONS;
+
+extern std::map<std::string, unsigned int> objectvariablemap;
 
 #endif /* SOURCE_EXTBASE_HPP_ */

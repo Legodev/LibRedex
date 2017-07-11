@@ -40,8 +40,12 @@
 #include <sstream>
 #include <string>
 #include <string.h>            // strcmp, strncpy
+#include <map>
 
 #include "constants.hpp"
+extern std::map<std::string, unsigned int> objectvariablemap;
+std::map<std::string, unsigned int> objectvariablemap;
+
 #include "redex.hpp"
 redex * extension = 0;
 

@@ -100,113 +100,165 @@ print(instance.ExecuteAndPrint("echo", [
                                "The quick brown fox jumps over the lazy dog."]))
 
 print("\n\n")
-out= instance.ExecuteAndPrint("GetInitOrder", [])
+out= instance.ExecuteAndPrint("version", [])
 print(out)
-print("\n\n")
-out= instance.ExecuteAndPrint("GetCfgFile", ["configfiles",'["PluginManager","DesoDB","Desolation","DSZombz","ObjectMovement","ActionSystem","Realism","AntiSideChat","Jump","TimeManagement","SpookyWeather","EarPlugs","Holster","GlitchPunisher","ChernarusMap","CUPExpansion","OPA2Expansion"]'])
-print(out)
-print("\n\n")
-out= instance.ExecuteAndPrint("getRandomNumberList", ["type","int","amount","20","start","-10","end","10"])
-print(out)
-print("\n\n")
-out= instance.ExecuteAndPrint("getEpochTime", [])
-print(out)
-print("\n\n")
-out= instance.ExecuteAndPrint("getDateTimeArray", [])
-print(out)
+#out= instance.ExecuteAndPrint("addDiscreteItemList", ["listName", "lowlevelloot",
+													  #"weights", "[100,90,2,2500]",
+													  #"items", '[""trash"",""food"",""weapon"",""toiletpaper""]'])
+#print(out)
+#out= instance.ExecuteAndPrint("getDiscreteItemList", ["listName", "lowlevelloot",
+													  #"itemAmount", "30"])
+#print(out)
+#out= instance.ExecuteAndPrint("GetInitOrder", [])
+#print(out)
+#print("\n\n")
+#out= instance.ExecuteAndPrint("GetCfgFile", ["configfiles",'["PluginManager","DesoDB","Desolation","DSZombz","ObjectMovement","ActionSystem","Realism","AntiSideChat","Jump","TimeManagement","SpookyWeather","EarPlugs","Holster","GlitchPunisher","ChernarusMap","CUPExpansion","OPA2Expansion"]'])
+#print(out)
+#print("\n\n")
+#out= instance.ExecuteAndPrint("getRandomNumberList", ["type","int","amount","20","start","-10","end","10"])
+#print(out)
+#print("\n\n")
+#out= instance.ExecuteAndPrint("getEpochTime", [])
+#print(out)
+#print("\n\n")
+#out= instance.ExecuteAndPrint("getDateTimeArray", [])
+#print(out)
 
 
 out= instance.ExecuteAndPrint("initdb", [
                                "poolsize", "4",
                                "worlduuid", "11e66ac33a4ccd1c82c510bf48883ace"])
 print(out)
-# sleep(1)
-#  
-# print("\n\n")
-# out= instance.ExecuteAndPrint("loadPlayer", [
-#                                "nickname", "Lego",
-#                                "steamid", "76561198025362180"])
-# print(out)
-# compiledout = ast.literal_eval(out.replace('false', '"false"'))
-# playeruuid = compiledout[1][0]
-#  
-#   
-# print("\n\n")
-# out= instance.ExecuteAndPrint("loadAvChars", [
-#                                "playeruuid", playeruuid])
-# print(out)
-#   
-# print("\n\n")
-# out= instance.ExecuteAndPrint("loadChar", [
-#                                "playeruuid", playeruuid])
-# print(out)
-# 
-# if out =='["MSG",[]]':
-#     print("\n\n")
-#     print("need to create char")
-#     out= instance.ExecuteAndPrint("createChar", [
-#                                   "playeruuid", playeruuid, 
-#                                   "animationstate", "VAR_ANIMATIONSTATE", 
-#                                   "direction", "23.5", 
-#                                   "positiontype", "0", 
-#                                   "positionx", "21.42", 
-#                                   "positiony", "666.9", 
-#                                   "positionz", "133.7", 
-#                                   "classname", "sampleclass", 
-#                                   "hitpoints", "[]", 
-#                                   "variables", "[]", 
-#                                   "persistentvariables", "[]", 
-#                                   "textures", "[]", 
-#                                   "inventoryuniform", "[]", 
-#                                   "inventoryvest", "[]", 
-#                                   "inventorybackpack", "[]", 
-#                                   "uniform", "someuniform", 
-#                                   "vest", "somevest", 
-#                                   "backpack", "somebackpack", 
-#                                   "headgear", "someheadgear", 
-#                                   "googles", "somegoogles", 
-#                                   "primaryweapon", "[\"someprimaryweapon\", [\"someattachment\"]]", 
-#                                   "secondaryweapon", "[\"somesecondaryweapon\", [\"someattachment\"]]", 
-#                                   "handgun", "[\"somehandgunweapon\", [\"someattachment\"]]", 
-#                                   "tools", "[]", 
-#                                   "currentweapon", "someprimaryweapon"])
-#     print(out)
-#     
-#     print("\n\n")
-#     out= instance.ExecuteAndPrint("loadChar", [
-#                                    "playeruuid", playeruuid])
-# 
-# compiledout = ast.literal_eval(out)
-# charuuid = compiledout[1][0]
-# 
-# print("\n\n")
-# out= instance.ExecuteAndPrint("updateChar", [
-#                               "charuuid", charuuid, 
-#                               "animationstate", "VAR_ANIMATIONSTATE", 
-#                               "direction", "23.5", 
-#                               "positiontype", "0", 
-#                               "positionx", "21.42", 
-#                               "positiony", "666.9", 
-#                               "positionz", "133.7", 
-#                               "classname", "sampleclass", 
-#                               "hitpoints", "[]", 
-#                               "variables", "[]", 
-#                               "persistentvariables", "[]", 
-#                               "textures", "[]", 
-#                               "inventoryuniform", "[]", 
-#                               "inventoryvest", "[]", 
-#                               "inventorybackpack", "[]", 
-#                               "uniform", "someuniform", 
-#                               "vest", "somevest", 
-#                               "backpack", "somebackpack", 
-#                               "headgear", "someheadgear", 
-#                               "googles", "somegoogles", 
-#                               "primaryweapon", "[\"someprimaryweapon\", [\"someattachment\"]]", 
-#                               "secondaryweapon", "[\"somesecondaryweapon\", [\"someattachment\"]]", 
-#                               "handgun", "[\"somehandgunweapon\", [\"someattachment\"]]", 
-#                               "tools", "[]", 
-#                               "currentweapon", "someprimaryweapon"])
-# print(out)
+sleep(1)
+ 
+print("\n\n")
+out= instance.ExecuteAndPrint("loadPlayer", [
+                               "nickname", "Lego",
+                               "steamid", "76561198025362180"])
+print(out)
+compiledout = ast.literal_eval(out.replace('false', '"false"'))
+playeruuid = compiledout[1][0]
+ 
+  
+#print("\n\n")
+#out= instance.ExecuteAndPrint("loadAvChars", [
+                               #"playeruuid", playeruuid])
+#print(out)
+  
+print("\n\n")
+out= instance.ExecuteAndPrint("loadChar", [
+                               "playeruuid", playeruuid])
+print(out)
+
+if out !='["MSG",[]]':
+	print("\n\n")
+	compiledout = ast.literal_eval(out)
+	charuuid = compiledout[1][0]
+	print("need to delete char %s" % charuuid)
+	out= instance.ExecuteAndPrint("killChar", [
+								"charuuid", charuuid, 
+								"attackeruuid", "",
+								"type", "", 
+								"weapon", "", 
+								"distance", "0"])
+	print(out)
+
+print("\n\n")
+print("need to create char")
+out= instance.ExecuteAndPrint("createChar", [
+								"playeruuid", playeruuid, 
+								"animationstate", "VAR_ANIMATIONSTATE", 
+								"direction", "23.5", 
+								"positiontype", "0", 
+								"positionx", "21.42", 
+								"positiony", "666.9", 
+								"positionz", "133.7", 
+								"classname", "sampleclass", 
+								"hitpoints", "[]", 
+								"variables", "[]", 
+								"persistentvariables", "[]", 
+								"textures", "[]", 
+								"inventoryuniform", "[]", 
+								"inventoryvest", "[]", 
+								"inventorybackpack", "[]", 
+								"uniform", "someuniform", 
+								"vest", "somevest", 
+								"backpack", "somebackpack", 
+								"headgear", "someheadgear", 
+								"googles", "somegoogles", 
+								"primaryweapon", "[\"someprimaryweapon\", [\"someattachment\"]]", 
+								"secondaryweapon", "[\"somesecondaryweapon\", [\"someattachment\"]]", 
+								"handgun", "[\"somehandgunweapon\", [\"someattachment\"]]", 
+								"tools", "[]", 
+								"currentweapon", "someprimaryweapon"])
+print(out)
+
+#if out =='["MSG",[]]':
+    #print("\n\n")
+    #print("need to create char")
+    #out= instance.ExecuteAndPrint("createChar", [
+                                  #"playeruuid", playeruuid, 
+                                  #"animationstate", "VAR_ANIMATIONSTATE", 
+                                  #"direction", "23.5", 
+                                  #"positiontype", "0", 
+                                  #"positionx", "21.42", 
+                                  #"positiony", "666.9", 
+                                  #"positionz", "133.7", 
+                                  #"classname", "sampleclass", 
+                                  #"hitpoints", "[]", 
+                                  #"variables", "[]", 
+                                  #"persistentvariables", "[]", 
+                                  #"textures", "[]", 
+                                  #"inventoryuniform", "[]", 
+                                  #"inventoryvest", "[]", 
+                                  #"inventorybackpack", "[]", 
+                                  #"uniform", "someuniform", 
+                                  #"vest", "somevest", 
+                                  #"backpack", "somebackpack", 
+                                  #"headgear", "someheadgear", 
+                                  #"googles", "somegoogles", 
+                                  #"primaryweapon", "[\"someprimaryweapon\", [\"someattachment\"]]", 
+                                  #"secondaryweapon", "[\"somesecondaryweapon\", [\"someattachment\"]]", 
+                                  #"handgun", "[\"somehandgunweapon\", [\"someattachment\"]]", 
+                                  #"tools", "[]", 
+                                  #"currentweapon", "someprimaryweapon"])
+    #print(out)
+    
+print("\n\n")
+out= instance.ExecuteAndPrint("loadChar", [
+								"playeruuid", playeruuid])
+print(out)
+compiledout = ast.literal_eval(out)
+charuuid = compiledout[1][0]
+
+#print("\n\n")
+#out= instance.ExecuteAndPrint("updateChar", [
+                              #"charuuid", charuuid, 
+                              #"animationstate", "VAR_ANIMATIONSTATE", 
+                              #"direction", "23.5", 
+                              #"positiontype", "0", 
+                              #"positionx", "21.42", 
+                              #"positiony", "666.9", 
+                              #"positionz", "133.7", 
+                              #"classname", "sampleclass", 
+                              #"hitpoints", "[]", 
+                              #"variables", "[]", 
+                              #"persistentvariables", "[an string with non valid data just for kegan]", 
+                              #"textures", "[]", 
+                              #"inventoryuniform", "[]", 
+                              #"inventoryvest", "[]", 
+                              #"inventorybackpack", "[]", 
+                              #"uniform", "someuniform", 
+                              #"vest", "somevest", 
+                              #"backpack", "somebackpack", 
+                              #"headgear", "someheadgear", 
+                              #"googles", "somegoogles", 
+                              #"primaryweapon", "[\"someprimaryweapon\", [\"someattachment\"]]", 
+                              #"secondaryweapon", "[\"somesecondaryweapon\", [\"someattachment\"]]", 
+                              #"handgun", "[\"somehandgunweapon\", [\"someattachment\"]]", 
+                              #"tools", "[]", 
+                              #"currentweapon", "someprimaryweapon"])
+#print(out)
 # 
 # print("\n\n")
 # out= instance.ExecuteAndPrint("getUUID", [])
