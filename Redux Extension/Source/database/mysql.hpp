@@ -41,6 +41,7 @@ public:
 
 	std::string querydbversion();
 
+	void checkWorldUUID();
 	std::string loadPlayer(std::string nickname, std::string steamid);
 	std::string loadAvChars(std::string playeruuid);
 	std::string linkChars(std::string playeruuid, std::string variabuuid);
@@ -87,7 +88,7 @@ public:
 			int positiontype, float positionx, float positiony, float positionz,
 			std::string positionadvanced, std::string reservedone, std::string reservedtwo);
 	std::string killObject(std::string objectuuid, std::string attackeruuid, std::string type, std::string weapon, float distance);
-	std::vector<std::vector<std::string> > dumpObjects();
+	std::vector<object_base*> dumpObjects(std::map<std::string, object_base*> &objectcache);
 
 private:
 		MYSQL *connection;

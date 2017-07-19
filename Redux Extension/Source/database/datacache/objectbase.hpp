@@ -18,7 +18,7 @@ public:
 	virtual int setData(std::string variableName, std::string variableValue) { return 0; };
 	virtual int setData(ext_arguments &extArgument) { return 0; };
 
-	virtual std::string getAsArmaString(std::string nickname, std::string steamid) { return "none"; };
+	virtual std::string getAsArmaString() { return "none"; };
 
 };
 /*

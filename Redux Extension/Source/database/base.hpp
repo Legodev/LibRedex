@@ -23,6 +23,7 @@
 #include <queue>
 #include <vector>
 #include "constants.hpp"
+#include "database/datacache/objectmysql.hpp"
 
 class base_db_handler {
 /*
@@ -41,6 +42,7 @@ public:
 	virtual std::string querydbversion() { return "none"; }
 	virtual std::vector<std::vector<std::string> > verbosetest(std::string query) { return {{"none"}}; };
 
+	virtual void checkWorldUUID() {};
 	virtual std::string loadPlayer(std::string nickname, std::string steamid) { return "none"; };
 	virtual std::string loadAvChars(std::string playeruuid) { return "none"; }
 	virtual std::string linkChars(std::string playeruuid, std::string variabuuid) { return "none"; }
@@ -84,7 +86,7 @@ public:
 			std::string reservedone, std::string reservedtwo) { return "none"; }
 	virtual std::string killObject(std::string objectuuid, std::string attackeruuid, std::string type,
 			std::string weapon, float distance) { return "none"; }
-	virtual std::vector<std::vector<std::string> > dumpObjects() { return {{"none"}}; };
+	virtual std::vector<object_base*> dumpObjects(std::map<std::string, object_base*> &objectcache) { return std::vector<object_base*>(); };
 };
 
 #endif /* SOURCE_BASE_HPP_ */

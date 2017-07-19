@@ -35,6 +35,7 @@
 #include "database/mysql.hpp"
 #include "extbase.hpp"
 #include "constants.hpp"
+#include "database/datacache/objectmysql.hpp"
 
 #include <stdio.h>
 
@@ -64,6 +65,8 @@ private:
 	std::mutex msgmutex;
 	typedef std::map<PROTOCOL_IDENTIFIER_DATATYPE, std::string> SINGLE_MESSAGE_MAP;
 	SINGLE_MESSAGE_MAP msgmap;
+
+	std::map<std::string, object_base*> objectcache;
 
 	std::string getUUID(std::string &extFunction, ext_arguments &extArgument);
 	std::string echo(std::string &extFunction, ext_arguments &extArgument);

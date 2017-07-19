@@ -17,16 +17,16 @@ public:
 	~object_mysql();
 
 	int setData(std::string variableName, std::string variableValue);
+	int setData(unsigned int arraypos, std::string variableValue);
 	int setData(ext_arguments &extArgument);
 
 	std::string getAsArmaString();
 
-private:
 	MYSQL_BIND mysql_bind[25];
+	my_bool is_null[25];
 
+private:
 	bool dirty = false;
-
-
 
 	int priority = 10001;
 	signed char type = 3;
@@ -40,6 +40,9 @@ private:
 	float positionx = 0.0;
 	float positiony = 0.0;
 	float positionz = 0.0;
+
+	std::string parentobject_uuid = "\"\"";
+	std::string clan_uuid = "\"\"";
 
 	void freeStrings();
 };

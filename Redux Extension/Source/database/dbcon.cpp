@@ -260,7 +260,7 @@ std::string dbcon::spawnHandler(std::string &extFunction, ext_arguments &extArgu
 		/* for the beginning we want to have some spare pool handlers */
 		syncdbhandlerpool.reserve(poolsize + 3);
 
-		for (i = 0; i < poolsize+2; i++) {
+		for (i = 0; i < poolsize+1; i++) {
 			if (boost::iequals(type, "MYSQL")) {
 				std::cout << "creating mysql_db_handler" << std::endl;
 				syncdbhandler = new (mysql_db_handler);
@@ -270,6 +270,11 @@ std::string dbcon::spawnHandler(std::string &extFunction, ext_arguments &extArgu
 
 			syncdbhandler->connect(hostname, user, password, database, port, whitelistonly, allowsteamapi, vaccheckban,
 					vacmaxcount, vacignoredays, worlduuid);
+
+			if (i == 0) {
+				syncdbhandler->checkWorldUUID();
+			}
+
 			syncdbhandlerpool.bounded_push((intptr_t) syncdbhandler);
 		}
 
@@ -761,23 +766,15 @@ std::string dbcon::dumpObjects(ext_arguments &extArgument, base_db_handler *dbha
         bool placecommaone = false;
         bool placecommatwo = false;
 
-        std::vector< std::vector<std::string> > resultmatrix = dbhandler->dumpObjects();
+        std::vector<object_base*> objectList = dbhandler->dumpObjects(objectcache);
         matrix = "[";
-        for (auto& row : resultmatrix) {
+        for (object_base* object : objectList) {
                 if (placecommaone) {
                         matrix += ",";
                 }
-                matrix += "[";
-                placecommatwo = false;
-                for (auto& value : row) {
-                        if (placecommatwo) {
-                                matrix += ",";
-                        }
-                        //matrix += "\"" + value + "\"";
-                        matrix += value;
-                        placecommatwo = true;
-                }
-                matrix += "]";
+
+                matrix += object->getAsArmaString();
+
                 placecommaone = true;
         }
         matrix += "]";
