@@ -110,6 +110,8 @@ private:
 
 		std::string worlduuid;
 
+		void test_stmt_error(MYSQL_STMT *stmt, int status);
+
 };
 
 #endif /* SOURCE_MYSQL_HPP_ */

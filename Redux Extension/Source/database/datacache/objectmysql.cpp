@@ -98,17 +98,6 @@ object_mysql::object_mysql() {
 
 	mysql_bind[25].buffer_type = MYSQL_TYPE_VAR_STRING; // parent_uuid = "0"
 	mysql_bind[26].buffer_type = MYSQL_TYPE_VAR_STRING; // clan_uuid = "0"
-
-	for (unsigned int arraypos = 0; arraypos < 27; arraypos++) {
-		if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_VAR_STRING) {
-			if (mysql_bind[arraypos].buffer != 0) {
-				char * pointer = new char[64];
-				mysql_bind[arraypos].buffer = pointer;
-				mysql_bind[arraypos].buffer_length = 63;
-			}
-		}
-	}
-
 }
 
 object_mysql::~object_mysql() {

@@ -1138,6 +1138,131 @@ std::string mysql_db_handler::killObject(std::string objectuuid, std::string att
 	return killuuid;
 }
 
+//std::vector<object_base*> mysql_db_handler::dumpObjects(std::map<std::string, object_base*> &objectcache) {
+//	std::vector<object_base*> objectList;
+//	MYSQL_BIND input_params[1];
+//	int        status;
+//
+//	long unsigned int length = 35;
+//	char buffer[35] = "0x";
+//	memcpy (buffer+2, worlduuid.c_str(), 33);
+//	buffer[34] = 0;
+//
+//	input_params[0].buffer_type = MYSQL_TYPE_STRING;
+//	input_params[0].buffer = (void*) buffer;
+//	input_params[0].length = &length;
+//	input_params[0].is_null = 0;
+//
+//	MYSQL_STMT *stmt;
+//	stmt = mysql_stmt_init(connection);
+//	if (!stmt)
+//	{
+//	  printf("Could not initialize statement\n");
+//	  exit(1);
+//	}
+//
+//	std::string query = "SELECT HEX(`object`.`uuid`), "
+//							"`object`.`classname`, `object`.`priority`, `object`.`type`, `object`.`accesscode`, "
+//							"`object`.`locked`, HEX(`object`.`player_uuid`), `object`.`hitpoints`, `object`.`damage`, "
+//							"`object`.`fuel`, `object`.`fuelcargo`, `object`.`repaircargo`, `object`.`items`, "
+//							"`object`.`magazinesturret`, "
+//							"`object`.`variables`, `object`.`animationstate`, `object`.`textures`, `object`.`direction`, "
+//							"`object`.`positiontype`, `object`.`positionx`, `object`.`positiony`, `object`.`positionz`, "
+//							"`object`.`positionadvanced`, `object`.`reservedone`, `object`.`reservedtwo`, "
+//							"HEX(`world_has_objects`.`parentobject_uuid`), "
+//							"HEX(`player`.`uuid`) "
+//							"FROM `world_has_objects` "
+//							"INNER JOIN `object` "
+//							" ON `world_has_objects`.`object_uuid` = `object`.`uuid` "
+//							"LEFT JOIN `player` "
+//							" ON `object`.`player_uuid` = `player`.`uuid` "
+//							"WHERE `world_has_objects`.`world_uuid` = CAST(? AS BINARY) "
+//							"OR `world_has_objects`.`killinfo_uuid` IS NULL "
+//							"ORDER BY `object`.priority ASC, `world_has_objects`.`parentobject_uuid` ASC";
+//
+//	status = mysql_stmt_prepare(stmt, query.c_str(), query.size() + 1);
+//	test_stmt_error(stmt, status);
+//
+//	status = mysql_stmt_bind_param(stmt, input_params);
+//	test_stmt_error(stmt, status);
+//
+//	status = mysql_stmt_execute(stmt);
+//	test_stmt_error(stmt, status);
+//
+//	do {
+//		int i;
+//		int num_fields;       /* number of columns in result */
+//		MYSQL_FIELD *fields;  /* for result set metadata */
+//
+//		/* the column count is > 0 if there is a result set */
+//		/* 0 if the result is only the final status packet */
+//		num_fields = mysql_stmt_field_count(stmt);
+//
+//		if (num_fields > objectCacheMaxElements) {
+//			throw std::runtime_error("to many fields in dump objects:" + std::to_string(num_fields));
+//		}
+//
+//		if (num_fields > 0)
+//		{
+//			MYSQL_RES *rs_metadata = mysql_stmt_result_metadata(stmt);
+//
+//			fields = mysql_fetch_fields(rs_metadata);
+//
+//			object_mysql* object = new object_mysql;
+//
+//			for (i = 0; i < num_fields; ++i)
+//			{
+//				if (object->mysql_bind[i].buffer_type != fields[i].type && fields[i].type != 252) {
+//					throw std::runtime_error("unexpected field type in dump objects field " + std::to_string(i) +
+//							std::string(" has type ") + std::to_string(object->mysql_bind[i].buffer_type) +
+//							std::string(" but got type ") + std::to_string(fields[i].type));
+//				}
+//			}
+//
+//			/* fetch and display result set rows */
+//			while (1)
+//			{
+//				for (unsigned int arraypos = 0; arraypos < num_fields; arraypos++) {
+//					if (object->mysql_bind[arraypos].buffer_type == MYSQL_TYPE_VAR_STRING) {
+//						if (object->mysql_bind[arraypos].buffer == 0) {
+//							char * pointer = new char[64];
+//							object->mysql_bind[arraypos].buffer = pointer;
+//							object->mysql_bind[arraypos].buffer_length = 64;
+//						}
+//					}
+//				}
+//
+//				status = mysql_stmt_bind_result(stmt, object->mysql_bind);
+//				test_stmt_error(stmt, status);
+//
+//				status = mysql_stmt_fetch(stmt);
+//
+//				if (status == 1 || status == MYSQL_NO_DATA) {
+////					delete object;
+//					break;
+//				}
+//
+//				std::string uuid = (char*) object->mysql_bind[0].buffer;
+//				objectList.push_back((object_base*) object);
+//				objectcache.insert(std::make_pair(uuid, (object_base*) object));
+//
+//				object_mysql* object = new object_mysql;
+//			}
+//
+//			mysql_free_result(rs_metadata); /* free metadata */
+//		}
+//
+//		/* more results? -1 = no, >0 = error, 0 = yes (keep looking) */
+//		status = mysql_stmt_next_result(stmt);
+//		if (status > 0) {
+//			test_stmt_error(stmt, status);
+//		}
+//
+//	} while (status == 0);
+//
+//	return objectList;
+//}
+
 std::vector<object_base*> mysql_db_handler::dumpObjects(std::map<std::string, object_base*> &objectcache) {
 	std::vector<object_base*> objectList;
 	MYSQL_RES *result;
@@ -1194,3 +1319,9 @@ std::vector<object_base*> mysql_db_handler::dumpObjects(std::map<std::string, ob
 	return objectList;
 }
 
+void mysql_db_handler::test_stmt_error(MYSQL_STMT *stmt, int status) {
+  if (status)
+  {
+	  throw std::runtime_error(std::string("MYSQLERROR") + std::string(mysql_stmt_error(stmt)) + std::string(" Errornumber: ") + std::to_string(mysql_stmt_errno(stmt)));
+  }
+}
