@@ -1181,9 +1181,9 @@ std::vector<object_base*> mysql_db_handler::dumpObjects(std::map<std::string, ob
 			for (int fieldpos = 0; fieldpos < fieldcount; fieldpos++) {
 				if (row[fieldpos] != NULL) {
 					object->setData(fieldpos, row[fieldpos]);
-/*				} else {
+				} else {
 					object->setData(fieldpos, "");
-					object->is_null[fieldpos] = (my_bool) 1;*/
+					object->is_null[fieldpos] = (my_bool) 1;
 				}
 			}
 		}

@@ -11,6 +11,8 @@
 #include "database/datacache/objectbase.hpp"
 #include <mysql.h>
 
+#define objectCacheMaxElements 27
+
 class object_mysql: virtual public object_base {
 public:
 	object_mysql();
@@ -22,8 +24,8 @@ public:
 
 	std::string getAsArmaString();
 
-	MYSQL_BIND mysql_bind[25];
-	my_bool is_null[25];
+	MYSQL_BIND mysql_bind[objectCacheMaxElements];
+	my_bool is_null[objectCacheMaxElements];
 
 private:
 	bool dirty = false;
@@ -40,9 +42,6 @@ private:
 	float positionx = 0.0;
 	float positiony = 0.0;
 	float positionz = 0.0;
-
-	std::string parentobject_uuid = "\"\"";
-	std::string clan_uuid = "\"\"";
 
 	void freeStrings();
 };

@@ -13,7 +13,7 @@
 object_mysql::object_mysql() {
 	memset(mysql_bind, 0, sizeof (mysql_bind));
 
-	for (unsigned int arraypos = 0; arraypos < 25; arraypos++) {
+	for (unsigned int arraypos = 0; arraypos < objectCacheMaxElements; arraypos++) {
 		is_null[arraypos] = (my_bool) 1;
 		mysql_bind[arraypos].is_null = &is_null[arraypos];
 	}
@@ -95,6 +95,9 @@ object_mysql::object_mysql() {
 	mysql_bind[22].buffer_type = MYSQL_TYPE_STRING; // positionadvanced = "[]"
 	mysql_bind[23].buffer_type = MYSQL_TYPE_STRING; // reservedone = ""
 	mysql_bind[24].buffer_type = MYSQL_TYPE_STRING; // reservedtwo = ""
+
+	mysql_bind[25].buffer_type = MYSQL_TYPE_STRING; // parent_uuid = "0"
+	mysql_bind[26].buffer_type = MYSQL_TYPE_STRING; // clan_uuid = "0"
 
 }
 
@@ -241,7 +244,7 @@ std::string object_mysql::getAsArmaString() {
 	std::string returnString = "[";
 	bool placecommaone = false;
 
-	for (unsigned int arraypos = 0; arraypos < 25; arraypos++) {
+	for (unsigned int arraypos = 0; arraypos < objectCacheMaxElements; arraypos++) {
 		if (placecommaone) {
 			returnString += ",";
 		}
@@ -283,7 +286,7 @@ std::string object_mysql::getAsArmaString() {
 		placecommaone = true;
 	}
 
-	returnString += std::string(",") + parentobject_uuid + std::string(",") + clan_uuid + "]";
+	returnString += "]";
 
 	return returnString;
 }
