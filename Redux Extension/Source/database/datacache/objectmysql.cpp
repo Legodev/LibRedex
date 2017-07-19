@@ -46,20 +46,20 @@ object_mysql::object_mysql() {
 		objectvariablemap.insert(std::make_pair("reservedtwo", 24));
 	}
 
-	mysql_bind[0].buffer_type = MYSQL_TYPE_STRING; // uuid = "0"
-	mysql_bind[1].buffer_type = MYSQL_TYPE_STRING; // classname =  "uninitializedobject"
+	mysql_bind[0].buffer_type = MYSQL_TYPE_VAR_STRING; // uuid = "0"
+	mysql_bind[1].buffer_type = MYSQL_TYPE_VAR_STRING; // classname =  "uninitializedobject"
 	mysql_bind[2].buffer_type = MYSQL_TYPE_LONG;   // priority = 10001
 	mysql_bind[2].buffer = (char *) &priority;
 
 	mysql_bind[3].buffer_type = MYSQL_TYPE_TINY;   // type = 3
 	mysql_bind[3].buffer = (char *) &type;
 
-	mysql_bind[4].buffer_type = MYSQL_TYPE_STRING; // accesscode 	= ""
+	mysql_bind[4].buffer_type = MYSQL_TYPE_VAR_STRING; // accesscode 	= ""
 	mysql_bind[5].buffer_type = MYSQL_TYPE_TINY;   // locked 	= 0
 	mysql_bind[5].buffer = (char *) &locked;
 
-	mysql_bind[6].buffer_type = MYSQL_TYPE_STRING; // player_uuid = ""
-	mysql_bind[7].buffer_type = MYSQL_TYPE_STRING; // hitpoints = "[]"
+	mysql_bind[6].buffer_type = MYSQL_TYPE_VAR_STRING; // player_uuid = ""
+	mysql_bind[7].buffer_type = MYSQL_TYPE_VAR_STRING; // hitpoints = "[]"
 	mysql_bind[8].buffer_type = MYSQL_TYPE_FLOAT;  // damage = 1.0
 	mysql_bind[8].buffer = (char *) &damage;
 
@@ -72,11 +72,11 @@ object_mysql::object_mysql() {
 	mysql_bind[11].buffer_type = MYSQL_TYPE_FLOAT;  // repaircargo = 0.0
 	mysql_bind[11].buffer = (char *) &repaircargo;
 
-	mysql_bind[12].buffer_type = MYSQL_TYPE_STRING; // items = "[[],[],[],[],[]]"
-	mysql_bind[13].buffer_type = MYSQL_TYPE_STRING; // magazinesturret = "[]"
-	mysql_bind[14].buffer_type = MYSQL_TYPE_STRING; // variables = "[]"
-	mysql_bind[15].buffer_type = MYSQL_TYPE_STRING; // animationstate = "[]"
-	mysql_bind[16].buffer_type = MYSQL_TYPE_STRING; // textures = "[]"
+	mysql_bind[12].buffer_type = MYSQL_TYPE_VAR_STRING; // items = "[[],[],[],[],[]]"
+	mysql_bind[13].buffer_type = MYSQL_TYPE_VAR_STRING; // magazinesturret = "[]"
+	mysql_bind[14].buffer_type = MYSQL_TYPE_VAR_STRING; // variables = "[]"
+	mysql_bind[15].buffer_type = MYSQL_TYPE_VAR_STRING; // animationstate = "[]"
+	mysql_bind[16].buffer_type = MYSQL_TYPE_VAR_STRING; // textures = "[]"
 	mysql_bind[17].buffer_type = MYSQL_TYPE_FLOAT;  // direction = 0.0
 	mysql_bind[17].buffer = (char *) &direction;
 
@@ -92,12 +92,22 @@ object_mysql::object_mysql() {
 	mysql_bind[21].buffer_type = MYSQL_TYPE_FLOAT;  // positionz = 0.0
 	mysql_bind[21].buffer = (char *) &positionz;
 
-	mysql_bind[22].buffer_type = MYSQL_TYPE_STRING; // positionadvanced = "[]"
-	mysql_bind[23].buffer_type = MYSQL_TYPE_STRING; // reservedone = ""
-	mysql_bind[24].buffer_type = MYSQL_TYPE_STRING; // reservedtwo = ""
+	mysql_bind[22].buffer_type = MYSQL_TYPE_VAR_STRING; // positionadvanced = "[]"
+	mysql_bind[23].buffer_type = MYSQL_TYPE_VAR_STRING; // reservedone = ""
+	mysql_bind[24].buffer_type = MYSQL_TYPE_VAR_STRING; // reservedtwo = ""
 
-	mysql_bind[25].buffer_type = MYSQL_TYPE_STRING; // parent_uuid = "0"
-	mysql_bind[26].buffer_type = MYSQL_TYPE_STRING; // clan_uuid = "0"
+	mysql_bind[25].buffer_type = MYSQL_TYPE_VAR_STRING; // parent_uuid = "0"
+	mysql_bind[26].buffer_type = MYSQL_TYPE_VAR_STRING; // clan_uuid = "0"
+
+	for (unsigned int arraypos = 0; arraypos < 27; arraypos++) {
+		if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_VAR_STRING) {
+			if (mysql_bind[arraypos].buffer != 0) {
+				char * pointer = new char[64];
+				mysql_bind[arraypos].buffer = pointer;
+				mysql_bind[arraypos].buffer_length = 63;
+			}
+		}
+	}
 
 }
 
@@ -106,7 +116,7 @@ object_mysql::~object_mysql() {
 }
 
 void object_mysql::freeStrings() {
-	for (unsigned int arraypos = 0; arraypos < 25; arraypos++) {
+	for (unsigned int arraypos = 0; arraypos < objectCacheMaxElements; arraypos++) {
 		if (mysql_bind[arraypos].buffer != 0) {
 			free(mysql_bind[arraypos].buffer);
 			mysql_bind[arraypos].buffer = 0;
@@ -132,7 +142,7 @@ int object_mysql::setData(std::string variableName, std::string variableValue) {
 }
 
 int object_mysql::setData(unsigned int arraypos, std::string variableValue) {
-	if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_STRING) {
+	if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_VAR_STRING) {
 		char * pointer = (char *) mysql_bind[arraypos].buffer;
 		int size = variableValue.size() + 1;
 
@@ -179,7 +189,7 @@ int object_mysql::setData(ext_arguments &extArgument) {
 			if (it != objectvariablemap.end()) {
 				unsigned int arraypos = it->second;
 
-				if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_STRING) {
+				if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_VAR_STRING) {
 					char * pointer = (char *) mysql_bind[arraypos].buffer;
 					std::string value = extArgument.get<std::string>(key);
 					int size = value.size() + 1;
@@ -252,7 +262,7 @@ std::string object_mysql::getAsArmaString() {
 		if (mysql_bind[arraypos].buffer != 0) {
 
 			if (is_null[arraypos] == (my_bool) 0) {
-				if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_STRING) {
+				if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_VAR_STRING) {
 					char * pointer = (char *) mysql_bind[arraypos].buffer;
 					std::string data = pointer;
 					if (data.front() == '[') {
