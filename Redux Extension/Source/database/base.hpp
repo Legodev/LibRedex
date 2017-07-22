@@ -86,7 +86,7 @@ public:
 			std::string reservedone, std::string reservedtwo) { return "none"; }
 	virtual std::string killObject(std::string objectuuid, std::string attackeruuid, std::string type,
 			std::string weapon, float distance) { return "none"; }
-	virtual std::vector<object_base*> dumpObjects(std::map<std::string, object_base*> &objectcache) { return std::vector<object_base*>(); };
+	virtual std::vector<cache_base*> dumpObjects(std::map<std::string, cache_base*> &objectcache) { return std::vector<cache_base*>(); };
 };
 
 #endif /* SOURCE_BASE_HPP_ */

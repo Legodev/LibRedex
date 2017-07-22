@@ -766,9 +766,9 @@ std::string dbcon::dumpObjects(ext_arguments &extArgument, base_db_handler *dbha
         bool placecommaone = false;
         bool placecommatwo = false;
 
-        std::vector<object_base*> objectList = dbhandler->dumpObjects(objectcache);
+        std::vector<cache_base*> objectList = dbhandler->dumpObjects(objectcache);
         matrix = "[";
-        for (object_base* object : objectList) {
+        for (cache_base* object : objectList) {
                 if (placecommaone) {
                         matrix += ",";
                 }

@@ -8,12 +8,12 @@
 #ifndef SOURCE_DATABASE_DATACACHE_OBJECTMYSQL_HPP_
 #define SOURCE_DATABASE_DATACACHE_OBJECTMYSQL_HPP_
 
-#include "database/datacache/objectbase.hpp"
+#include "database/datacache/cachebase.hpp"
 #include <mysql.h>
 
 #define objectCacheMaxElements 27
 
-class object_mysql: virtual public object_base {
+class object_mysql: virtual public cache_base {
 public:
 	object_mysql();
 	~object_mysql();

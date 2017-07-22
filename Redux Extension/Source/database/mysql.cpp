@@ -1138,8 +1138,8 @@ std::string mysql_db_handler::killObject(std::string objectuuid, std::string att
 	return killuuid;
 }
 
-//std::vector<object_base*> mysql_db_handler::dumpObjects(std::map<std::string, object_base*> &objectcache) {
-//	std::vector<object_base*> objectList;
+//std::vector<cache_base*> mysql_db_handler::dumpObjects(std::map<std::string, cache_base*> &objectcache) {
+//	std::vector<cache_base*> objectList;
 //	MYSQL_BIND input_params[1];
 //	int        status;
 //
@@ -1243,8 +1243,8 @@ std::string mysql_db_handler::killObject(std::string objectuuid, std::string att
 //				}
 //
 //				std::string uuid = (char*) object->mysql_bind[0].buffer;
-//				objectList.push_back((object_base*) object);
-//				objectcache.insert(std::make_pair(uuid, (object_base*) object));
+//				objectList.push_back((cache_base*) object);
+//				objectcache.insert(std::make_pair(uuid, (cache_base*) object));
 //
 //				object_mysql* object = new object_mysql;
 //			}
@@ -1263,8 +1263,8 @@ std::string mysql_db_handler::killObject(std::string objectuuid, std::string att
 //	return objectList;
 //}
 
-std::vector<object_base*> mysql_db_handler::dumpObjects(std::map<std::string, object_base*> &objectcache) {
-	std::vector<object_base*> objectList;
+std::vector<cache_base*> mysql_db_handler::dumpObjects(std::map<std::string, cache_base*> &objectcache) {
+	std::vector<cache_base*> objectList;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
@@ -1300,8 +1300,8 @@ std::vector<object_base*> mysql_db_handler::dumpObjects(std::map<std::string, ob
 			std::string uuid = row[0];
 
 			object_mysql* object = new object_mysql;
-			objectList.push_back((object_base*) object);
-			objectcache.insert(std::make_pair(uuid, (object_base*) object));
+			objectList.push_back((cache_base*) object);
+			objectcache.insert(std::make_pair(uuid, (cache_base*) object));
 
 			for (int fieldpos = 0; fieldpos < fieldcount; fieldpos++) {
 				if (row[fieldpos] != NULL) {

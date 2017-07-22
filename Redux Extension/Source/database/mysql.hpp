@@ -88,7 +88,7 @@ public:
 			int positiontype, float positionx, float positiony, float positionz,
 			std::string positionadvanced, std::string reservedone, std::string reservedtwo);
 	std::string killObject(std::string objectuuid, std::string attackeruuid, std::string type, std::string weapon, float distance);
-	std::vector<object_base*> dumpObjects(std::map<std::string, object_base*> &objectcache);
+	std::vector<cache_base*> dumpObjects(std::map<std::string, cache_base*> &objectcache);
 
 private:
 		MYSQL *connection;

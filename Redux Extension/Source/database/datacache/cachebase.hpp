@@ -1,19 +1,19 @@
 /*
- * objectbase.hpp
+ * cachebase.hpp
  *
  *  Created on: 11.07.2017
  *      Author: lego
  */
 
-#ifndef SOURCE_DATABASE_DATACACHE_OBJECTBASE_HPP_
-#define SOURCE_DATABASE_DATACACHE_OBJECTBASE_HPP_
+#ifndef SOURCE_DATABASE_DATACACHE_CACHEBASE_HPP_
+#define SOURCE_DATABASE_DATACACHE_CACHEBASE_HPP_
 
 #include "extbase.hpp"
 
-class object_base {
+class cache_base {
 
 public:
-	virtual ~object_base() { };
+	virtual ~cache_base() { };
 
 	virtual int setData(std::string variableName, std::string variableValue) { return 0; };
 	virtual int setData(ext_arguments &extArgument) { return 0; };
@@ -49,4 +49,4 @@ public:
 	reservedtwo = ""
  */
 
-#endif /* SOURCE_DATABASE_DATACACHE_OBJECTBASE_HPP_ */
+#endif /* SOURCE_DATABASE_DATACACHE_CACHEBASE_HPP_ */
