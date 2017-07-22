@@ -1,4 +1,4 @@
-/* objectmysql.hpp
+/* charactermysql.hpp
  *
  * Copyright 2016-2018 Desolation Redux
  *
@@ -15,18 +15,18 @@
  * GNU Affero General Public License for more details.
  */
 
-#ifndef SOURCE_DATABASE_DATACACHE_OBJECTMYSQL_HPP_
-#define SOURCE_DATABASE_DATACACHE_OBJECTMYSQL_HPP_
+#ifndef SOURCE_DATABASE_DATACACHE_CHARACTERMYSQL_HPP_
+#define SOURCE_DATABASE_DATACACHE_CHARACTERMYSQL_HPP_
 
 #include "database/datacache/cachebase.hpp"
 #include <mysql.h>
 
-#define objectCacheMaxElements 27
+#define characterCacheMaxElements 27
 
-class object_mysql: virtual public cache_base {
+class character_mysql: virtual public cache_base {
 public:
-	object_mysql();
-	~object_mysql();
+	character_mysql();
+	~character_mysql();
 
 	int setData(std::string variableName, std::string variableValue);
 	int setData(unsigned int arraypos, std::string variableValue);
@@ -34,8 +34,8 @@ public:
 
 	std::string getAsArmaString();
 
-	MYSQL_BIND mysql_bind[objectCacheMaxElements];
-	my_bool is_null[objectCacheMaxElements];
+	MYSQL_BIND mysql_bind[characterCacheMaxElements];
+	my_bool is_null[characterCacheMaxElements];
 
 private:
 	bool dirty = false;
@@ -56,4 +56,4 @@ private:
 	void freeStrings();
 };
 
-#endif /* SOURCE_DATABASE_DATACACHE_OBJECTMYSQL_HPP_ */
+#endif /* SOURCE_DATABASE_DATACACHE_CHARACTERMYSQL_HPP_ */
