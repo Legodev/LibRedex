@@ -131,13 +131,13 @@ out= instance.ExecuteAndPrint("initdb", [
 print(out)
 sleep(1)
  
-print("\n\n")
-out= instance.ExecuteAndPrint("loadPlayer", [
-                               "nickname", "Lego",
-                               "steamid", "76561198025362180"])
-print(out)
-compiledout = ast.literal_eval(out.replace('false', '"false"'))
-playeruuid = compiledout[1][0]
+#print("\n\n")
+#out= instance.ExecuteAndPrint("loadPlayer", [
+                               #"nickname", "Lego",
+                               #"steamid", "76561198025362180"])
+#print(out)
+#compiledout = ast.literal_eval(out.replace('false', '"false"'))
+#playeruuid = compiledout[1][0]
  
   
 #print("\n\n")
@@ -145,53 +145,53 @@ playeruuid = compiledout[1][0]
                                #"playeruuid", playeruuid])
 #print(out)
   
-print("\n\n")
-out= instance.ExecuteAndPrint("loadChar", [
-                               "playeruuid", playeruuid])
-print(out)
+#print("\n\n")
+#out= instance.ExecuteAndPrint("loadChar", [
+                               #"playeruuid", playeruuid])
+#print(out)
 
-if out !='["MSG",[]]':
-	print("\n\n")
-	compiledout = ast.literal_eval(out)
-	charuuid = compiledout[1][0]
-	print("need to delete char %s" % charuuid)
-	out= instance.ExecuteAndPrint("killChar", [
-								"charuuid", charuuid, 
-								"attackeruuid", "",
-								"type", "", 
-								"weapon", "", 
-								"distance", "0"])
-	print(out)
+#if out !='["MSG",[]]':
+	#print("\n\n")
+	#compiledout = ast.literal_eval(out)
+	#charuuid = compiledout[1][0]
+	#print("need to delete char %s" % charuuid)
+	#out= instance.ExecuteAndPrint("killChar", [
+								#"charuuid", charuuid, 
+								#"attackeruuid", "",
+								#"type", "", 
+								#"weapon", "", 
+								#"distance", "0"])
+	#print(out)
 
-print("\n\n")
-print("need to create char")
-out= instance.ExecuteAndPrint("createChar", [
-								"playeruuid", playeruuid, 
-								"animationstate", "VAR_ANIMATIONSTATE", 
-								"direction", "23.5", 
-								"positiontype", "0", 
-								"positionx", "21.42", 
-								"positiony", "666.9", 
-								"positionz", "133.7", 
-								"classname", "sampleclass", 
-								"hitpoints", "[]", 
-								"variables", "[]", 
-								"persistentvariables", "[]", 
-								"textures", "[]", 
-								"inventoryuniform", "[]", 
-								"inventoryvest", "[]", 
-								"inventorybackpack", "[]", 
-								"uniform", "someuniform", 
-								"vest", "somevest", 
-								"backpack", "somebackpack", 
-								"headgear", "someheadgear", 
-								"googles", "somegoogles", 
-								"primaryweapon", "[\"someprimaryweapon\", [\"someattachment\"]]", 
-								"secondaryweapon", "[\"somesecondaryweapon\", [\"someattachment\"]]", 
-								"handgun", "[\"somehandgunweapon\", [\"someattachment\"]]", 
-								"tools", "[]", 
-								"currentweapon", "someprimaryweapon"])
-print(out)
+#print("\n\n")
+#print("need to create char")
+#out= instance.ExecuteAndPrint("createChar", [
+								#"playeruuid", playeruuid, 
+								#"animationstate", "VAR_ANIMATIONSTATE", 
+								#"direction", "23.5", 
+								#"positiontype", "0", 
+								#"positionx", "21.42", 
+								#"positiony", "666.9", 
+								#"positionz", "133.7", 
+								#"classname", "sampleclass", 
+								#"hitpoints", "[]", 
+								#"variables", "[]", 
+								#"persistentvariables", "[]", 
+								#"textures", "[]", 
+								#"inventoryuniform", "[]", 
+								#"inventoryvest", "[]", 
+								#"inventorybackpack", "[]", 
+								#"uniform", "someuniform", 
+								#"vest", "somevest", 
+								#"backpack", "somebackpack", 
+								#"headgear", "someheadgear", 
+								#"googles", "somegoogles", 
+								#"primaryweapon", "[\"someprimaryweapon\", [\"someattachment\"]]", 
+								#"secondaryweapon", "[\"somesecondaryweapon\", [\"someattachment\"]]", 
+								#"handgun", "[\"somehandgunweapon\", [\"someattachment\"]]", 
+								#"tools", "[]", 
+								#"currentweapon", "someprimaryweapon"])
+#print(out)
 
 #if out =='["MSG",[]]':
     #print("\n\n")
@@ -224,12 +224,12 @@ print(out)
                                   #"currentweapon", "someprimaryweapon"])
     #print(out)
     
-print("\n\n")
-out= instance.ExecuteAndPrint("loadChar", [
-								"playeruuid", playeruuid])
-print(out)
-compiledout = ast.literal_eval(out)
-charuuid = compiledout[1][0]
+#print("\n\n")
+#out= instance.ExecuteAndPrint("loadChar", [
+								#"playeruuid", playeruuid])
+#print(out)
+#compiledout = ast.literal_eval(out)
+#charuuid = compiledout[1][0]
 
 #print("\n\n")
 #out= instance.ExecuteAndPrint("updateChar", [
@@ -260,70 +260,70 @@ charuuid = compiledout[1][0]
                               #"currentweapon", "someprimaryweapon"])
 #print(out)
 # 
-# print("\n\n")
-# out= instance.ExecuteAndPrint("getUUID", [])
-# print(out)
-# compiledout = ast.literal_eval(out)
-# objectuuid = compiledout[1]
+#print("\n\n")
+#out= instance.ExecuteAndPrint("getUUID", [])
+#print(out)
+#compiledout = ast.literal_eval(out)
+#objectuuid = compiledout[1]
+
+#print("\n\n")
+#out= instance.ExecuteAndPrint("qcreateObject", [
+                              #"objectuuid", objectuuid,
+                              #"classname", stringgenerator(8),
+                              #"priority", "2", 
+                              #"visible", "1", 
+                              #"accesscode", "", 
+                              #"locked", "0", 
+                              #"playeruuid", "",
+                              #"hitpoints", "[]",  
+                              #"damage", "0.1", 
+                              #"fuel", "0.9", 
+                              #"fuelcargo", "0.0", 
+                              #"repaircargo", "0.0",
+                              #"items", "[]", 
+                              #"magazinesturret", "[]", 
+                              #"variables", "[]",
+                              #"animationstate", "[]", 
+                              #"textures", "[]", 
+                              #"direction", "23.5", 
+                              #"positiontype", "0", 
+                              #"positionx", "21.42", 
+                              #"positiony", "666.9", 
+                              #"positionz", "133.7",
+                              #"positionadvanced", "[[1,2,3]]", 
+                              #"reservedone", "[]", 
+                              #"reservedtwo", "[]"])
+#print(out)
 # 
-# print("\n\n")
-# out= instance.ExecuteAndPrint("qcreateObject", [
-#                               "objectuuid", objectuuid,
-#                               "classname", stringgenerator(8),
-#                               "priority", "2", 
-#                               "visible", "1", 
-#                               "accesscode", "", 
-#                               "locked", "0", 
-#                               "playeruuid", playeruuid,
-#                               "hitpoints", "[]",  
-#                               "damage", "0.1", 
-#                               "fuel", "0.9", 
-#                               "fuelcargo", "0.0", 
-#                               "repaircargo", "0.0",
-#                               "items", "[]", 
-#                               "magazinesturret", "[]", 
-#                               "variables", "[]",
-#                               "animationstate", "[]", 
-#                               "textures", "[]", 
-#                               "direction", "23.5", 
-#                               "positiontype", "0", 
-#                               "positionx", "21.42", 
-#                               "positiony", "666.9", 
-#                               "positionz", "133.7",
-#                               "positionadvanced", "[[1,2,3]]", 
-#                               "reservedone", "[]", 
-#                               "reservedtwo", "[]"])
-# print(out)
-# 
-# print("\n\n")
-# out= instance.ExecuteAndPrint("createObject", [
-#                               "classname", stringgenerator(8),
-#                               "priority", "2", 
-#                               "visible", "1", 
-#                               "accesscode", "", 
-#                               "locked", "0", 
-#                               "playeruuid", playeruuid,
-#                               "hitpoints", "[]",  
-#                               "damage", "0.1", 
-#                               "fuel", "0.9", 
-#                               "fuelcargo", "0.0", 
-#                               "repaircargo", "0.0",
-#                               "items", "[]", 
-#                               "magazinesturret", "[]", 
-#                               "variables", "[]",
-#                               "animationstate", "[]", 
-#                               "textures", "[]", 
-#                               "direction", "23.5", 
-#                               "positiontype", "0", 
-#                               "positionx", "21.42", 
-#                               "positiony", "666.9", 
-#                               "positionz", "133.7",
-#                               "positionadvanced", "[[1,2,3]]", 
-#                               "reservedone", "[]", 
-#                               "reservedtwo", "[]"])
-# print(out)
-# compiledout = ast.literal_eval(out)
-# objectuuid = compiledout[1]
+#print("\n\n")
+#out= instance.ExecuteAndPrint("createObject", [
+                              #"classname", stringgenerator(8),
+                              #"priority", "2", 
+                              #"visible", "1", 
+                              #"accesscode", "", 
+                              #"locked", "0", 
+                              #"playeruuid", "",
+                              #"hitpoints", "[]",  
+                              #"damage", "0.1", 
+                              #"fuel", "0.9", 
+                              #"fuelcargo", "0.0", 
+                              #"repaircargo", "0.0",
+                              #"items", "[]", 
+                              #"magazinesturret", "[]", 
+                              #"variables", "[]",
+                              #"animationstate", "[]", 
+                              #"textures", "[]", 
+                              #"direction", "23.5", 
+                              #"positiontype", "0", 
+                              #"positionx", "21.42", 
+                              #"positiony", "666.9", 
+                              #"positionz", "133.7",
+                              #"positionadvanced", "[[1,2,3]]", 
+                              #"reservedone", "[]", 
+                              #"reservedtwo", "[]"])
+#print(out)
+#compiledout = ast.literal_eval(out)
+#objectuuid = compiledout[1]
 # 
 # print("\n\n")
 # out= instance.ExecuteAndPrint("updateObject", [
@@ -355,6 +355,6 @@ charuuid = compiledout[1][0]
 # print(out)
 # 
 # print("\n\n")
-# out= instance.ExecuteAndPrint("dumpObjects", [])
-# print(out)
+out= instance.ExecuteAndPrint("dumpObjects", [])
+print(out)
 
