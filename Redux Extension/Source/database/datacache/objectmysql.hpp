@@ -32,6 +32,12 @@ public:
 	int setData(unsigned int arraypos, std::string variableValue);
 	int setData(ext_arguments &extArgument);
 
+	bool isDirty() { return dirty; };
+	bool cleanDirty() {
+		dirty = false;
+		return true;
+	};
+
 	std::string getAsArmaString();
 
 	MYSQL_BIND mysql_bind[objectCacheMaxElements];

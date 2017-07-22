@@ -21,7 +21,7 @@
 #include "database/datacache/cachebase.hpp"
 #include <mysql.h>
 
-#define characterCacheMaxElements 27
+#define characterCacheMaxElements 17
 
 class character_mysql: virtual public cache_base {
 public:
@@ -32,21 +32,27 @@ public:
 	int setData(unsigned int arraypos, std::string variableValue);
 	int setData(ext_arguments &extArgument);
 
+	bool isDirty() { return dirty; };
+	bool cleanDirty() {
+		dirty = false;
+		dirtytablecharacter = false;
+		dirtytableshareables = false;
+		dirtytablepersistentvariables = false;
+		return true;
+	};
+
 	std::string getAsArmaString();
 
 	MYSQL_BIND mysql_bind[characterCacheMaxElements];
 	my_bool is_null[characterCacheMaxElements];
 
+	bool dirtytablecharacter = false;
+	bool dirtytableshareables = false;
+	bool dirtytablepersistentvariables = false;
+
 private:
 	bool dirty = false;
 
-	int priority = 10001;
-	signed char type = 3;
-	signed char locked 	= 0;
-	float damage = 1.0;
-	float fuel = 1.0;
-	float fuelcargo = 0.0;
-	float repaircargo = 0.0;
 	float direction = 0.0;
 	signed char positiontype = 0;
 	float positionx = 0.0;

@@ -1270,14 +1270,14 @@ std::vector<cache_base*> mysql_db_handler::dumpObjects(std::map<std::string, cac
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
 	std::string query =
-	str(boost::format{"SELECT HEX(`object`.`uuid`), "
-						"`object`.`classname`, `object`.`priority`, `object`.`type`, `object`.`accesscode`, "
+	str(boost::format{"SELECT `object`.`classname`, `object`.`priority`, `object`.`type`, `object`.`accesscode`, "
 						"`object`.`locked`, HEX(`object`.`player_uuid`), `object`.`hitpoints`, `object`.`damage`, "
 						"`object`.`fuel`, `object`.`fuelcargo`, `object`.`repaircargo`, `object`.`items`, "
 						"`object`.`magazinesturret`, "
 						"`object`.`variables`, `object`.`animationstate`, `object`.`textures`, `object`.`direction`, "
 						"`object`.`positiontype`, `object`.`positionx`, `object`.`positiony`, `object`.`positionz`, "
 						"`object`.`positionadvanced`, `object`.`reservedone`, `object`.`reservedtwo`, "
+						"HEX(`object`.`uuid`), "
 						"HEX(`world_has_objects`.`parentobject_uuid`), "
 						"HEX(`player`.`uuid`) "
 						"FROM `world_has_objects` "

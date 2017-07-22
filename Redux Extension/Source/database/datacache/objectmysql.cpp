@@ -29,85 +29,86 @@ object_mysql::object_mysql() {
 	}
 
 	if (objectvariablemap.empty()) {
-		objectvariablemap.insert(std::make_pair("uuid", 0));
-		objectvariablemap.insert(std::make_pair("classname", 1));
-		objectvariablemap.insert(std::make_pair("priority", 2));
-		objectvariablemap.insert(std::make_pair("type", 3));
-		objectvariablemap.insert(std::make_pair("accesscode", 4));
-		objectvariablemap.insert(std::make_pair("locked", 5));
-		objectvariablemap.insert(std::make_pair("player_uuid", 6));
-		objectvariablemap.insert(std::make_pair("hitpoints", 7));
-		objectvariablemap.insert(std::make_pair("damage", 8));
-		objectvariablemap.insert(std::make_pair("fuel", 9));
-		objectvariablemap.insert(std::make_pair("fuelcargo", 10));
-		objectvariablemap.insert(std::make_pair("repaircargo", 11));
-		objectvariablemap.insert(std::make_pair("items", 12));
-		objectvariablemap.insert(std::make_pair("magazinesturret", 13));
-		objectvariablemap.insert(std::make_pair("variables", 14));
-		objectvariablemap.insert(std::make_pair("animationstate", 15));
-		objectvariablemap.insert(std::make_pair("textures", 16));
-		objectvariablemap.insert(std::make_pair("direction", 17));
-		objectvariablemap.insert(std::make_pair("positiontype", 18));
-		objectvariablemap.insert(std::make_pair("positionx", 19));
-		objectvariablemap.insert(std::make_pair("positiony", 20));
-		objectvariablemap.insert(std::make_pair("positionz", 21));
-		objectvariablemap.insert(std::make_pair("positionadvanced", 22));
-		objectvariablemap.insert(std::make_pair("reservedone", 23));
-		objectvariablemap.insert(std::make_pair("reservedtwo", 24));
+		objectvariablemap.insert(std::make_pair("classname", 0));
+		objectvariablemap.insert(std::make_pair("priority", 1));
+		objectvariablemap.insert(std::make_pair("type", 2));
+		objectvariablemap.insert(std::make_pair("accesscode", 3));
+		objectvariablemap.insert(std::make_pair("locked", 4));
+		objectvariablemap.insert(std::make_pair("player_uuid", 5));
+		objectvariablemap.insert(std::make_pair("hitpoints", 6));
+		objectvariablemap.insert(std::make_pair("damage", 7));
+		objectvariablemap.insert(std::make_pair("fuel", 8));
+		objectvariablemap.insert(std::make_pair("fuelcargo", 9));
+		objectvariablemap.insert(std::make_pair("repaircargo", 10));
+		objectvariablemap.insert(std::make_pair("items", 11));
+		objectvariablemap.insert(std::make_pair("magazinesturret", 12));
+		objectvariablemap.insert(std::make_pair("variables", 13));
+		objectvariablemap.insert(std::make_pair("animationstate", 14));
+		objectvariablemap.insert(std::make_pair("textures", 15));
+		objectvariablemap.insert(std::make_pair("direction", 16));
+		objectvariablemap.insert(std::make_pair("positiontype", 17));
+		objectvariablemap.insert(std::make_pair("positionx", 18));
+		objectvariablemap.insert(std::make_pair("positiony", 19));
+		objectvariablemap.insert(std::make_pair("positionz", 20));
+		objectvariablemap.insert(std::make_pair("positionadvanced", 21));
+		objectvariablemap.insert(std::make_pair("reservedone", 22));
+		objectvariablemap.insert(std::make_pair("reservedtwo", 23));
+		objectvariablemap.insert(std::make_pair("uuid", 24));
 	}
 
-	mysql_bind[0].buffer_type = MYSQL_TYPE_VAR_STRING; // uuid = "0"
-	mysql_bind[1].buffer_type = MYSQL_TYPE_VAR_STRING; // classname =  "uninitializedobject"
-	mysql_bind[2].buffer_type = MYSQL_TYPE_LONG;   // priority = 10001
-	mysql_bind[2].buffer = (char *) &priority;
+	mysql_bind[0].buffer_type = MYSQL_TYPE_VAR_STRING; // classname =  "uninitializedobject"
+	mysql_bind[1].buffer_type = MYSQL_TYPE_LONG;   // priority = 10001
+	mysql_bind[1].buffer = (char *) &priority;
 
-	mysql_bind[3].buffer_type = MYSQL_TYPE_TINY;   // type = 3
-	mysql_bind[3].buffer = (char *) &type;
+	mysql_bind[2].buffer_type = MYSQL_TYPE_TINY;   // type = 3
+	mysql_bind[2].buffer = (char *) &type;
 
-	mysql_bind[4].buffer_type = MYSQL_TYPE_VAR_STRING; // accesscode 	= ""
-	mysql_bind[5].buffer_type = MYSQL_TYPE_TINY;   // locked 	= 0
-	mysql_bind[5].buffer = (char *) &locked;
+	mysql_bind[3].buffer_type = MYSQL_TYPE_VAR_STRING; // accesscode 	= ""
+	mysql_bind[4].buffer_type = MYSQL_TYPE_TINY;   // locked 	= 0
+	mysql_bind[4].buffer = (char *) &locked;
 
-	mysql_bind[6].buffer_type = MYSQL_TYPE_VAR_STRING; // player_uuid = ""
-	mysql_bind[7].buffer_type = MYSQL_TYPE_VAR_STRING; // hitpoints = "[]"
-	mysql_bind[8].buffer_type = MYSQL_TYPE_FLOAT;  // damage = 1.0
-	mysql_bind[8].buffer = (char *) &damage;
+	mysql_bind[5].buffer_type = MYSQL_TYPE_VAR_STRING; // player_uuid = ""
+	mysql_bind[6].buffer_type = MYSQL_TYPE_VAR_STRING; // hitpoints = "[]"
+	mysql_bind[7].buffer_type = MYSQL_TYPE_FLOAT;  // damage = 1.0
+	mysql_bind[7].buffer = (char *) &damage;
 
-	mysql_bind[9].buffer_type = MYSQL_TYPE_FLOAT;  // fuel = 1.0
-	mysql_bind[9].buffer = (char *) &fuel;
+	mysql_bind[8].buffer_type = MYSQL_TYPE_FLOAT;  // fuel = 1.0
+	mysql_bind[8].buffer = (char *) &fuel;
 
-	mysql_bind[10].buffer_type = MYSQL_TYPE_FLOAT;  // fuelcargo = 0.0
-	mysql_bind[10].buffer = (char *) &fuelcargo;
+	mysql_bind[9].buffer_type = MYSQL_TYPE_FLOAT;  // fuelcargo = 0.0
+	mysql_bind[9].buffer = (char *) &fuelcargo;
 
-	mysql_bind[11].buffer_type = MYSQL_TYPE_FLOAT;  // repaircargo = 0.0
-	mysql_bind[11].buffer = (char *) &repaircargo;
+	mysql_bind[10].buffer_type = MYSQL_TYPE_FLOAT;  // repaircargo = 0.0
+	mysql_bind[10].buffer = (char *) &repaircargo;
 
-	mysql_bind[12].buffer_type = MYSQL_TYPE_VAR_STRING; // items = "[[],[],[],[],[]]"
-	mysql_bind[13].buffer_type = MYSQL_TYPE_VAR_STRING; // magazinesturret = "[]"
-	mysql_bind[14].buffer_type = MYSQL_TYPE_VAR_STRING; // variables = "[]"
-	mysql_bind[15].buffer_type = MYSQL_TYPE_VAR_STRING; // animationstate = "[]"
-	mysql_bind[16].buffer_type = MYSQL_TYPE_VAR_STRING; // textures = "[]"
-	mysql_bind[17].buffer_type = MYSQL_TYPE_FLOAT;  // direction = 0.0
-	mysql_bind[17].buffer = (char *) &direction;
+	mysql_bind[11].buffer_type = MYSQL_TYPE_VAR_STRING; // items = "[[],[],[],[],[]]"
+	mysql_bind[12].buffer_type = MYSQL_TYPE_VAR_STRING; // magazinesturret = "[]"
+	mysql_bind[13].buffer_type = MYSQL_TYPE_VAR_STRING; // variables = "[]"
+	mysql_bind[14].buffer_type = MYSQL_TYPE_VAR_STRING; // animationstate = "[]"
+	mysql_bind[15].buffer_type = MYSQL_TYPE_VAR_STRING; // textures = "[]"
+	mysql_bind[16].buffer_type = MYSQL_TYPE_FLOAT;  // direction = 0.0
+	mysql_bind[16].buffer = (char *) &direction;
 
-	mysql_bind[18].buffer_type = MYSQL_TYPE_TINY;   // positiontype = 0
-	mysql_bind[18].buffer = (char *) &positiontype;
+	mysql_bind[17].buffer_type = MYSQL_TYPE_TINY;   // positiontype = 0
+	mysql_bind[17].buffer = (char *) &positiontype;
 
-	mysql_bind[19].buffer_type = MYSQL_TYPE_FLOAT;  // positionx = 0.0
-	mysql_bind[19].buffer = (char *) &positionx;
+	mysql_bind[18].buffer_type = MYSQL_TYPE_FLOAT;  // positionx = 0.0
+	mysql_bind[18].buffer = (char *) &positionx;
 
-	mysql_bind[20].buffer_type = MYSQL_TYPE_FLOAT;  // positiony = 0.0
-	mysql_bind[20].buffer = (char *) &positiony;
+	mysql_bind[19].buffer_type = MYSQL_TYPE_FLOAT;  // positiony = 0.0
+	mysql_bind[19].buffer = (char *) &positiony;
 
-	mysql_bind[21].buffer_type = MYSQL_TYPE_FLOAT;  // positionz = 0.0
-	mysql_bind[21].buffer = (char *) &positionz;
+	mysql_bind[20].buffer_type = MYSQL_TYPE_FLOAT;  // positionz = 0.0
+	mysql_bind[20].buffer = (char *) &positionz;
 
-	mysql_bind[22].buffer_type = MYSQL_TYPE_VAR_STRING; // positionadvanced = "[]"
-	mysql_bind[23].buffer_type = MYSQL_TYPE_VAR_STRING; // reservedone = ""
-	mysql_bind[24].buffer_type = MYSQL_TYPE_VAR_STRING; // reservedtwo = ""
+	mysql_bind[21].buffer_type = MYSQL_TYPE_VAR_STRING; // positionadvanced = "[]"
+	mysql_bind[22].buffer_type = MYSQL_TYPE_VAR_STRING; // reservedone = ""
+	mysql_bind[23].buffer_type = MYSQL_TYPE_VAR_STRING; // reservedtwo = ""
 
+	mysql_bind[24].buffer_type = MYSQL_TYPE_VAR_STRING; // uuid = "0"
 	mysql_bind[25].buffer_type = MYSQL_TYPE_VAR_STRING; // parent_uuid = "0"
 	mysql_bind[26].buffer_type = MYSQL_TYPE_VAR_STRING; // clan_uuid = "0"
+
 }
 
 object_mysql::~object_mysql() {

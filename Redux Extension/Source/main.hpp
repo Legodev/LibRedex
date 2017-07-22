@@ -45,6 +45,8 @@
 #include "constants.hpp"
 extern std::map<std::string, unsigned int> objectvariablemap;
 std::map<std::string, unsigned int> objectvariablemap;
+extern std::map<std::string, unsigned int> charactervariablemap;
+std::map<std::string, unsigned int> charactervariablemap;
 
 #include "redex.hpp"
 redex * extension = 0;

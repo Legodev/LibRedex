@@ -30,6 +30,9 @@ public:
 
 	virtual std::string getAsArmaString() { return "none"; };
 
+	virtual bool isDirty() { return false; };
+	virtual bool cleanDirty() { return true; };
+
 };
 /*
 	uuid = "0"
