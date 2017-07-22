@@ -49,21 +49,8 @@ public:
 	virtual cache_base* loadChar(std::map<std::string, cache_base*> &charactercache, std::string playeruuid) { return NULL; };
 
 	virtual std::string loadChar(std::string playeruuid) { return "none"; }
-	virtual std::string createChar(std::string playeruuid, std::string animationstate, float direction,
-			int positiontype, float positionx, float positiony, float positionz, std::string classname,
-			std::string hitpoints, std::string variables, std::string persistentvariables, std::string textures,
-			std::string gear, std::string inventoryvest, std::string inventorybackpack, std::string uniform,
-			std::string vest, std::string backpack, std::string headgear, std::string googles,
-			std::string primaryweapon, std::string secondaryweapon, std::string handgun, std::string tools,
-			std::string currentweapon) { return "none"; }
-	virtual std::string updateChar(std::string charuuid, std::string animationstate, float direction, int positiontype,
-			float positionx, float positiony, float positionz, std::string classname, std::string hitpoints,
-			std::string variables, std::string persistentvariables, std::string textures, std::string gear,
-			std::string inventoryvest, std::string inventorybackpack, std::string uniform, std::string vest,
-			std::string backpack, std::string headgear, std::string googles, std::string primaryweapon,
-			std::string secondaryweapon, std::string handgun, std::string tools, std::string currentweapon) { return "none"; }
-	virtual std::string locupdateChar(std::string charuuid, std::string animationstate, float direction,
-			int positiontype, float positionx, float positiony, float positionz) { return "none"; }
+	virtual std::string createChar(std::map<std::string, cache_base*> &charactercache, ext_arguments &extArgument) { return "none"; }
+	virtual std::string updateChar(std::map<std::string, cache_base*> &charactercache, ext_arguments &extArgument) { return "none"; }
 	virtual std::string killChar(std::string charuuid, std::string attackeruuid, std::string type, std::string weapon,
 			float distance) { return "none"; }
 

@@ -45,6 +45,7 @@ public:
 
 	MYSQL_BIND mysql_bind[characterCacheMaxElements];
 	my_bool is_null[characterCacheMaxElements];
+	long unsigned int length [characterCacheMaxElements];
 
 	bool dirtytablecharacter = false;
 	bool dirtytableshareables = false;
@@ -58,6 +59,8 @@ private:
 	float positionx = 0.0;
 	float positiony = 0.0;
 	float positionz = 0.0;
+
+	long unsigned int test = 32;
 
 	void freeStrings();
 };

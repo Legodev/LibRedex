@@ -366,9 +366,8 @@ std::string dbcon::syncCall(DB_FUNCTION_INFO funcinfo, ext_arguments &extArgumen
 	base_db_handler *syncdbhandler;
 
 	// try to get an db handler
-	while (!syncdbhandlerpool.pop(syncdbhandlerpointer)) {
-		printf("i am in a loop! :( \n");
-	}
+	while (!syncdbhandlerpool.pop(syncdbhandlerpointer));
+
 	try {
 		syncdbhandler = (base_db_handler*) syncdbhandlerpointer;
 
@@ -526,71 +525,13 @@ std::string dbcon::loadChar(ext_arguments &extArgument, base_db_handler *dbhandl
 }
 
 std::string dbcon::createChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
-	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
-	std::string animationstate = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
-	float direction = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
-	int positiontype = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
-	float positionx = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
-	float positiony = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
-	float positionz = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
-	std::string classname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
-	std::string hitpoints = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS);
-	std::string variables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
-	std::string persistentvariables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABLES);
-	std::string textures = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TEXTURES);
-	std::string gear = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_GEAR);
-	std::string inventoryvest = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYVEST);
-	std::string inventorybackpack = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYBACKPACK);
-	std::string uniform = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_UNIFORM);
-	std::string vest = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VEST);
-	std::string backpack = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_BACKPACK);
-	std::string headgear = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HEADGEAR);
-	std::string googles = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_GOOGLES);
-	std::string primaryweapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PRIMARYWEAPON);
-	std::string secondaryweapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_SECONDARYWEAPON);
-	std::string handgun = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HANDGUN);
-	std::string tools = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TOOLS);
-	std::string currentweapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CURRENTWEAPON);
-
-	std::string result = dbhandler->createChar(playeruuid, animationstate, direction, positiontype, positionx,
-			positiony, positionz, classname, hitpoints, variables, persistentvariables, textures, gear,
-			inventoryvest, inventorybackpack, uniform, vest, backpack, headgear, googles, primaryweapon,
-			secondaryweapon, handgun, tools, currentweapon);
+	std::string result = dbhandler->createChar(charactercache, extArgument);
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
 std::string dbcon::updateChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
-	std::string charuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
-	std::string animationstate = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
-	float direction = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
-	int positiontype = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
-	float positionx = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
-	float positiony = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
-	float positionz = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
-	std::string classname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
-	std::string hitpoints = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS);
-	std::string variables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
-	std::string persistentvariables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABLES);
-	std::string textures = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TEXTURES);
-	std::string gear = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_GEAR);
-	std::string inventoryvest = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYVEST);
-	std::string inventorybackpack = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYBACKPACK);
-	std::string uniform = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_UNIFORM);
-	std::string vest = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VEST);
-	std::string backpack = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_BACKPACK);
-	std::string headgear = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HEADGEAR);
-	std::string googles = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_GOOGLES);
-	std::string primaryweapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PRIMARYWEAPON);
-	std::string secondaryweapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_SECONDARYWEAPON);
-	std::string handgun = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HANDGUN);
-	std::string tools = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TOOLS);
-	std::string currentweapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CURRENTWEAPON);
-
-	std::string result = dbhandler->updateChar(charuuid, animationstate, direction, positiontype, positionx,
-				positiony, positionz, classname, hitpoints, variables, persistentvariables, textures, gear,
-				inventoryvest, inventorybackpack, uniform, vest, backpack, headgear, googles, primaryweapon,
-				secondaryweapon, handgun, tools, currentweapon);
+	std::string result = dbhandler->updateChar(charactercache, extArgument);
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }

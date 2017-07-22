@@ -131,13 +131,13 @@ out= instance.ExecuteAndPrint("initdb", [
 print(out)
 sleep(1)
  
-#print("\n\n")
-#out= instance.ExecuteAndPrint("loadPlayer", [
-                               #"nickname", "Lego",
-                               #"steamid", "76561198025362180"])
-#print(out)
-#compiledout = ast.literal_eval(out.replace('false', '"false"'))
-#playeruuid = compiledout[1][0]
+print("\n\n")
+out= instance.ExecuteAndPrint("loadPlayer", [
+                               "nickname", "Lego",
+                               "steamid", "76561198025362180"])
+print(out)
+compiledout = ast.literal_eval(out.replace('false', '"false"').replace('true', '"true"'))
+playeruuid = compiledout[1][0]
  
   
 #print("\n\n")
@@ -165,33 +165,22 @@ sleep(1)
 
 #print("\n\n")
 #print("need to create char")
-#out= instance.ExecuteAndPrint("createChar", [
-								#"playeruuid", playeruuid, 
-								#"animationstate", "VAR_ANIMATIONSTATE", 
-								#"direction", "23.5", 
-								#"positiontype", "0", 
-								#"positionx", "21.42", 
-								#"positiony", "666.9", 
-								#"positionz", "133.7", 
-								#"classname", "sampleclass", 
-								#"hitpoints", "[]", 
-								#"variables", "[]", 
-								#"persistentvariables", "[]", 
-								#"textures", "[]", 
-								#"gear", "[]", 
-								#"inventoryvest", "[]", 
-								#"inventorybackpack", "[]", 
-								#"uniform", "someuniform", 
-								#"vest", "somevest", 
-								#"backpack", "somebackpack", 
-								#"headgear", "someheadgear", 
-								#"googles", "somegoogles", 
-								#"primaryweapon", "[\"someprimaryweapon\", [\"someattachment\"]]", 
-								#"secondaryweapon", "[\"somesecondaryweapon\", [\"someattachment\"]]", 
-								#"handgun", "[\"somehandgunweapon\", [\"someattachment\"]]", 
-								#"tools", "[]", 
-								#"currentweapon", "someprimaryweapon"])
-#print(out)
+out= instance.ExecuteAndPrint("createChar", [
+								"playeruuid", playeruuid, 
+								"animationstate", "VAR_ANIMATIONSTATE", 
+								"direction", "23.5", 
+								"positiontype", "0", 
+								"positionx", "21.42", 
+								"positiony", "666.9", 
+								"positionz", "133.7", 
+								"classname", "sampleclass", 
+								"hitpoints", "[]", 
+								"variables", "[]", 
+								"persistentvariables", "[]", 
+								"textures", "[]", 
+								"gear", "[]", 
+								"currentweapon", "someprimaryweapon"])
+print(out)
 
 #if out =='["MSG",[]]':
     #print("\n\n")
@@ -210,17 +199,6 @@ sleep(1)
                                   #"persistentvariables", "[]", 
                                   #"textures", "[]", 
                                   #"gear", "[]", 
-                                  #"inventoryvest", "[]", 
-                                  #"inventorybackpack", "[]", 
-                                  #"uniform", "someuniform", 
-                                  #"vest", "somevest", 
-                                  #"backpack", "somebackpack", 
-                                  #"headgear", "someheadgear", 
-                                  #"googles", "somegoogles", 
-                                  #"primaryweapon", "[\"someprimaryweapon\", [\"someattachment\"]]", 
-                                  #"secondaryweapon", "[\"somesecondaryweapon\", [\"someattachment\"]]", 
-                                  #"handgun", "[\"somehandgunweapon\", [\"someattachment\"]]", 
-                                  #"tools", "[]", 
                                   #"currentweapon", "someprimaryweapon"])
     #print(out)
     
@@ -246,17 +224,6 @@ sleep(1)
                               #"persistentvariables", "[an string with non valid data just for kegan]", 
                               #"textures", "[]", 
                               #"gear", "[]", 
-                              #"inventoryvest", "[]", 
-                              #"inventorybackpack", "[]", 
-                              #"uniform", "someuniform", 
-                              #"vest", "somevest", 
-                              #"backpack", "somebackpack", 
-                              #"headgear", "someheadgear", 
-                              #"googles", "somegoogles", 
-                              #"primaryweapon", "[\"someprimaryweapon\", [\"someattachment\"]]", 
-                              #"secondaryweapon", "[\"somesecondaryweapon\", [\"someattachment\"]]", 
-                              #"handgun", "[\"somehandgunweapon\", [\"someattachment\"]]", 
-                              #"tools", "[]", 
                               #"currentweapon", "someprimaryweapon"])
 #print(out)
 # 
@@ -355,6 +322,6 @@ sleep(1)
 # print(out)
 # 
 # print("\n\n")
-out= instance.ExecuteAndPrint("dumpObjects", [])
-print(out)
+#out= instance.ExecuteAndPrint("dumpObjects", [])
+#print(out)
 

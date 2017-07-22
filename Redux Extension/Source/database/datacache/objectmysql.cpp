@@ -15,7 +15,7 @@
  * GNU Affero General Public License for more details.
  */
 
-
+#include "constants.hpp"
 #include "database/datacache/objectmysql.hpp"
 #include <string.h>
 #include <boost/lexical_cast.hpp>
@@ -29,31 +29,31 @@ object_mysql::object_mysql() {
 	}
 
 	if (objectvariablemap.empty()) {
-		objectvariablemap.insert(std::make_pair("classname", 0));
-		objectvariablemap.insert(std::make_pair("priority", 1));
-		objectvariablemap.insert(std::make_pair("type", 2));
-		objectvariablemap.insert(std::make_pair("accesscode", 3));
-		objectvariablemap.insert(std::make_pair("locked", 4));
-		objectvariablemap.insert(std::make_pair("player_uuid", 5));
-		objectvariablemap.insert(std::make_pair("hitpoints", 6));
-		objectvariablemap.insert(std::make_pair("damage", 7));
-		objectvariablemap.insert(std::make_pair("fuel", 8));
-		objectvariablemap.insert(std::make_pair("fuelcargo", 9));
-		objectvariablemap.insert(std::make_pair("repaircargo", 10));
-		objectvariablemap.insert(std::make_pair("items", 11));
-		objectvariablemap.insert(std::make_pair("magazinesturret", 12));
-		objectvariablemap.insert(std::make_pair("variables", 13));
-		objectvariablemap.insert(std::make_pair("animationstate", 14));
-		objectvariablemap.insert(std::make_pair("textures", 15));
-		objectvariablemap.insert(std::make_pair("direction", 16));
-		objectvariablemap.insert(std::make_pair("positiontype", 17));
-		objectvariablemap.insert(std::make_pair("positionx", 18));
-		objectvariablemap.insert(std::make_pair("positiony", 19));
-		objectvariablemap.insert(std::make_pair("positionz", 20));
-		objectvariablemap.insert(std::make_pair("positionadvanced", 21));
-		objectvariablemap.insert(std::make_pair("reservedone", 22));
-		objectvariablemap.insert(std::make_pair("reservedtwo", 23));
-		objectvariablemap.insert(std::make_pair("uuid", 24));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME, 0));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_PRIORITY, 1));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_TYPE, 2));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_ACCESSCODE, 3));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_LOCKED, 4));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID, 5));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS, 6));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_DAMAGE, 7));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_FUEL, 8));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_FUELCARGO, 9));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_REPAIRCARGO, 10));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_ITEMS, 11));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_MAGAZINESTURRET, 12));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_VARIABLES, 13));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE, 14));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_TEXTURES, 15));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_DIRECTION, 16));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE, 17));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONX, 18));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONY, 19));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ, 20));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONADVANCED, 21));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_RESERVEDONE, 22));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_RESERVEDTWO, 23));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID, 24));
 	}
 
 	mysql_bind[0].buffer_type = MYSQL_TYPE_VAR_STRING; // classname =  "uninitializedobject"
@@ -126,8 +126,8 @@ void object_mysql::freeStrings() {
 }
 
 int object_mysql::setData(std::string variableName, std::string variableValue) {
-	auto it = objectvariablemap.find(variableName);
-	if (it != objectvariablemap.end()) {
+	auto it = charactervariablemap.find(variableName);
+	if (it != charactervariablemap.end()) {
 		unsigned int arraypos = it->second;
 
 		setData(arraypos, variableValue);
@@ -141,24 +141,44 @@ int object_mysql::setData(std::string variableName, std::string variableValue) {
 	return 1;
 }
 
+int object_mysql::setData(ext_arguments &extArgument) {
+	std::list<std::string> keyList = extArgument.getKeys();
+
+	for(auto const &key : keyList) {
+		auto it = charactervariablemap.find(key);
+		if (it != charactervariablemap.end()) {
+			unsigned int arraypos = it->second;
+
+			setData(arraypos, extArgument.get<std::string>(key));
+		}
+	}
+
+	dirty = true;
+
+	return 1;
+}
+
 int object_mysql::setData(unsigned int arraypos, std::string variableValue) {
 	if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_VAR_STRING) {
 		char * pointer = (char *) mysql_bind[arraypos].buffer;
-		int size = variableValue.size() + 1;
+		int size = variableValue.size();
 
 		if (pointer == 0 || std::string(pointer) != variableValue) {
 			if (pointer != 0 && mysql_bind[arraypos].buffer_length < size) {
 				mysql_bind[arraypos].buffer = 0;
 				mysql_bind[arraypos].buffer_length = 0;
 				free(pointer);
+				pointer = 0;
 			}
-
-			char * pointer = new char[size*2];
-			mysql_bind[arraypos].buffer = pointer;
-			mysql_bind[arraypos].buffer_length = size * 2;
+			if (pointer == 0) {
+				char * pointer = new char[size*2];
+				mysql_bind[arraypos].buffer = pointer;
+				mysql_bind[arraypos].buffer_length = size * 2;
+			}
 		}
-
 		memcpy (mysql_bind[arraypos].buffer, variableValue.c_str(), size);
+		length[arraypos] = size;
+		mysql_bind[arraypos].length = &length[arraypos];
 	}
 
 	if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_FLOAT) {
@@ -176,76 +196,8 @@ int object_mysql::setData(unsigned int arraypos, std::string variableValue) {
 		* pointer = boost::lexical_cast<int>(variableValue);
 	}
 
-	is_null[arraypos] = (my_bool) 0;
-
-	return 1;
-}
-
-int object_mysql::setData(ext_arguments &extArgument) {
-	std::list<std::string> keyList = extArgument.getKeys();
-
-		for(auto const &key : keyList) {
-			auto it = objectvariablemap.find(key);
-			if (it != objectvariablemap.end()) {
-				unsigned int arraypos = it->second;
-
-				if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_VAR_STRING) {
-					char * pointer = (char *) mysql_bind[arraypos].buffer;
-					std::string value = extArgument.get<std::string>(key);
-					int size = value.size() + 1;
-
-					if (pointer == 0 || std::string(pointer) != value) {
-						if (pointer != 0 && mysql_bind[arraypos].buffer_length < size) {
-							mysql_bind[arraypos].buffer = 0;
-							mysql_bind[arraypos].buffer_length = 0;
-							free(pointer);
-
-							char * pointer = new char(size*2);
-							mysql_bind[arraypos].buffer = pointer;
-							mysql_bind[arraypos].buffer_length = size * 2;
-						}
-						memcpy (mysql_bind[arraypos].buffer, value.c_str(), size);
-					}
-				}
-
-				if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_FLOAT) {
-					float * pointer = (float *) mysql_bind[arraypos].buffer;
-					float value = extArgument.get<float>(key);
-
-					if (* pointer != value) {
-						* pointer = value;
-						dirty = true;
-					}
-				}
-
-				if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_TINY) {
-					signed char * pointer = (signed char *) mysql_bind[arraypos].buffer;
-					signed char value = extArgument.get<signed char>(key);
-
-					if (* pointer != value) {
-						* pointer = value;
-						dirty = true;
-					}
-				}
-
-				if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_LONG) {
-					int * pointer = (int *) mysql_bind[arraypos].buffer;
-					int value = extArgument.get<int>(key);
-
-					if (* pointer != value) {
-						* pointer = value;
-						dirty = true;
-					}
-				}
-
-				is_null[arraypos] = (my_bool) 0;
-
-			} else {
-				throw std::runtime_error("unknown variable: " + key);
-			}
-		}
-
-	dirty = true;
+	is_null[arraypos] = 0;
+	mysql_bind[arraypos].is_null = &is_null[arraypos];
 
 	return 1;
 }
@@ -254,7 +206,7 @@ std::string object_mysql::getAsArmaString() {
 	std::string returnString = "[";
 	bool placecommaone = false;
 
-	for (unsigned int arraypos = 0; arraypos < objectCacheMaxElements; arraypos++) {
+	for (unsigned int arraypos = 0; arraypos < characterCacheMaxElements; arraypos++) {
 		if (placecommaone) {
 			returnString += ",";
 		}

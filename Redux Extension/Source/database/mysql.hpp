@@ -46,14 +46,8 @@ public:
 	std::string loadAvChars(std::string playeruuid);
 	std::string linkChars(std::string playeruuid, std::string variabuuid);
 	cache_base* loadChar(std::map<std::string, cache_base*> &charactercache, std::string playeruuid);
-	std::string createChar(std::string playeruuid, std::string animationstate, float direction, int positiontype,
-			float positionx, float positiony, float positionz, std::string classname, std::string hitpoints,
-			std::string variables, std::string persistentvariables, std::string textures, std::string gear,
-			std::string currentweapon);
-	std::string updateChar(std::string charuuid, std::string animationstate, float direction, int positiontype,
-			float positionx, float positiony, float positionz, std::string classname, std::string hitpoints,
-			std::string variables, std::string persistentvariables, std::string textures, std::string gear,
-			std::string currentweapon);
+	std::string createChar(std::map<std::string, cache_base*> &charactercache, ext_arguments &extArgument);
+	std::string updateChar(std::map<std::string, cache_base*> &charactercache, ext_arguments &extArgument);
 	std::string killChar(std::string charuuid, std::string attackeruuid, std::string type, std::string weapon, float distance);
 
 	std::string loadObject(std::string objectuuid);
@@ -104,6 +98,7 @@ private:
 
 		std::string worlduuid;
 
+		void preparedStatementQuery(std::string query, MYSQL_BIND input_params[]);
 		void test_stmt_error(MYSQL_STMT *stmt, int status);
 
 };
