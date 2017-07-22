@@ -117,16 +117,6 @@ dbcon::dbcon(EXT_FUNCTIONS &extFunctions) {
 							ASYNC_MAGIC)));
 	extFunctions.insert(
 			std::make_pair(
-					std::string(PROTOCOL_DBCALL_FUNCTION_LOCATIONUPDATE_CHAR),
-					boost::bind(&dbcon::processDBCall, this, _1, _2)));
-	dbfunctions.insert(
-			std::make_pair(
-					std::string(PROTOCOL_DBCALL_FUNCTION_LOCATIONUPDATE_CHAR),
-					std::make_tuple(
-							boost::bind(&dbcon::locupdateChar, this, _1, _2),
-							ASYNC_MAGIC)));
-	extFunctions.insert(
-			std::make_pair(
 					std::string(PROTOCOL_DBCALL_FUNCTION_DECLARE_CHAR_DEATH),
 					boost::bind(&dbcon::processDBCall, this, _1, _2)));
 	dbfunctions.insert(
@@ -214,7 +204,7 @@ dbcon::~dbcon() {
 
 std::string dbcon::spawnHandler(std::string &extFunction, ext_arguments &extArgument) {
 	unsigned int poolsize = extArgument.get<unsigned int>("poolsize");
-	std::string worlduuid = extArgument.get<std::string>("worlduuid");
+	std::string worlduuid = extArgument.getUUID("worlduuid");
 
 	if (poolsize < 1) {
 		poolsize = 1;
@@ -313,7 +303,7 @@ void dbcon::terminateHandler() {
 		boost::thread::yield();
 	}
 
-	// should not  ne needed
+	// should not be needed
 	DBioService.stop();
 
 	// get rid of all threads
@@ -511,7 +501,7 @@ std::string dbcon::loadPlayer(ext_arguments &extArgument, base_db_handler *dbhan
 }
 
 std::string dbcon::loadAvChars(ext_arguments &extArgument, base_db_handler *dbhandler) {
-	std::string playeruuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 
 	std::string result = dbhandler->loadAvChars(playeruuid);
 
@@ -519,8 +509,8 @@ std::string dbcon::loadAvChars(ext_arguments &extArgument, base_db_handler *dbha
 }
 
 std::string dbcon::linkChars(ext_arguments &extArgument, base_db_handler *dbhandler) {
-	std::string playeruuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
-	std::string variabuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABUUID);
+	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string variabuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_VARIABUUID);
 
 	std::string result = dbhandler->linkChars(playeruuid, variabuuid);
 
@@ -528,15 +518,15 @@ std::string dbcon::linkChars(ext_arguments &extArgument, base_db_handler *dbhand
 }
 
 std::string dbcon::loadChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
-	std::string playeruuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 
-	std::string result = dbhandler->loadChar(playeruuid);
+	cache_base* character = dbhandler->loadChar(charactercache, playeruuid);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + result + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + character->getAsArmaString() + "]";
 }
 
 std::string dbcon::createChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
-	std::string playeruuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 	std::string animationstate = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
 	float direction = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
 	int positiontype = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
@@ -548,7 +538,7 @@ std::string dbcon::createChar(ext_arguments &extArgument, base_db_handler *dbhan
 	std::string variables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
 	std::string persistentvariables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABLES);
 	std::string textures = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TEXTURES);
-	std::string inventoryuniform = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYUNIFORM);
+	std::string gear = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_GEAR);
 	std::string inventoryvest = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYVEST);
 	std::string inventorybackpack = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYBACKPACK);
 	std::string uniform = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_UNIFORM);
@@ -563,7 +553,7 @@ std::string dbcon::createChar(ext_arguments &extArgument, base_db_handler *dbhan
 	std::string currentweapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CURRENTWEAPON);
 
 	std::string result = dbhandler->createChar(playeruuid, animationstate, direction, positiontype, positionx,
-			positiony, positionz, classname, hitpoints, variables, persistentvariables, textures, inventoryuniform,
+			positiony, positionz, classname, hitpoints, variables, persistentvariables, textures, gear,
 			inventoryvest, inventorybackpack, uniform, vest, backpack, headgear, googles, primaryweapon,
 			secondaryweapon, handgun, tools, currentweapon);
 
@@ -571,7 +561,7 @@ std::string dbcon::createChar(ext_arguments &extArgument, base_db_handler *dbhan
 }
 
 std::string dbcon::updateChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
-	std::string charuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
+	std::string charuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
 	std::string animationstate = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
 	float direction = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
 	int positiontype = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
@@ -583,7 +573,7 @@ std::string dbcon::updateChar(ext_arguments &extArgument, base_db_handler *dbhan
 	std::string variables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
 	std::string persistentvariables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABLES);
 	std::string textures = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TEXTURES);
-	std::string inventoryuniform = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYUNIFORM);
+	std::string gear = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_GEAR);
 	std::string inventoryvest = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYVEST);
 	std::string inventorybackpack = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_INVENTORYBACKPACK);
 	std::string uniform = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_UNIFORM);
@@ -598,31 +588,16 @@ std::string dbcon::updateChar(ext_arguments &extArgument, base_db_handler *dbhan
 	std::string currentweapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CURRENTWEAPON);
 
 	std::string result = dbhandler->updateChar(charuuid, animationstate, direction, positiontype, positionx,
-				positiony, positionz, classname, hitpoints, variables, persistentvariables, textures, inventoryuniform,
+				positiony, positionz, classname, hitpoints, variables, persistentvariables, textures, gear,
 				inventoryvest, inventorybackpack, uniform, vest, backpack, headgear, googles, primaryweapon,
 				secondaryweapon, handgun, tools, currentweapon);
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
-std::string dbcon::locupdateChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
-	std::string charuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
-	std::string animationstate = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE);
-	float direction = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DIRECTION);
-	int positiontype = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE);
-	float positionx = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONX);
-	float positiony = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONY);
-	float positionz = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ);
-
-	std::string result = dbhandler->locupdateChar(charuuid, animationstate, direction, positiontype, positionx,
-					positiony, positionz);
-
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
-}
-
 std::string dbcon::killChar(ext_arguments &extArgument, base_db_handler *dbhandler) {
-	std::string charuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
-	std::string attackeruuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
+	std::string charuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
+	std::string attackeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
 	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TYPE);
 	std::string weapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
 	float distance = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DISTANCE);
@@ -633,7 +608,7 @@ std::string dbcon::killChar(ext_arguments &extArgument, base_db_handler *dbhandl
 }
 
 std::string dbcon::loadObject(ext_arguments &extArgument, base_db_handler *dbhandler) {
-	std::string objectuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 
 	std::string result = dbhandler->loadObject(objectuuid);
 
@@ -646,7 +621,7 @@ std::string dbcon::createObject(ext_arguments &extArgument, base_db_handler *dbh
 	int visible = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_OBJECTTYPE);
 	std::string accesscode = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ACCESSCODE);
 	int locked = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_LOCKED);
-	std::string player_uuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string player_uuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 	std::string hitpoints = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS);
 	float damage = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DAMAGE);
 	float fuel = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUEL);
@@ -676,13 +651,13 @@ std::string dbcon::createObject(ext_arguments &extArgument, base_db_handler *dbh
 }
 
 std::string dbcon::qcreateObject(ext_arguments &extArgument, base_db_handler *dbhandler) {
-	std::string objectuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 	std::string classname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
 	int priority = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_PRIORITY);
 	int visible = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_OBJECTTYPE);
 	std::string accesscode = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ACCESSCODE);
 	int locked = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_LOCKED);
-	std::string player_uuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string player_uuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 	std::string hitpoints = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS);
 	float damage = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DAMAGE);
 	float fuel = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUEL);
@@ -713,13 +688,13 @@ std::string dbcon::qcreateObject(ext_arguments &extArgument, base_db_handler *db
 }
 
 std::string dbcon::updateObject(ext_arguments &extArgument, base_db_handler *dbhandler) {
-	std::string objectuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 	std::string classname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME);
 	int priority = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_PRIORITY);
 	int visible = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_OBJECTTYPE);
 	std::string accesscode = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ACCESSCODE);
 	int locked = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_LOCKED);
-	std::string player_uuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string player_uuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 	std::string hitpoints = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS);
 	float damage = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DAMAGE);
 	float fuel = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_FUEL);
@@ -750,8 +725,8 @@ std::string dbcon::updateObject(ext_arguments &extArgument, base_db_handler *dbh
 }
 
 std::string dbcon::killObject(ext_arguments &extArgument, base_db_handler *dbhandler) {
-	std::string charuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
-	std::string attackeruuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
+	std::string charuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+	std::string attackeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
 	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TYPE);
 	std::string weapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
 	float distance = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DISTANCE);

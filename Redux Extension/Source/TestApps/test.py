@@ -127,7 +127,7 @@ print(out)
 
 out= instance.ExecuteAndPrint("initdb", [
                                "poolsize", "4",
-                               "worlduuid", "11e66ac33a4ccd1c82c510bf48883ace"])
+                               "worlduuid", "11e66ac33a4ccd1c82c510bf-48883ace"])
 print(out)
 sleep(1)
  
@@ -178,7 +178,7 @@ sleep(1)
 								#"variables", "[]", 
 								#"persistentvariables", "[]", 
 								#"textures", "[]", 
-								#"inventoryuniform", "[]", 
+								#"gear", "[]", 
 								#"inventoryvest", "[]", 
 								#"inventorybackpack", "[]", 
 								#"uniform", "someuniform", 
@@ -209,7 +209,7 @@ sleep(1)
                                   #"variables", "[]", 
                                   #"persistentvariables", "[]", 
                                   #"textures", "[]", 
-                                  #"inventoryuniform", "[]", 
+                                  #"gear", "[]", 
                                   #"inventoryvest", "[]", 
                                   #"inventorybackpack", "[]", 
                                   #"uniform", "someuniform", 
@@ -245,7 +245,7 @@ sleep(1)
                               #"variables", "[]", 
                               #"persistentvariables", "[an string with non valid data just for kegan]", 
                               #"textures", "[]", 
-                              #"inventoryuniform", "[]", 
+                              #"gear", "[]", 
                               #"inventoryvest", "[]", 
                               #"inventorybackpack", "[]", 
                               #"uniform", "someuniform", 

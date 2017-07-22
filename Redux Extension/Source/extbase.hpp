@@ -65,6 +65,21 @@ public:
 	    return boost::lexical_cast<ReturnType>(Argument);
 	}
 
+	std::string getUUID(std::string identifier) {
+		std::string Argument;
+
+		ARGUMENT_MAP::iterator it = argmap.find(identifier);
+		if (it != argmap.end()) {
+			Argument = it->second;
+		} else {
+			throw std::runtime_error("did not find identifier: " + identifier);
+		}
+
+		Argument.erase( std::remove_if( Argument.begin(), Argument.end(), []( char c ) { return !std::isalnum(c) ; } ), Argument.end() ) ;
+
+		return Argument;
+	}
+
 	template<typename ReturnType>
 	std::list<ReturnType> get_simplelist(std::string identifier) {
 		int brakedcount = 0;

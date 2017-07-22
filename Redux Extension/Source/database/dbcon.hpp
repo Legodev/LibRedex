@@ -67,6 +67,7 @@ private:
 	SINGLE_MESSAGE_MAP msgmap;
 
 	std::map<std::string, cache_base*> objectcache;
+	std::map<std::string, cache_base*> charactercache;
 
 	std::string getUUID(std::string &extFunction, ext_arguments &extArgument);
 	std::string echo(std::string &extFunction, ext_arguments &extArgument);
@@ -81,7 +82,6 @@ private:
 	std::string loadChar(ext_arguments &extArgument, base_db_handler *dbhandler);
 	std::string createChar(ext_arguments &extArgument, base_db_handler *dbhandler);
 	std::string updateChar(ext_arguments &extArgument, base_db_handler *dbhandler);
-	std::string locupdateChar(ext_arguments &extArgument, base_db_handler *dbhandler);
 	std::string killChar(ext_arguments &extArgument, base_db_handler *dbhandler);
 
 	std::string loadObject(ext_arguments &extArgument, base_db_handler *dbhandler);

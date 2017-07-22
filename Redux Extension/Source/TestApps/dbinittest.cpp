@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
 //	stringList.push_back("[]");
 //	stringList.push_back("textures");
 //	stringList.push_back("[]");
-//	stringList.push_back("inventoryuniform");
+//	stringList.push_back("gear");
 //	stringList.push_back("[]");
 //	stringList.push_back("inventoryvest");
 //	stringList.push_back("[]");

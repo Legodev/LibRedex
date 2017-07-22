@@ -20,6 +20,7 @@
 #include <boost/format.hpp>
 #include "database/mysql.hpp"
 #include "utils/uuid.hpp"
+#include "database/datacache/charactermysql.hpp"
 #include "database/datacache/objectmysql.hpp"
 
 mysql_db_handler::mysql_db_handler() {
@@ -396,123 +397,62 @@ std::string mysql_db_handler::linkChars(std::string playeruuid, std::string vari
 	return playeruuid;
 }
 
-std::string mysql_db_handler::loadChar(std::string playeruuid) {
+cache_base* mysql_db_handler::loadChar(std::map<std::string, cache_base*> &charactercache, std::string playeruuid) {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
 	bool printcomma = false;
+	character_mysql* character = 0;
 
-	// char info
-	std::string charinfo = "";
-
-	std::string querycharinfo = str(boost::format {
-		    "SELECT HEX(`character`.`uuid`), `animationstate`, "
-			"`direction`, `positiontype`, `positionx`, `positiony`, "
-			"`positionz`, `classname`, `hitpoints`, `variables`, "
-			"`persistentvariables`, `textures`, `inventoryuniform`, "
-			"`inventoryvest`, `inventorybackpack`, `uniform`, `vest`, "
-			"`backpack`, `headgear`, `googles`, `primaryweapon`, "
-			"`secondaryweapon`, `handgun`, `tools`, `currentweapon` "
-			"FROM `player_on_world_has_character` "
-			"INNER JOIN `character`  "
-			" ON `player_on_world_has_character`.`character_uuid` = `character`.`uuid` "
-			"INNER JOIN `charactershareables` "
-			" ON `character`.`charactershareables_uuid` = `charactershareables`.`uuid` "
-			"INNER JOIN `persistent_variables` "
-			" ON `charactershareables`.`persistent_variables_uuid` = `persistent_variables`.`uuid` "
-			"WHERE `player_on_world_has_character`.`player_uuid` = CAST(0x%s AS BINARY) "
-			" AND `player_on_world_has_character`.`world_uuid` =  CAST(0x%s AS BINARY) "
-			" AND `player_on_world_has_character`.`killinfo_uuid` IS NULL" } % playeruuid % worlduuid);
-
-	char typearray[] = {
-			1, // HEX(`character`.`uuid`)
-			1, // `animationstate`
-			0, // `direction`
-			0, // `positiontype`
-			0, // `positionx`
-			0, // `positiony`
-			0, // `positionz`
-			1, // `classname`
-			0, // `hitpoints`
-			0, // `variables`
-			0, // `persistentvariables`
-			0, // `textures`
-			0, // `inventoryuniform`
-			0, // `inventoryvest`
-			0, // `inventorybackpack`
-			1, // `uniform`
-			1, // `vest`
-			1, // `backpack`
-			1, // `headgear`
-			1, // `googles`
-			0, // `primaryweapon`
-			0, // `secondaryweapon`
-			0, // `handgun`
-			0, // `tools`
-			1  // `currentweapon`
-	};
+	std::string querycharinfo = str(boost::format{"SELECT `animationstate`, `direction`, `positiontype`, `positionx`, `positiony`, `positionz`, `character`.`uuid` as `character_uuid`, "
+				"`classname`, `hitpoints`, `variables`, `textures`, `gear`, `currentweapon`, `character`.`charactershareables_uuid`, "
+				"`persistentvariables`, `charactershareables`.`persistent_variables_uuid`, `object_uuid` "
+				"FROM `player_on_world_has_character` "
+				"INNER JOIN `character`  "
+				" ON `player_on_world_has_character`.`character_uuid` = `character`.`uuid` "
+				"INNER JOIN `charactershareables` "
+				" ON `character`.`charactershareables_uuid` = `charactershareables`.`uuid` "
+				"INNER JOIN `persistent_variables` "
+				" ON `charactershareables`.`persistent_variables_uuid` = `persistent_variables`.`uuid` "
+				"WHERE `player_on_world_has_character`.`player_uuid` = CAST(0x%s AS BINARY) "
+				" AND `player_on_world_has_character`.`world_uuid` =  CAST(0x%s AS BINARY) "
+				" AND `player_on_world_has_character`.`killinfo_uuid` IS NULL" } % playeruuid % worlduuid);
 
 	this->rawquery(querycharinfo, &result);
 
 	fieldcount = mysql_num_fields(result);
 	rowcount = mysql_num_rows(result);
 
-	// printf("rowcount = %d\n", (int) rowcount);
-
-	charinfo = "[";
-	if (rowcount > 0) {
+//	for (int rowpos = 0; rowpos < rowcount && rowpos < 25; rowpos++) {
 		row = mysql_fetch_row(result);
-		for (int fieldpos = 0; fieldpos < fieldcount; fieldpos++) {
-			if (printcomma) {
-				charinfo += ",";
-			}
-			switch (typearray[fieldpos]) {
-			case 1:
-				charinfo += "\"";
-				break;
-			case 2:
-				charinfo += "[";
-				if (row[fieldpos] != NULL)
-					charinfo += "\"";
-				break;
-			default:
-				charinfo += "";
-			}
+		if (row[6] != NULL && row[13] != NULL && row[15] != NULL) {
+			std::string uuid = row[6];
 
-			if (row[fieldpos] != NULL) {
-				charinfo += row[fieldpos];
-			} else {
-				charinfo += "";
-			}
+			character_mysql* character = new character_mysql;
+			charactercache.insert(std::make_pair(uuid, (cache_base*) character));
 
-			switch (typearray[fieldpos]) {
-			case 1:
-				charinfo += "\"";
-				break;
-			case 2:
-				if (row[fieldpos] != NULL)
-					charinfo += "\"";
-				charinfo += "]";
-				break;
+			for (int fieldpos = 0; fieldpos < fieldcount; fieldpos++) {
+				if (row[fieldpos] != NULL) {
+					character->setData(fieldpos, row[fieldpos]);
+				} else {
+					character->setData(fieldpos, "");
+					character->is_null[fieldpos] = (my_bool) 1;
+				}
 			}
-			printcomma = true;
 		}
-	}
-	charinfo += "]";
+//	}
 
 	mysql_free_result(result);
 
-	return charinfo;
+	return character;
 }
 
 
 std::string mysql_db_handler::createChar(std::string playeruuid, std::string animationstate, float direction,
 		int positiontype, float positionx, float positiony, float positionz, std::string classname,
 		std::string hitpoints, std::string variables, std::string persistentvariables, std::string textures,
-		std::string inventoryuniform, std::string inventoryvest, std::string inventorybackpack, std::string uniform,
-		std::string vest, std::string backpack, std::string headgear, std::string googles, std::string primaryweapon,
-		std::string secondaryweapon, std::string handgun, std::string tools, std::string currentweapon) {
+		std::string gear, std::string currentweapon) {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
@@ -634,7 +574,7 @@ std::string mysql_db_handler::createChar(std::string playeruuid, std::string ani
 			query = str(
 					boost::format { "INSERT INTO `charactershareables` (`uuid`, `classname`, `hitpoints`, "
 							"`variables`, `persistent_variables_uuid`, `textures`, "
-							"`inventoryuniform`, `inventoryvest`, `inventorybackpack`, "
+							"`gear`, `inventoryvest`, `inventorybackpack`, "
 							" `uniform`, `vest`, `backpack`, "
 							"`headgear`, `googles`, `primaryweapon`, "
 							"`secondaryweapon`, `handgun`, `tools`, "
@@ -648,7 +588,7 @@ std::string mysql_db_handler::createChar(std::string playeruuid, std::string ani
 							"\"%s\", \"%s\", \"%s\", "
 							"\"%s\", \"%s\", \"%s\", "
 							"\"%s\")" } % shareable_variables_uuid % classname % hitpoints % variables
-							% persistent_variables_uuid % textures % inventoryuniform % inventoryvest
+							% persistent_variables_uuid % textures % gear % inventoryvest
 							% inventorybackpack % uniform % vest % backpack % headgear % googles % primaryweapon
 							% secondaryweapon % handgun % tools % currentweapon);
 
@@ -692,10 +632,8 @@ std::string mysql_db_handler::createChar(std::string playeruuid, std::string ani
 
 std::string mysql_db_handler::updateChar(std::string charuuid, std::string animationstate, float direction, int positiontype,
 		float positionx, float positiony, float positionz, std::string classname, std::string hitpoints,
-		std::string variables, std::string persistentvariables, std::string textures, std::string inventoryuniform,
-		std::string inventoryvest, std::string inventorybackpack, std::string uniform, std::string vest,
-		std::string backpack, std::string headgear, std::string googles, std::string primaryweapon,
-		std::string secondaryweapon, std::string handgun, std::string tools, std::string currentweapon) {
+		std::string variables, std::string persistentvariables, std::string textures, std::string gear,
+		std::string currentweapon) {
 
 	std::string query = str(
 			boost::format { "UPDATE `characterview` "
@@ -717,7 +655,7 @@ std::string mysql_db_handler::updateChar(std::string charuuid, std::string anima
 					"`hitpoints` = \"%s\", "
 					"`variables` = \"%s\", "
 					"`textures` = \"%s\", "
-					"`inventoryuniform` = \"%s\", "
+					"`gear` = \"%s\", "
 					"`inventoryvest` = \"%s\", "
 					"`inventorybackpack` = \"%s\", "
 					"`uniform` = \"%s\", "
@@ -731,7 +669,7 @@ std::string mysql_db_handler::updateChar(std::string charuuid, std::string anima
 					"`tools` = \"%s\", "
 					"`currentweapon` = \"%s\" "
 					" WHERE `characterview`.`uuid` = CAST(0x%s AS BINARY);" } % classname % hitpoints % variables
-					% textures % inventoryuniform % inventoryvest % inventorybackpack % uniform % vest % backpack
+					% textures % gear % inventoryvest % inventorybackpack % uniform % vest % backpack
 					% headgear % googles % primaryweapon % secondaryweapon % handgun % tools % currentweapon
 					% charuuid);
 
@@ -741,25 +679,6 @@ std::string mysql_db_handler::updateChar(std::string charuuid, std::string anima
 	query = str(boost::format { "UPDATE `characterview` "
 			"SET `persistentvariables` = \"%s\" "
 			"WHERE `characterview`.`uuid` = CAST(0x%s AS BINARY);" } % persistentvariables % charuuid);
-
-
-	this->rawquery(query);
-
-	return charuuid;
-}
-
-std::string mysql_db_handler::locupdateChar(std::string charuuid, std::string animationstate, float direction,
-		int positiontype, float positionx, float positiony, float positionz) {
-	std::string query = str(
-			boost::format { "UPDATE `characterview` "
-					"SET `animationstate` = \"%s\", "
-					"`direction` = %s, "
-					"`positiontype` = %s, "
-					"`positionx` = %s, "
-					"`positiony` = %s, "
-					"`positionz` = %s "
-					" WHERE `characterview`.`uuid` = CAST(0x%s AS BINARY);" } % animationstate % direction
-					% positiontype % positionx % positiony % positionz % charuuid);
 
 
 	this->rawquery(query);
@@ -1294,10 +1213,10 @@ std::vector<cache_base*> mysql_db_handler::dumpObjects(std::map<std::string, cac
 	fieldcount = mysql_num_fields(result);
 	rowcount = mysql_num_rows(result);
 
-	for (int rowpos = 0; rowpos < rowcount && rowpos < 25; rowpos++) {
+	for (int rowpos = 0; rowpos < rowcount && rowpos < 27; rowpos++) {
 		row = mysql_fetch_row(result);
-		if (row[0] != NULL) {
-			std::string uuid = row[0];
+		if (row[24] != NULL) {
+			std::string uuid = row[24];
 
 			object_mysql* object = new object_mysql;
 			objectList.push_back((cache_base*) object);
