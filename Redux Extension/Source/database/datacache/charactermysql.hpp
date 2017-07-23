@@ -28,6 +28,7 @@ public:
 	character_mysql();
 	~character_mysql();
 
+	int setNull(unsigned int arraypos);
 	int setData(std::string variableName, std::string variableValue);
 	int setData(unsigned int arraypos, std::string variableValue);
 	int setData(ext_arguments &extArgument);

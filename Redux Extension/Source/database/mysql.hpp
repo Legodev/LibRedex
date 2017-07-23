@@ -51,30 +51,8 @@ public:
 	std::string killChar(std::string charuuid, std::string attackeruuid, std::string type, std::string weapon, float distance);
 
 	std::string loadObject(std::string objectuuid);
-	std::string createObject(std::string classname,
-			int priority, int type, std::string accesscode, int locked,
-			std::string player_uuid, std::string hitpoints, float damage,
-			float fuel, float fuelcargo, float repaircargo, std::string items,
-			std::string magazinesturret, std::string variables,
-			std::string animationstate, std::string textures, float direction,
-			int positiontype, float positionx, float positiony, float positionz,
-			std::string positionadvanced, std::string reservedone, std::string reservedtwo);
-	std::string createObject(std::string objectuuid, std::string classname,
-			int priority, int type, std::string accesscode, int locked,
-			std::string player_uuid, std::string hitpoints, float damage,
-			float fuel, float fuelcargo, float repaircargo, std::string items,
-			std::string magazinesturret, std::string variables,
-			std::string animationstate, std::string textures, float direction,
-			int positiontype, float positionx, float positiony, float positionz,
-			std::string positionadvanced, std::string reservedone, std::string reservedtwo);
-	std::string updateObject(std::string objectuuid, std::string classname,
-			int priority, int type, std::string accesscode, int locked,
-			std::string player_uuid, std::string hitpoints, float damage,
-			float fuel, float fuelcargo, float repaircargo, std::string items,
-			std::string magazinesturret, std::string variables,
-			std::string animationstate, std::string textures, float direction,
-			int positiontype, float positionx, float positiony, float positionz,
-			std::string positionadvanced, std::string reservedone, std::string reservedtwo);
+	std::string createObject(std::map<std::string, cache_base*> &objectcache, ext_arguments &extArgument);
+	std::string updateObject(std::map<std::string, cache_base*> &objectcache, ext_arguments &extArgument);
 	std::string killObject(std::string objectuuid, std::string attackeruuid, std::string type, std::string weapon, float distance);
 	std::vector<cache_base*> dumpObjects(std::map<std::string, cache_base*> &objectcache);
 

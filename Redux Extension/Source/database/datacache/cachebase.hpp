@@ -25,6 +25,7 @@ class cache_base {
 public:
 	virtual ~cache_base() { };
 
+	virtual int setNull(unsigned int arraypos) { return 0; };
 	virtual int setData(std::string variableName, std::string variableValue) { return 0; };
 	virtual int setData(ext_arguments &extArgument) { return 0; };
 

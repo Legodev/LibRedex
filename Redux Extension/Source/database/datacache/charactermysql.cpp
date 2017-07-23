@@ -100,6 +100,15 @@ void character_mysql::freeStrings() {
 	}
 }
 
+int character_mysql::setNull(unsigned int arraypos) {
+	is_null[arraypos] = (my_bool) 1;
+	mysql_bind[arraypos].is_null = &is_null[arraypos];
+
+	dirty = true;
+
+	return 1;
+}
+
 int character_mysql::setData(std::string variableName, std::string variableValue) {
 	auto it = charactervariablemap.find(variableName);
 	if (it != charactervariablemap.end()) {
@@ -123,8 +132,13 @@ int character_mysql::setData(ext_arguments &extArgument) {
 		auto it = charactervariablemap.find(key);
 		if (it != charactervariablemap.end()) {
 			unsigned int arraypos = it->second;
+			std::string variableValue = extArgument.get<std::string>(key);
 
-			setData(arraypos, extArgument.get<std::string>(key));
+			if (variableValue == "" && key.find("uuid") != std::string::npos) {
+				setNull(arraypos);
+			} else {
+				setData(arraypos, variableValue);
+			}
 		}
 	}
 

@@ -695,9 +695,6 @@ std::string mysql_db_handler::updateChar(std::map<std::string, cache_base*> &cha
 
 	this->preparedStatementQuery(query, character->mysql_bind);
 
-
-	this->rawquery(query);
-
 	query = "UPDATE `charactershareables` "
 					"SET `classname` = ?, "
 					"`hitpoints` = ?, "
@@ -879,169 +876,84 @@ std::string mysql_db_handler::loadObject(std::string objectuuid) {
 
 	return objectinfo;
 }
+#include <unistd.h>
+std::string mysql_db_handler::createObject(std::map<std::string, cache_base*> &objectcache, ext_arguments &extArgument) {
+	std::string objectuuid;
 
-std::string mysql_db_handler::createObject(std::string classname,
-		int priority, int type, std::string accesscode, int locked,
-		std::string player_uuid, std::string hitpoints, float damage,
-		float fuel, float fuelcargo, float repaircargo, std::string items,
-		std::string magazinesturret, std::string variables,
-		std::string animationstate, std::string textures, float direction,
-		int positiontype, float positionx, float positiony, float positionz,
-		std::string positionadvanced, std::string reservedone, std::string reservedtwo) {
+	object_mysql* object = new object_mysql;
+	object->setData(extArgument);
 
-	std::string objectuuid = orderedUUID();
-
-	this->createObject(objectuuid, classname, priority, type, accesscode,
-			locked, player_uuid, hitpoints, damage, fuel, fuelcargo,
-			repaircargo, items, magazinesturret, variables, animationstate,
-			textures, direction, positiontype, positionx, positiony, positionz,
-			positionadvanced, reservedone, reservedtwo);
-
-	return objectuuid;
-}
-
-std::string mysql_db_handler::createObject(std::string objectuuid, std::string classname,
-		int priority, int type, std::string accesscode, int locked,
-		std::string player_uuid, std::string hitpoints, float damage,
-		float fuel, float fuelcargo, float repaircargo, std::string items,
-		std::string magazinesturret, std::string variables,
-		std::string animationstate, std::string textures, float direction,
-		int positiontype, float positionx, float positiony, float positionz,
-		std::string positionadvanced, std::string reservedone, std::string reservedtwo) {
-
-	std::string query;
-
-	if (player_uuid == "") {
-		query = str(
-				boost::format { "INSERT INTO `object` (`uuid`, `classname`, `priority`, `timelastused`, "
-						"`timecreated`, `type`, `accesscode`, `locked`, `player_uuid`, `hitpoints`, "
-						"`damage`, `fuel`, `fuelcargo`, `repaircargo`, `items`, `magazinesturret`, "
-						"`variables`, `animationstate`, `textures`, `direction`, `positiontype`, "
-						"`positionx`, `positiony`, `positionz`, "
-						"`positionadvanced`, `reservedone`, `reservedtwo`) "
-						"VALUES (CAST(0x%s AS BINARY), \"%s\", %s, now(), "
-						"now(), %s, \"%s\", %s, NULL, \"%s\", "
-						"%s, %s, %s, %s, \"%s\", \"%s\", \"%s\", "
-						"\"%s\", \"%s\", %s, %s, %s, %s, %s, "
-						"\"%s\", \"%s\", \"%s\")" } % objectuuid % classname % priority % type % accesscode % locked
-						% hitpoints % damage % fuel % fuelcargo % repaircargo % items
-						% magazinesturret % variables % animationstate % textures % direction % positiontype % positionx
-						% positiony % positionz % positionadvanced % reservedone % reservedtwo);
-	} else {
-		query = str(
-				boost::format { "INSERT INTO `object` (`uuid`, `classname`, `priority`, `timelastused`, "
-						"`timecreated`, `type`, `accesscode`, `locked`, `player_uuid`, `hitpoints`, "
-						"`damage`, `fuel`, `fuelcargo`, `repaircargo`, `items`, `magazinesturret`, "
-						"`variables`, `animationstate`, `textures`, `direction`, `positiontype`, "
-						"`positionx`, `positiony`, `positionz`, "
-						"`positionadvanced`, `reservedone`, `reservedtwo`) "
-						"VALUES (CAST(0x%s AS BINARY), \"%s\", %s, now(), "
-						"now(), %s, \"%s\", %s, CAST(0x%s AS BINARY), \"%s\", "
-						"%s, %s, %s, %s, \"%s\", \"%s\", \"%s\", "
-						"\"%s\", \"%s\", %s, %s, %s, %s, %s, "
-						"\"%s\", \"%s\", \"%s\")" } % objectuuid % classname % priority % type % accesscode % locked	% player_uuid
-						% hitpoints % damage % fuel % fuelcargo % repaircargo % items
-						% magazinesturret % variables % animationstate % textures % direction % positiontype % positionx
-						% positiony % positionz	% positionadvanced % reservedone % reservedtwo);
+	try {
+		objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+	} catch (std::runtime_error const& e) {
+		objectuuid = orderedUUID();
+		object->setData(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID, objectuuid);
 	}
 
+	objectcache.insert(std::make_pair(objectuuid, (cache_base*) object));
 
+	std::string query = "INSERT INTO `object` (`classname`, `priority`, `timelastused`, "
+							"`timecreated`, `type`, `accesscode`, `locked`, `player_uuid`, `hitpoints`, "
+							"`damage`, `fuel`, `fuelcargo`, `repaircargo`, `items`, `magazinesturret`, "
+							"`variables`, `animationstate`, `textures`, `direction`, `positiontype`, "
+							"`positionx`, `positiony`, `positionz`, "
+							"`positionadvanced`, `reservedone`, `reservedtwo`, `uuid`) "
+							"VALUES (?, ?, now(), "
+							"now(), ?, ?, ?, UNHEX(?), ?, "
+							"?, ?, ?, ?, ?, ?, ?, "
+							"?, ?, ?, ?, ?, ?, ?, "
+							"?, ?, ?, UNHEX(?))";
 
-	this->rawquery(query);
+	this->preparedStatementQuery(query, object->mysql_bind);
 
 	query = str(boost::format { "INSERT INTO `world_has_objects` (`world_uuid`, `object_uuid`) "
 			"VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY))" } % worlduuid % objectuuid);
 
-
 	this->rawquery(query);
 
 	return objectuuid;
 }
 
-std::string mysql_db_handler::updateObject(std::string objectuuid, std::string classname,
-		int priority, int type, std::string accesscode, int locked,
-		std::string player_uuid, std::string hitpoints, float damage,
-		float fuel, float fuelcargo, float repaircargo, std::string items,
-		std::string magazinesturret, std::string variables,
-		std::string animationstate, std::string textures, float direction,
-		int positiontype, float positionx, float positiony, float positionz,
-		std::string positionadvanced, std::string reservedone, std::string reservedtwo) {
+std::string mysql_db_handler::updateObject(std::map<std::string, cache_base*> &objectcache, ext_arguments &extArgument) {
+	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+	object_mysql* object = 0;
 
-	std::string query;
+	auto it = objectcache.find(objectuuid);
+	if (it != objectcache.end()) {
+		object = static_cast<object_mysql*>((void*)it->second);
+	} else {
+		throw std::runtime_error("could not find object to update: " + objectuuid);
+	}
 
-		if (player_uuid == "") {
-			query = str(
-					boost::format { "UPDATE `object` "
-									"SET `classname` = \"%s\", "
-									"    `priority` = %s, "
-									"    `type` = \"%s\","
-									"    `accesscode` = \"%s\", "
-									"    `locked` = \"%s\", "
-									"    `player_uuid` = NULL, "
-									"    `hitpoints` = \"%s\", "
-									"    `damage` = %s, "
-									"    `fuel` = %s, "
-									"    `fuelcargo` = %s, "
-									"    `repaircargo` = %s, "
-									"    `items` = \"%s\", "
-									"    `magazinesturret` = \"%s\", "
-									"    `variables` = \"%s\", "
-									"    `animationstate` = \"%s\", "
-									"    `textures` = \"%s\", "
-									"    `direction` = %s, "
-									"    `positiontype` = %s, "
-									"    `positionx` = %s, "
-									"    `positiony` = %s, "
-									"    `positionz` = %s, "
-									"    `positionadvanced` = \"%s\", "
-									"    `reservedone` = \"%s\", "
-									"    `reservedtwo` = \"%s\" "
-									"WHERE `object`.`uuid` = CAST(0x%s AS BINARY);" }
-									% classname % priority % type % accesscode % locked
-									% hitpoints % damage % fuel % fuelcargo % repaircargo % items
-									% magazinesturret % variables % animationstate % textures % direction
-									% positiontype % positionx % positiony % positionz
-									% positionadvanced % reservedone % reservedtwo % objectuuid);
-		} else {
-			query = str(
-					boost::format { "UPDATE `object` "
-									"SET `classname` = \"%s\", "
-									"    `priority` = %s, "
-									"    `type` = \"%s\","
-									"    `accesscode` = \"%s\", "
-									"    `locked` = \"%s\", "
-									"    `player_uuid` = CAST(0x%s AS BINARY), "
-									"    `hitpoints` = \"%s\", "
-									"    `damage` = %s, "
-									"    `fuel` = %s, "
-									"    `fuelcargo` = %s, "
-									"    `repaircargo` = %s, "
-									"    `items` = \"%s\", "
-									"    `magazinesturret` = \"%s\", "
-									"    `variables` = \"%s\", "
-									"    `animationstate` = \"%s\", "
-									"    `textures` = \"%s\", "
-									"    `direction` = %s, "
-									"    `positiontype` = %s, "
-									"    `positionx` = %s, "
-									"    `positiony` = %s, "
-									"    `positionz` = %s, "
-									"    `positionadvanced` = \"%s\", "
-									"    `reservedone` = \"%s\", "
-									"    `reservedtwo` = \"%s\" "
-									"WHERE `object`.`uuid` = CAST(0x%s AS BINARY);" }
-									% classname % priority % type % accesscode % locked
-									% player_uuid % hitpoints % damage % fuel % fuelcargo % repaircargo % items
-									% magazinesturret % variables % animationstate % textures % direction
-									% positiontype % positionx % positiony % positionz
-									% positionadvanced % reservedone % reservedtwo % objectuuid);
-		}
+	std::string query = "UPDATE `object` "
+						"SET `classname` = ?, "
+						"    `priority` = ?, "
+						"    `type` = ?,"
+						"    `accesscode` = ?, "
+						"    `locked` = ?, "
+						"    `player_uuid` = UNHEX(?), "
+						"    `hitpoints` = ?, "
+						"    `damage` = ?, "
+						"    `fuel` = ?, "
+						"    `fuelcargo` = ?, "
+						"    `repaircargo` = ?, "
+						"    `items` = ?, "
+						"    `magazinesturret` = ?, "
+						"    `variables` = ?, "
+						"    `animationstate` = ?, "
+						"    `textures` = ?, "
+						"    `direction` = ?, "
+						"    `positiontype` = ?, "
+						"    `positionx` = ?, "
+						"    `positiony` = ?, "
+						"    `positionz` = ?, "
+						"    `positionadvanced` = ?, "
+						"    `reservedone` = ?, "
+						"    `reservedtwo` = ? "
+						"WHERE `object`.`uuid` = UNHEX(?);";
+	this->preparedStatementQuery(query, object->mysql_bind);
 
-
-
-		this->rawquery(query);
-
-		return objectuuid;
+	return objectuuid;
 }
 
 std::string mysql_db_handler::killObject(std::string objectuuid, std::string attackeruuid, std::string type,
@@ -1255,8 +1167,7 @@ std::vector<cache_base*> mysql_db_handler::dumpObjects(std::map<std::string, cac
 				if (row[fieldpos] != NULL) {
 					object->setData(fieldpos, row[fieldpos]);
 				} else {
-					object->setData(fieldpos, "");
-					object->is_null[fieldpos] = (my_bool) 1;
+					object->setNull(fieldpos);
 				}
 			}
 		}

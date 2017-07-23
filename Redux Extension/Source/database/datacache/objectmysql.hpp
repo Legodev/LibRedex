@@ -28,6 +28,7 @@ public:
 	object_mysql();
 	~object_mysql();
 
+	int setNull(unsigned int arraypos);
 	int setData(std::string variableName, std::string variableValue);
 	int setData(unsigned int arraypos, std::string variableValue);
 	int setData(ext_arguments &extArgument);
@@ -42,6 +43,7 @@ public:
 
 	MYSQL_BIND mysql_bind[objectCacheMaxElements];
 	my_bool is_null[objectCacheMaxElements];
+	long unsigned int length [objectCacheMaxElements];
 
 private:
 	bool dirty = false;

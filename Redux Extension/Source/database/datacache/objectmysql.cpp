@@ -125,9 +125,18 @@ void object_mysql::freeStrings() {
 	}
 }
 
+int object_mysql::setNull(unsigned int arraypos) {
+	is_null[arraypos] = (my_bool) 1;
+	mysql_bind[arraypos].is_null = &is_null[arraypos];
+
+	dirty = true;
+
+	return 1;
+}
+
 int object_mysql::setData(std::string variableName, std::string variableValue) {
-	auto it = charactervariablemap.find(variableName);
-	if (it != charactervariablemap.end()) {
+	auto it = objectvariablemap.find(variableName);
+	if (it != objectvariablemap.end()) {
 		unsigned int arraypos = it->second;
 
 		setData(arraypos, variableValue);
@@ -145,11 +154,16 @@ int object_mysql::setData(ext_arguments &extArgument) {
 	std::list<std::string> keyList = extArgument.getKeys();
 
 	for(auto const &key : keyList) {
-		auto it = charactervariablemap.find(key);
-		if (it != charactervariablemap.end()) {
+		auto it = objectvariablemap.find(key);
+		if (it != objectvariablemap.end()) {
 			unsigned int arraypos = it->second;
+			std::string variableValue = extArgument.get<std::string>(key);
 
-			setData(arraypos, extArgument.get<std::string>(key));
+			if (variableValue == "" && key.find("uuid") != std::string::npos) {
+				setNull(arraypos);
+			} else {
+				setData(arraypos, variableValue);
+			}
 		}
 	}
 
@@ -206,7 +220,7 @@ std::string object_mysql::getAsArmaString() {
 	std::string returnString = "[";
 	bool placecommaone = false;
 
-	for (unsigned int arraypos = 0; arraypos < characterCacheMaxElements; arraypos++) {
+	for (unsigned int arraypos = 0; arraypos < objectCacheMaxElements; arraypos++) {
 		if (placecommaone) {
 			returnString += ",";
 		}
