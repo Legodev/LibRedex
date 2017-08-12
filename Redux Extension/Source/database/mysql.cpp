@@ -1154,7 +1154,7 @@ std::vector<cache_base*> mysql_db_handler::dumpObjects(std::map<std::string, cac
 	fieldcount = mysql_num_fields(result);
 	rowcount = mysql_num_rows(result);
 
-	for (int rowpos = 0; rowpos < rowcount && rowpos < 27; rowpos++) {
+	for (int rowpos = 0; rowpos < rowcount; rowpos++) {
 		row = mysql_fetch_row(result);
 		if (row[24] != NULL) {
 			std::string uuid = row[24];
@@ -1163,7 +1163,7 @@ std::vector<cache_base*> mysql_db_handler::dumpObjects(std::map<std::string, cac
 			objectList.push_back((cache_base*) object);
 			objectcache.insert(std::make_pair(uuid, (cache_base*) object));
 
-			for (int fieldpos = 0; fieldpos < fieldcount; fieldpos++) {
+			for (int fieldpos = 0; fieldpos < fieldcount && fieldpos < 27; fieldpos++) {
 				if (row[fieldpos] != NULL) {
 					object->setData(fieldpos, row[fieldpos]);
 				} else {

@@ -3,12 +3,13 @@ import ast
 from time import sleep
 import string
 import random
+import time
 
 def stringgenerator(size=6, chars=string.ascii_uppercase):
     return ''.join(random.choice(chars) for _ in range(size))
 
 class Extension:
-    buffersize = 4096
+    buffersize = 10240
     ffi = FFI()
     header = '''
     void RVExtension(char *output, int outputSize, const char *function);
@@ -327,6 +328,16 @@ sleep(1)
 # print(out)
 # 
 # print("\n\n")
+
+start = time.time()
+
 out= instance.ExecuteAndPrint("dumpObjects", [])
 print(out)
+
+end = time.time()
+print(end - start)
+# for x in range(0, 100):
+#     out= instance.ExecuteAndPrint("dumpObjects", [])
+#     print(out)
+#     print("this was round " + str(x))
 
