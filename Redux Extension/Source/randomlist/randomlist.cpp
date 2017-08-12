@@ -34,13 +34,19 @@
 randomlist::randomlist(EXT_FUNCTIONS &extFunctions) {
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_RANDOM_FUNCTION_ADD_DISCRETE_LIST),
-					boost::bind(&randomlist::addDiscreteItemList, this, _1, _2)));
+					std::make_tuple(
+							boost::bind(&randomlist::addDiscreteItemList, this, _1, _2),
+							SYNC_MAGIC)));
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_RANDOM_FUNCTION_GET_DISCRETE_LIST),
-					boost::bind(&randomlist::getDiscreteItemList, this, _1, _2)));
+					std::make_tuple(
+							boost::bind(&randomlist::getDiscreteItemList, this, _1, _2),
+							SYNC_MAGIC)));
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_RANDOM_FUNCTION_GET_RANDOMNUMBER_LIST),
-					boost::bind(&randomlist::getRandomNumberList, this, _1, _2)));
+					std::make_tuple(
+							boost::bind(&randomlist::getRandomNumberList, this, _1, _2),
+							SYNC_MAGIC)));
 
     boost::property_tree::ptree configtree;
     boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);

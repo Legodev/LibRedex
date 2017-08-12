@@ -25,6 +25,11 @@
 #include <mutex>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/function.hpp>
+#include <boost/asio.hpp>
+#include <boost/lockfree/queue.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/tss.hpp>
 #include "constants.hpp"
 #include "extbase.hpp"
 #include "database/dbcon.hpp"
@@ -42,6 +47,10 @@ public:
 private:
 	EXT_FUNCTIONS extFunctions;
 
+	boost::asio::io_service REDEXioService;
+	boost::shared_ptr<boost::asio::io_service::work> REDEXioServiceWork;
+	boost::thread_group asyncthreadpool;
+
 	typedef std::vector<std::unique_ptr<ext_base>> extModulesType;
 	extModulesType extModules;
 
@@ -50,10 +59,19 @@ private:
 	MESSAGE_MAP msgmap;
 
 	std::string terminateAll(std::string extFunction, ext_arguments &extArguments);
+	std::string rcvasmsg(std::string &extFunction, ext_arguments &extArgument);
+	std::string chkasmsg(std::string &extFunction, ext_arguments &extArgument);
 	std::string rcvmsg(std::string extFunction, ext_arguments &extArguments);
 	std::string chkmsg(std::string extFunction, ext_arguments &extArguments);
 	std::string version(std::string extFunction, ext_arguments &extArguments);
 	std::string multipartMSGGenerator(std::string returnString, int outputSize);
+
+
+
+	std::string syncCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
+	std::string asyncCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
+	std::string quietCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
+	void asyncCallProcessor(EXT_FUNCTION_INFO funcinfo, ext_arguments extArgument, PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier);
 };
 
 #endif /* SOURCE_REDEX_HPP_ */

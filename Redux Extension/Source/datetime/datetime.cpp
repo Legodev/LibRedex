@@ -29,13 +29,20 @@
 datetime::datetime(EXT_FUNCTIONS &extFunctions) {
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DTCALL_FUNCTION_GET_DATE_TIME_Array),
-					boost::bind(&datetime::getDateTimeArray, this, _1, _2)));
+					std::make_tuple(
+							boost::bind(&datetime::getDateTimeArray, this, _1, _2),
+							SYNC_MAGIC)));
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DTCALL_FUNCTION_GET_EPOCH_TIME),
-					boost::bind(&datetime::getEpochTime, this, _1, _2)));
+					std::make_tuple(
+							boost::bind(&datetime::getEpochTime, this, _1, _2),
+							SYNC_MAGIC)));
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DTCALL_FUNCTION_GET_UNIX_TIME),
-					boost::bind(&datetime::getEpochTime, this, _1, _2)));
+					std::make_tuple(
+							boost::bind(&datetime::getEpochTime, this, _1, _2),
+							SYNC_MAGIC)));
+
 	return;
 }
 

@@ -36,6 +36,7 @@ class Extension:
         
         print ('SENDING: %s - %s' % (functions, arguments))
         self.lib.RVExtensionArgs(cbuffer, cbuffersize, function, args, argsCnt)
+#         print(self.ffi.string(cbuffer))
         mybytes = self.ffi.string(cbuffer).decode('utf-8')
         print ('OUTPUT: %s' % mybytes)
         

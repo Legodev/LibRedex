@@ -185,12 +185,13 @@ int object_mysql::setData(unsigned int arraypos, std::string variableValue) {
 				pointer = 0;
 			}
 			if (pointer == 0) {
-				char * pointer = new char[size*2];
+				pointer = new char[size*2];
 				mysql_bind[arraypos].buffer = pointer;
 				mysql_bind[arraypos].buffer_length = size * 2;
 			}
 		}
 		memcpy (mysql_bind[arraypos].buffer, variableValue.c_str(), size);
+		pointer[size] = 0;
 		length[arraypos] = size;
 		mysql_bind[arraypos].length = &length[arraypos];
 	}
