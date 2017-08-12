@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-mkdir -p build
-cd build
+mkdir -p debug-build
+cd debug-build
 ####
 mkdir -p 32bit-linux
 cd 32bit-linux
@@ -28,4 +28,6 @@ make
 cp -f libredex_x64.dll ../../Binaries
 cd ..
 ####
-cd ..
+cd ../Binaries
+mkdir -p Debug
+mv libredex*.so libredex*.dll Debug/
