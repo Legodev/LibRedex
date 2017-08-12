@@ -33,79 +33,81 @@ dbcon::dbcon(EXT_FUNCTIONS &extFunctions) {
 					std::make_tuple(
 							boost::bind(&dbcon::spawnHandler, this, _1, _2),
 							SYNC_MAGIC)));
-
 	extFunctions.insert(
 			std::make_pair(
 					std::string(PROTOCOL_DBCALL_FUNCTION_EXECUTE_TERMINATE_DB),
 					std::make_tuple(
 							boost::bind(&dbcon::terminateHandler, this, _1, _2),
 							SYNC_MAGIC)));
-
 	extFunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_UUID),
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_UUID),
 					std::make_tuple(
 							boost::bind(&dbcon::getUUID, this, _1, _2),
 							SYNC_MAGIC)));
-
 	extFunctions.insert(
 			std::make_pair(
 					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ECHO_STRING),
 					std::make_tuple(
 							boost::bind(&dbcon::echo, this, _1, _2),
 							SYNC_MAGIC)));
-
 	extFunctions.insert(
 			std::make_pair(
 					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_DB_VERSION),
 					std::make_tuple(
 							boost::bind(&dbcon::dbVersion, this, _1, _2),
 							SYNC_MAGIC)));
-
 	extFunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_PLAYER),
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_PLAYER),
 					std::make_tuple(
 							boost::bind(&dbcon::loadPlayer, this, _1, _2),
 							ASYNC_MAGIC)));
-
 	extFunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_AV_CHARS),
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_AV_CHARS),
 					std::make_tuple(
 							boost::bind(&dbcon::loadAvChars, this, _1, _2),
 							ASYNC_MAGIC)));
-
 	extFunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_LINK_CHARS),
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_LINK_CHARS),
 					std::make_tuple(
 							boost::bind(&dbcon::linkChars, this, _1, _2),
 							ASYNC_MAGIC)));
-
 	extFunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_CHAR),
-					std::make_tuple(boost::bind(&dbcon::loadChar, this, _1, _2),
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_CHAR),
+					std::make_tuple(
+							boost::bind(&dbcon::loadChar, this, _1, _2),
 							ASYNC_MAGIC)));
-
 	extFunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_CHAR),
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_CHAR),
 					std::make_tuple(
 							boost::bind(&dbcon::createChar, this, _1, _2),
 							ASYNC_MAGIC)));
 	extFunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_CHAR),
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_CHAR),
 					std::make_tuple(
 							boost::bind(&dbcon::updateChar, this, _1, _2),
 							ASYNC_MAGIC)));
 	extFunctions.insert(
 			std::make_pair(
 					std::string(PROTOCOL_DBCALL_FUNCTION_DECLARE_CHAR_DEATH),
-					std::make_tuple(boost::bind(&dbcon::killChar, this, _1, _2),
+					std::make_tuple(
+							boost::bind(&dbcon::killChar, this, _1, _2),
 							ASYNC_MAGIC)));
 	extFunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_OBJECT),
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_OBJECT),
 					std::make_tuple(
 							boost::bind(&dbcon::loadObject, this, _1, _2),
 							ASYNC_MAGIC)));
 	extFunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_OBJECT),
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_OBJECT),
 					std::make_tuple(
 							boost::bind(&dbcon::createObject, this, _1, _2),
 							ASYNC_MAGIC)));
@@ -116,7 +118,8 @@ dbcon::dbcon(EXT_FUNCTIONS &extFunctions) {
 							boost::bind(&dbcon::qcreateObject, this, _1, _2),
 							QUIET_MAGIC)));
 	extFunctions.insert(
-			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_OBJECT),
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_OBJECT),
 					std::make_tuple(
 							boost::bind(&dbcon::updateObject, this, _1, _2),
 							ASYNC_MAGIC)));
@@ -131,7 +134,6 @@ dbcon::dbcon(EXT_FUNCTIONS &extFunctions) {
 					std::make_tuple(
 							boost::bind(&dbcon::dumpObjects, this, _1, _2),
 							ASYNC_MAGIC)));
-
 	return;
 }
 
