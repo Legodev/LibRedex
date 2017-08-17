@@ -50,7 +50,7 @@ public:
 	std::string updateChar(std::map<std::string, cache_base*> &charactercache, ext_arguments &extArgument);
 	std::string killChar(std::string charuuid, std::string attackeruuid, std::string type, std::string weapon, float distance);
 
-	std::string loadObject(std::string objectuuid);
+	std::string loadObject(std::map<std::string, cache_base*> &objectcache, ext_arguments &extArgument);
 	std::string createObject(std::map<std::string, cache_base*> &objectcache, ext_arguments &extArgument);
 	std::string updateObject(std::map<std::string, cache_base*> &objectcache, ext_arguments &extArgument);
 	std::string killObject(std::string objectuuid, std::string attackeruuid, std::string type, std::string weapon, float distance);

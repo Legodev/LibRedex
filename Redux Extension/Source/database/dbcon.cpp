@@ -368,9 +368,8 @@ std::string dbcon::killChar(std::string &extFunction, ext_arguments &extArgument
 
 std::string dbcon::loadObject(std::string &extFunction, ext_arguments &extArgument) {
 	base_db_handler *dbhandler = getDBHandler();
-	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 
-	std::string result = dbhandler->loadObject(objectuuid);
+	std::string result = dbhandler->loadObject(objectcache, extArgument);
 
 	returnDBHandler(dbhandler);
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + result + "]";

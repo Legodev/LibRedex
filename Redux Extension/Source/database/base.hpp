@@ -54,7 +54,7 @@ public:
 	virtual std::string killChar(std::string charuuid, std::string attackeruuid, std::string type, std::string weapon,
 			float distance) { return "none"; }
 
-	virtual std::string loadObject(std::string objectuuid) { return "none"; }
+	virtual std::string loadObject(std::map<std::string, cache_base*> &objectcache, ext_arguments &extArgument) { return "none"; }
 	virtual std::string createObject(std::map<std::string, cache_base*> &objectcache, ext_arguments &extArgument) { return "none"; }
 	virtual std::string updateObject(std::map<std::string, cache_base*> &objectcache, ext_arguments &extArgument) { return "none"; }
 	virtual std::string killObject(std::string objectuuid, std::string attackeruuid, std::string type,
