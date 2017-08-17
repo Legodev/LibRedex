@@ -210,7 +210,7 @@ std::string mysql_db_handler::loadPlayer(std::string nickname, std::string steam
 	// player info
 	std::string playeruuid = "";
 	std::string persistent_variables_uuid = "";
-	std::string friendlist = "";
+	std::string mainclanuuid = "";
 	std::string banned = "false";
 	std::string banreason = "unknown";
 
@@ -229,7 +229,7 @@ std::string mysql_db_handler::loadPlayer(std::string nickname, std::string steam
 	char typearrayplayerinfo[] = {
 			1, // HEX(`actualplayer`.`uuid`)
 			1, // HEX(`player_on_world_has_persistent_variables`.`persistent_variables_uuid`)
-			2, // GROUP_CONCAT(`player`.`steamid` SEPARATOR '\", \"') AS friendlist
+			2, // GROUP_CONCAT(`player`.`steamid` SEPARATOR '\", \"') AS mainclanuuid
 			0, // (CASE WHEN (NOW() < `actualplayer`.`banenddate`) THEN "true" ELSE "false" END) AS BANNED`
 			0  // `actualplayer`.`banreason
 	};
@@ -253,9 +253,7 @@ std::string mysql_db_handler::loadPlayer(std::string nickname, std::string steam
 		}
 
 		if (row[2] != NULL) {
-			friendlist = "\"" ;
-			friendlist += row[2];
-			friendlist += "\"";
+			mainclanuuid = row[2];
 		}
 
 		if (row[3] != NULL) {
@@ -305,7 +303,7 @@ std::string mysql_db_handler::loadPlayer(std::string nickname, std::string steam
 		}
 	}
 
-	return "[\"" + playeruuid + "\",\"" + persistent_variables_uuid + "\",[" + friendlist + "],[" + banned + ",\"" + banreason +"\"]]";
+	return "[\"" + playeruuid + "\",\"" + persistent_variables_uuid + "\",\"" + mainclanuuid + "\",[" + banned + ",\"" + banreason +"\"]]";
 }
 
 std::string mysql_db_handler::loadAvChars(std::string playeruuid) {
@@ -446,10 +444,15 @@ cache_base* mysql_db_handler::loadChar(std::map<std::string, cache_base*> &chara
 //	for (int rowpos = 0; rowpos < rowcount && rowpos < 25; rowpos++) {
 		row = mysql_fetch_row(result);
 		if (row[6] != NULL && row[13] != NULL && row[15] != NULL) {
-			std::string uuid = row[6];
+			std::string charuuid = row[6];
 
-			character_mysql* character = new character_mysql;
-			charactercache.insert(std::make_pair(uuid, (cache_base*) character));
+			auto it = charactercache.find(charuuid);
+			if (it != charactercache.end()) {
+				character = static_cast<character_mysql*>((void*)it->second);
+			} else {
+				character_mysql* character = new character_mysql;
+				charactercache.insert(std::make_pair(charuuid, (cache_base*) character));
+			}
 
 			for (int fieldpos = 0; fieldpos < fieldcount; fieldpos++) {
 				if (row[fieldpos] != NULL) {
@@ -779,7 +782,7 @@ std::string mysql_db_handler::loadObject(std::string objectuuid) {
 					"`object`.`variables`, `object`.`animationstate`, `object`.`textures`, `object`.`direction`, "
 					"`object`.`positiontype`, `object`.`positionx`, `object`.`positiony`, `object`.`positionz`, "
 					"`object`.`positionadvanced`, `object`.`reservedone`, `object`.`reservedtwo`, "
-					"GROUP_CONCAT(`player`.`steamid` SEPARATOR '\", \"') AS friendlist "
+					"GROUP_CONCAT(`player`.`steamid` SEPARATOR '\", \"') AS mainclanuuid "
 					"FROM `world_has_objects` "
 					"INNER JOIN `object` "
 					" ON `world_has_objects`.`object_uuid` = `object`.`uuid` "
@@ -817,7 +820,7 @@ std::string mysql_db_handler::loadObject(std::string objectuuid) {
 			0, // `object`.`positionadvanced`
 			0, // `object`.`reservedone`
 			0, // `object`.`reservedtwo`
-			2  // GROUP_CONCAT(`player`.`steamid` SEPARATOR '\", \"') AS friendlist
+			2  // GROUP_CONCAT(`player`.`steamid` SEPARATOR '\", \"') AS mainclanuuid
 			};
 
 
