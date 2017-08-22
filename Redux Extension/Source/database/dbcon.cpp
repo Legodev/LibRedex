@@ -330,18 +330,18 @@ std::string dbcon::loadChar(std::string &extFunction, ext_arguments &extArgument
 	base_db_handler *dbhandler = getDBHandler();
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 
-	cache_base* character = dbhandler->loadChar(charactercache, playeruuid);
+	std::string characterdata = dbhandler->loadChar(charactercache, playeruuid);
 
 	returnDBHandler(dbhandler);
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + character->getAsArmaString() + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + characterdata + "]";
 }
 
 std::string dbcon::createChar(std::string &extFunction, ext_arguments &extArgument) {
 	base_db_handler *dbhandler = getDBHandler();
-	std::string result = dbhandler->createChar(charactercache, extArgument);
+	std::string characterdata = dbhandler->createChar(charactercache, extArgument);
 
 	returnDBHandler(dbhandler);
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + characterdata + "\"]";
 }
 
 std::string dbcon::updateChar(std::string &extFunction, ext_arguments &extArgument) {

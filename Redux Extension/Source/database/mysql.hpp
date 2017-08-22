@@ -45,7 +45,7 @@ public:
 	std::string loadPlayer(std::string nickname, std::string steamid);
 	std::string loadAvChars(std::string playeruuid);
 	std::string linkChars(std::string playeruuid, std::string variabuuid);
-	cache_base* loadChar(std::map<std::string, cache_base*> &charactercache, std::string playeruuid);
+	std::string loadChar(std::map<std::string, cache_base*> &charactercache, std::string playeruuid);
 	std::string createChar(std::map<std::string, cache_base*> &charactercache, ext_arguments &extArgument);
 	std::string updateChar(std::map<std::string, cache_base*> &charactercache, ext_arguments &extArgument);
 	std::string killChar(std::string charuuid, std::string attackeruuid, std::string type, std::string weapon, float distance);

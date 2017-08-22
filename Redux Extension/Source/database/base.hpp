@@ -46,7 +46,7 @@ public:
 	virtual std::string loadPlayer(std::string nickname, std::string steamid) { return "none"; };
 	virtual std::string loadAvChars(std::string playeruuid) { return "none"; }
 	virtual std::string linkChars(std::string playeruuid, std::string variabuuid) { return "none"; }
-	virtual cache_base* loadChar(std::map<std::string, cache_base*> &charactercache, std::string playeruuid) { return NULL; };
+	virtual std::string loadChar(std::map<std::string, cache_base*> &charactercache, std::string playeruuid) { return NULL; };
 
 	virtual std::string loadChar(std::string playeruuid) { return "none"; }
 	virtual std::string createChar(std::map<std::string, cache_base*> &charactercache, ext_arguments &extArgument) { return "none"; }

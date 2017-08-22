@@ -414,7 +414,7 @@ std::string mysql_db_handler::linkChars(std::string playeruuid, std::string vari
 	return playeruuid;
 }
 
-cache_base* mysql_db_handler::loadChar(std::map<std::string, cache_base*> &charactercache, std::string playeruuid) {
+std::string mysql_db_handler::loadChar(std::map<std::string, cache_base*> &charactercache, std::string playeruuid) {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
@@ -422,9 +422,9 @@ cache_base* mysql_db_handler::loadChar(std::map<std::string, cache_base*> &chara
 	bool printcomma = false;
 	character_mysql* character = 0;
 
-	std::string querycharinfo = str(boost::format{"SELECT `animationstate`, `direction`, `positiontype`, `positionx`, `positiony`, `positionz`, `character`.`uuid` as `character_uuid`, "
-				"`classname`, `hitpoints`, `variables`, `textures`, `gear`, `currentweapon`, `character`.`charactershareables_uuid`, "
-				"`persistentvariables`, `charactershareables`.`persistent_variables_uuid`, `object_uuid` "
+	std::string querycharinfo = str(boost::format{"SELECT `animationstate`, `direction`, `positiontype`, `positionx`, `positiony`, `positionz`, HEX(`character`.`uuid`) as `character_uuid`, "
+				"`classname`, `hitpoints`, `variables`, `textures`, `gear`, `currentweapon`, HEX(`character`.`charactershareables_uuid`), "
+				"`persistentvariables`, HEX(`charactershareables`.`persistent_variables_uuid`), HEX(`object_uuid`) "
 				"FROM `player_on_world_has_character` "
 				"INNER JOIN `character`  "
 				" ON `player_on_world_has_character`.`character_uuid` = `character`.`uuid` "
@@ -441,7 +441,7 @@ cache_base* mysql_db_handler::loadChar(std::map<std::string, cache_base*> &chara
 	fieldcount = mysql_num_fields(result);
 	rowcount = mysql_num_rows(result);
 
-//	for (int rowpos = 0; rowpos < rowcount && rowpos < 25; rowpos++) {
+	if (rowcount > 0) {
 		row = mysql_fetch_row(result);
 		if (row[6] != NULL && row[13] != NULL && row[15] != NULL) {
 			std::string charuuid = row[6];
@@ -450,7 +450,7 @@ cache_base* mysql_db_handler::loadChar(std::map<std::string, cache_base*> &chara
 			if (it != charactercache.end()) {
 				character = static_cast<character_mysql*>((void*)it->second);
 			} else {
-				character_mysql* character = new character_mysql;
+				character = new character_mysql;
 				charactercache.insert(std::make_pair(charuuid, (cache_base*) character));
 			}
 
@@ -463,11 +463,15 @@ cache_base* mysql_db_handler::loadChar(std::map<std::string, cache_base*> &chara
 				}
 			}
 		}
-//	}
+	}
 
 	mysql_free_result(result);
 
-	return character;
+	if (character != 0) {
+		return character->getAsArmaString();
+	}
+
+	return "[]";
 }
 
 

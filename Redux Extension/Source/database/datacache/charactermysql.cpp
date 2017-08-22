@@ -160,12 +160,13 @@ int character_mysql::setData(unsigned int arraypos, std::string variableValue) {
 				pointer = 0;
 			}
 			if (pointer == 0) {
-				char * pointer = new char[size*2];
+				pointer = new char[size*2];
 				mysql_bind[arraypos].buffer = pointer;
 				mysql_bind[arraypos].buffer_length = size * 2;
 			}
 		}
 		memcpy (mysql_bind[arraypos].buffer, variableValue.c_str(), size);
+		pointer[size] = 0;
 		length[arraypos] = size;
 		mysql_bind[arraypos].length = &length[arraypos];
 	}
@@ -177,7 +178,9 @@ int character_mysql::setData(unsigned int arraypos, std::string variableValue) {
 
 	if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_TINY) {
 		signed char * pointer = (signed char *) mysql_bind[arraypos].buffer;
-		* pointer = boost::lexical_cast<signed char>(variableValue);
+		// lexical_cast casts all 8 bit values as character not as number ( 0 becomes 48 instead of 0)
+		// * pointer = boost::lexical_cast<signed char>(variableValue);
+		* pointer = (signed char) boost::lexical_cast<int>(variableValue);
 	}
 
 	if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_LONG) {
