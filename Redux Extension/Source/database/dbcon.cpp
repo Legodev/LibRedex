@@ -356,7 +356,7 @@ std::string dbcon::killChar(std::string &extFunction, ext_arguments &extArgument
 	base_db_handler *dbhandler = getDBHandler();
 	std::string charuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
 	std::string attackeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
-	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TYPE);
+	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTTYPE);
 	std::string weapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
 	float distance = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DISTANCE);
 
@@ -403,7 +403,7 @@ std::string dbcon::killObject(std::string &extFunction, ext_arguments &extArgume
 	base_db_handler *dbhandler = getDBHandler();
 	std::string charuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 	std::string attackeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
-	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TYPE);
+	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTTYPE);
 	std::string weapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
 	float distance = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DISTANCE);
 
