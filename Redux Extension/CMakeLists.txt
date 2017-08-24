@@ -11,14 +11,14 @@ ELSE()
     SET(BITVALUE 32)
 ENDIF()
 
-FILE(GLOB LIBSOURCES "Source/*.cpp" "Source/utils/*.cpp" "Source/database/*.cpp" "Source/fileio/*.cpp" "Source/datetime/*.cpp" "Source/randomlist/*.cpp")
+FILE(GLOB LIBSOURCES "Source/*.cpp" "Source/utils/*.cpp" "Source/database/*.cpp" "Source/database/datacache/*.cpp" "Source/fileio/*.cpp" "Source/datetime/*.cpp" "Source/randomlist/*.cpp")
 FILE(GLOB TESTSSOURCES "Source/TestApps/*.cpp")
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/Binaries)
 
 SET(CMAKE_CXX_STANDARD 11)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_RELEASE} -s -DDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_RELEASE} -s -DDEBUG")
 
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")

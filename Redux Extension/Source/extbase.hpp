@@ -1,18 +1,18 @@
 /* ext_base.hpp
  *
- * Copyright 2016-2017 Desolation Redux
+ * Copyright 2016-2018 Desolation Redux
  *
  * Author: Legodev <legodevgit@mailbox.org>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Affero General Public License for more details.
  */
 
 #ifndef SOURCE_EXTBASE_HPP_
@@ -22,6 +22,8 @@
 #include <string>
 #include <sstream>
 #include <boost/lexical_cast.hpp>
+#include <boost/function.hpp>
+#include <map>
 
 class ext_arguments {
 public:
@@ -41,6 +43,14 @@ public:
 		return 0;
 	}
 
+	std::list<std::string> getKeys() {
+		std::list<std::string> keyList;
+		for(auto const &key : argmap) {
+		   keyList.push_back (key.first);
+		}
+		return keyList;
+	}
+
 	template<typename ReturnType>
 	ReturnType get(std::string identifier) {
 		std::string Argument;
@@ -53,6 +63,21 @@ public:
 		}
 
 	    return boost::lexical_cast<ReturnType>(Argument);
+	}
+
+	std::string getUUID(std::string identifier) {
+		std::string Argument;
+
+		ARGUMENT_MAP::iterator it = argmap.find(identifier);
+		if (it != argmap.end()) {
+			Argument = it->second;
+		} else {
+			throw std::runtime_error("did not find identifier: " + identifier);
+		}
+
+		Argument.erase( std::remove_if( Argument.begin(), Argument.end(), []( char c ) { return !std::isalnum(c) ; } ), Argument.end() ) ;
+
+		return Argument;
 	}
 
 	template<typename ReturnType>
@@ -134,14 +159,11 @@ protected:
 
 	std::string escapeChars(std::string input) {
 		std::stringstream outputstream;
+		unsigned int inputlenght = input.length();
 
-		for (unsigned int i = 0; i < input.length(); i++) {
+		for (unsigned int i = 0; i < inputlenght; i++) {
 			switch(input[i]) {
-				case '-': if (input[i+1] >= '0' && input[i+1] <= '9') { outputstream << "-"; }; break;
-				case ';': break;
-				case '#': break;
-				case '"': if (i > 0 && i < input.length() - 1) { outputstream << "\\\""; }; break;
-				case '\\': outputstream << "\\\\"; break;
+				case '"': if (i > 0 && i < inputlenght - 1) { outputstream << input[i]; }; break;
 				default: outputstream << input[i]; break;
 			}
 		}
@@ -168,6 +190,10 @@ protected:
 };
 
 typedef boost::function<std::string(std::string &extFunction, ext_arguments &extArgument)> EXT_FUNCTION;
-typedef std::map<std::string, EXT_FUNCTION> EXT_FUNCTIONS;
+typedef std::tuple<EXT_FUNCTION, int> EXT_FUNCTION_INFO;
+typedef std::map<std::string, EXT_FUNCTION_INFO> EXT_FUNCTIONS;
+
+extern std::map<std::string, unsigned int> objectvariablemap;
+extern std::map<std::string, unsigned int> charactervariablemap;
 
 #endif /* SOURCE_EXTBASE_HPP_ */

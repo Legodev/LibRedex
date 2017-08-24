@@ -1,19 +1,19 @@
 /* randomlist.cpp
  *
- * Copyright 2016-2017 Desolation Redux
+ * Copyright 2016-2018 Desolation Redux
  *
  * Author: Legodev <legodevgit@mailbox.org>
  *         Kegan <ryancheek@hush.com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Affero General Public License for more details.
  */
 
 #include "randomlist/randomlist.hpp"
@@ -34,13 +34,19 @@
 randomlist::randomlist(EXT_FUNCTIONS &extFunctions) {
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_RANDOM_FUNCTION_ADD_DISCRETE_LIST),
-					boost::bind(&randomlist::addDiscreteItemList, this, _1, _2)));
+					std::make_tuple(
+							boost::bind(&randomlist::addDiscreteItemList, this, _1, _2),
+							SYNC_MAGIC)));
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_RANDOM_FUNCTION_GET_DISCRETE_LIST),
-					boost::bind(&randomlist::getDiscreteItemList, this, _1, _2)));
+					std::make_tuple(
+							boost::bind(&randomlist::getDiscreteItemList, this, _1, _2),
+							SYNC_MAGIC)));
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_RANDOM_FUNCTION_GET_RANDOMNUMBER_LIST),
-					boost::bind(&randomlist::getRandomNumberList, this, _1, _2)));
+					std::make_tuple(
+							boost::bind(&randomlist::getRandomNumberList, this, _1, _2),
+							SYNC_MAGIC)));
 
     boost::property_tree::ptree configtree;
     boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);

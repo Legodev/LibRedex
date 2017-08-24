@@ -1,18 +1,18 @@
 /* mysql.cpp
  *
- * Copyright 2016-2017 Desolation Redux
+ * Copyright 2016-2018 Desolation Redux
  *
  * Author: Legodev <legodevgit@mailbox.org>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Affero General Public License for more details.
  */
 
 #include <exception>
@@ -20,6 +20,8 @@
 #include <boost/format.hpp>
 #include "database/mysql.hpp"
 #include "utils/uuid.hpp"
+#include "database/datacache/charactermysql.hpp"
+#include "database/datacache/objectmysql.hpp"
 
 mysql_db_handler::mysql_db_handler() {
 	this->hostname = "";
@@ -80,8 +82,6 @@ void mysql_db_handler::connect(std::string hostname, std::string user, std::stri
 				"connection problem while initializing mysql_db_handler: "
 						+ std::string(mysql_error(connection)));
 		mysql_close(connection);
-	} else {
-		printf("created connection \n");
 	}
 
 	return;
@@ -92,8 +92,38 @@ void mysql_db_handler::disconnect() {
 	return;
 }
 
+void mysql_db_handler::checkWorldUUID() {
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	bool addUUID = true;
+	unsigned long long int rowcount;
+
+	std::string queryworlduuid =
+	str(boost::format{"SELECT HEX(`world`.`uuid`) "
+			"FROM `world` "
+			"WHERE `world`.`uuid` = CAST(0x%s AS BINARY)"} % worlduuid);
+
+	this->rawquery(queryworlduuid, &result);
+
+	rowcount = mysql_num_rows(result);
+
+	if (rowcount > 0) {
+		addUUID = false;
+	}
+
+	mysql_free_result(result);
+
+	if (addUUID) {
+		queryworlduuid =
+			str(boost::format{"INSERT INTO `world` (`uuid`, `name`, `map`) "
+								"VALUES (CAST(0x%s AS BINARY), \"you need to\", \"eddit this\")"}
+								% worlduuid);
+		this->rawquery(queryworlduuid);
+	}
+};
+
 void mysql_db_handler::rawquery(std::string query) {
-	printf("%s\n", query.c_str());
+//	printf("%s\n", query.c_str());
 
 	if (mysql_real_query(connection, query.c_str(), query.size())) {
 		throw std::runtime_error(
@@ -107,7 +137,7 @@ void mysql_db_handler::rawquery(std::string query) {
 }
 
 void mysql_db_handler::rawquery(std::string query, MYSQL_RES **result) {
-	printf("%s\n", query.c_str());
+//	printf("%s\n", query.c_str());
 
 	if (mysql_real_query(connection, query.c_str(), query.size())) {
 		throw std::runtime_error(
@@ -126,6 +156,31 @@ void mysql_db_handler::rawquery(std::string query, MYSQL_RES **result) {
 						+ std::string(" ---- ERROR MESSAGE: ")
 						+ std::string(mysql_error(connection)));
 	}
+
+	return;
+}
+
+void mysql_db_handler::preparedStatementQuery(std::string query, MYSQL_BIND input_params[]) {
+	int        status;
+
+	MYSQL_STMT *stmt;
+	stmt = mysql_stmt_init(connection);
+	if (!stmt)
+	{
+		throw std::runtime_error("Could not initialize statement\n");
+	}
+
+	status = mysql_stmt_prepare(stmt, query.c_str(), query.size() + 1);
+	test_stmt_error(stmt, status);
+
+	status = mysql_stmt_bind_param(stmt, input_params);
+	test_stmt_error(stmt, status);
+
+	status = mysql_stmt_execute(stmt);
+	test_stmt_error(stmt, status);
+
+	status = mysql_stmt_close(stmt);
+	test_stmt_error(stmt, status);
 
 	return;
 }
@@ -154,31 +209,27 @@ std::string mysql_db_handler::loadPlayer(std::string nickname, std::string steam
 
 	// player info
 	std::string playeruuid = "";
-	std::string death_persistent_variables_uuid = "";
-	std::string friendlist = "";
+	std::string persistent_variables_uuid = "";
+	std::string mainclanuuid = "";
 	std::string banned = "false";
 	std::string banreason = "unknown";
 
 	std::string queryplayerinfo =
-	str(boost::format{"SELECT HEX(`actualplayer`.`uuid`), "
-			"HEX(`player_on_world_has_death_persistent_variables`.`death_persistent_variables_uuid`), "
-			"GROUP_CONCAT(`friendplayer`.`steamid` SEPARATOR '\", \"') AS friendlist, "
-		    "(CASE WHEN (NOW() < `actualplayer`.`banenddate`) THEN \"true\" ELSE \"false\" END) AS BANNED, `actualplayer`.`banreason`"
-			"FROM `player` actualplayer "
-			"LEFT JOIN `player_on_world_has_death_persistent_variables` "
-			" ON `actualplayer`.`uuid` = `player_on_world_has_death_persistent_variables`.`player_uuid` "
-			" AND `player_on_world_has_death_persistent_variables`.`world_uuid` =  CAST(0x%s AS BINARY) "
-			"LEFT JOIN `player_is_friend_with_player` "
-			" ON `actualplayer`.`uuid` = `player_is_friend_with_player`.`player1_uuid` "
-			" LEFT JOIN `player` friendplayer "
-			" ON `player_is_friend_with_player`.`player2_uuid` = `friendplayer`.`uuid` "
-			"WHERE `actualplayer`.`steamid` = \"%s\" "
-			"GROUP BY `actualplayer`.`uuid`"} % worlduuid % steamid);
+	str(boost::format{"SELECT HEX(`player`.`uuid`), "
+			"HEX(`player_on_world_has_persistent_variables`.`persistent_variables_uuid`), "
+			"HEX(`player`.`mainclan_uuid`), "
+		    "(CASE WHEN (NOW() < `player`.`banenddate`) THEN \"true\" ELSE \"false\" END) AS BANNED, "
+		    "`player`.`banreason`"
+			"FROM `player` "
+			"LEFT JOIN `player_on_world_has_persistent_variables` "
+			" ON `player`.`uuid` = `player_on_world_has_persistent_variables`.`player_uuid` "
+			" AND `player_on_world_has_persistent_variables`.`world_uuid` =  CAST(0x%s AS BINARY) "
+			"WHERE `player`.`steamid` = \"%s\" "} % worlduuid % steamid);
 
 	char typearrayplayerinfo[] = {
 			1, // HEX(`actualplayer`.`uuid`)
-			1, // HEX(`player_on_world_has_death_persistent_variables`.`death_persistent_variables_uuid`)
-			2, // GROUP_CONCAT(`player`.`steamid` SEPARATOR '\", \"') AS friendlist
+			1, // HEX(`player_on_world_has_persistent_variables`.`persistent_variables_uuid`)
+			2, // GROUP_CONCAT(`player`.`steamid` SEPARATOR '\", \"') AS mainclanuuid
 			0, // (CASE WHEN (NOW() < `actualplayer`.`banenddate`) THEN "true" ELSE "false" END) AS BANNED`
 			0  // `actualplayer`.`banreason
 	};
@@ -198,13 +249,11 @@ std::string mysql_db_handler::loadPlayer(std::string nickname, std::string steam
 		}
 
 		if (row[1] != NULL) {
-			death_persistent_variables_uuid = row[1];
+			persistent_variables_uuid = row[1];
 		}
 
 		if (row[2] != NULL) {
-			friendlist = "\"" ;
-			friendlist += row[2];
-			friendlist += "\"";
+			mainclanuuid = row[2];
 		}
 
 		if (row[3] != NULL) {
@@ -254,7 +303,7 @@ std::string mysql_db_handler::loadPlayer(std::string nickname, std::string steam
 		}
 	}
 
-	return "[\"" + playeruuid + "\",\"" + death_persistent_variables_uuid + "\",[" + friendlist + "],[" + banned + ",\"" + banreason +"\"]]";
+	return "[\"" + playeruuid + "\",\"" + persistent_variables_uuid + "\",\"" + mainclanuuid + "\",[" + banned + ",\"" + banreason +"\"]]";
 }
 
 std::string mysql_db_handler::loadAvChars(std::string playeruuid) {
@@ -271,22 +320,22 @@ std::string mysql_db_handler::loadAvChars(std::string playeruuid) {
 	std::string querycharinfo =
 			str(
 					boost::format {
-							"SELECT HEX(`death_persistent_variables`.`uuid`), "
-									"`death_persistent_variables`.`persistentvariables`, `world`.`name`, `world`.`map` "
+							"SELECT HEX(`persistent_variables`.`uuid`), "
+									"`persistent_variables`.`persistentvariables`, `world`.`name`, `world`.`map` "
 									"FROM `world_is_linked_to_world` "
-									"INNER JOIN `player_on_world_has_death_persistent_variables` "
-									" ON `world_is_linked_to_world`.`world_uuid2` = `player_on_world_has_death_persistent_variables`.`world_uuid` "
-									"INNER JOIN `death_persistent_variables` "
-									" ON `death_persistent_variables`.`uuid` = `player_on_world_has_death_persistent_variables`.`death_persistent_variables_uuid` "
+									"INNER JOIN `player_on_world_has_persistent_variables` "
+									" ON `world_is_linked_to_world`.`world_uuid2` = `player_on_world_has_persistent_variables`.`world_uuid` "
+									"INNER JOIN `persistent_variables` "
+									" ON `persistent_variables`.`uuid` = `player_on_world_has_persistent_variables`.`persistent_variables_uuid` "
 									"INNER JOIN `world` "
 									" ON `world`.`uuid` = `world_is_linked_to_world`.`world_uuid2` "
 									"WHERE `world_is_linked_to_world`.`world_uuid1` = CAST(0x%s AS BINARY) "
-									" AND `player_on_world_has_death_persistent_variables`.`player_uuid` = CAST(0x%s AS BINARY)" }
+									" AND `player_on_world_has_persistent_variables`.`player_uuid` = CAST(0x%s AS BINARY)" }
 							% worlduuid % playeruuid);
 
 	char typearray[] = {
-			1, // HEX(`death_persistent_variables`.`uuid`)
-			0, // `death_persistent_variables`.`persistentvariables`
+			1, // HEX(`persistent_variables`.`uuid`)
+			0, // `persistent_variables`.`persistentvariables`
 			1, // `world`.`name`
 			1  // `world`.`map`
 			};
@@ -354,8 +403,8 @@ std::string mysql_db_handler::loadAvChars(std::string playeruuid) {
 
 std::string mysql_db_handler::linkChars(std::string playeruuid, std::string variabuuid) {
 	std::string query = str(
-			boost::format { "INSERT INTO `player_on_world_has_death_persistent_variables` "
-					"(`player_uuid`, `world_uuid`, `death_persistent_variables_uuid`) "
+			boost::format { "INSERT INTO `player_on_world_has_persistent_variables` "
+					"(`player_uuid`, `world_uuid`, `persistent_variables_uuid`) "
 					"VALUES (0x%s AS BINARY), CAST(0x%s AS BINARY), CAST(0x%s AS BINARY))"
 					} % playeruuid % worlduuid % variabuuid);
 
@@ -365,131 +414,78 @@ std::string mysql_db_handler::linkChars(std::string playeruuid, std::string vari
 	return playeruuid;
 }
 
-std::string mysql_db_handler::loadChar(std::string playeruuid) {
+std::string mysql_db_handler::loadChar(std::map<std::string, cache_base*> &charactercache, std::string playeruuid) {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
 	bool printcomma = false;
+	character_mysql* character = 0;
 
-	// char info
-	std::string charinfo = "";
-
-	std::string querycharinfo = str(boost::format {
-		    "SELECT HEX(`character`.`uuid`), `animationstate`, "
-			"`direction`, `positiontype`, `positionx`, `positiony`, "
-			"`positionz`, `classname`, `hitpoints`, `variables`, "
-			"`persistentvariables`, `textures`, `inventoryuniform`, "
-			"`inventoryvest`, `inventorybackpack`, `uniform`, `vest`, "
-			"`backpack`, `headgear`, `googles`, `primaryweapon`, "
-			"`secondaryweapon`, `handgun`, `tools`, `currentweapon` "
-			"FROM `player_on_world_has_character` "
-			"INNER JOIN `character`  "
-			" ON `player_on_world_has_character`.`character_uuid` = `character`.`uuid` "
-			"INNER JOIN `charactershareables` "
-			" ON `character`.`charactershareables_uuid` = `charactershareables`.`uuid` "
-			"INNER JOIN `death_persistent_variables` "
-			" ON `charactershareables`.`death_persistent_variables_uuid` = `death_persistent_variables`.`uuid` "
-			"WHERE `player_on_world_has_character`.`player_uuid` = CAST(0x%s AS BINARY) "
-			" AND `player_on_world_has_character`.`world_uuid` =  CAST(0x%s AS BINARY) "
-			" AND `player_on_world_has_character`.`killinfo_uuid` IS NULL" } % playeruuid % worlduuid);
-
-	char typearray[] = {
-			1, // HEX(`character`.`uuid`)
-			1, // `animationstate`
-			0, // `direction`
-			0, // `positiontype`
-			0, // `positionx`
-			0, // `positiony`
-			0, // `positionz`
-			1, // `classname`
-			0, // `hitpoints`
-			0, // `variables`
-			0, // `persistentvariables`
-			0, // `textures`
-			0, // `inventoryuniform`
-			0, // `inventoryvest`
-			0, // `inventorybackpack`
-			1, // `uniform`
-			1, // `vest`
-			1, // `backpack`
-			1, // `headgear`
-			1, // `googles`
-			0, // `primaryweapon`
-			0, // `secondaryweapon`
-			0, // `handgun`
-			0, // `tools`
-			1  // `currentweapon`
-	};
+	std::string querycharinfo = str(boost::format{"SELECT `animationstate`, `direction`, `positiontype`, `positionx`, `positiony`, `positionz`, HEX(`character`.`uuid`) as `character_uuid`, "
+				"`classname`, `hitpoints`, `variables`, `textures`, `gear`, `currentweapon`, HEX(`character`.`charactershareables_uuid`), "
+				"`persistentvariables`, HEX(`charactershareables`.`persistent_variables_uuid`), HEX(`object_uuid`) "
+				"FROM `player_on_world_has_character` "
+				"INNER JOIN `character`  "
+				" ON `player_on_world_has_character`.`character_uuid` = `character`.`uuid` "
+				"INNER JOIN `charactershareables` "
+				" ON `character`.`charactershareables_uuid` = `charactershareables`.`uuid` "
+				"INNER JOIN `persistent_variables` "
+				" ON `charactershareables`.`persistent_variables_uuid` = `persistent_variables`.`uuid` "
+				"WHERE `player_on_world_has_character`.`player_uuid` = CAST(0x%s AS BINARY) "
+				" AND `player_on_world_has_character`.`world_uuid` =  CAST(0x%s AS BINARY) "
+				" AND `player_on_world_has_character`.`killinfo_uuid` IS NULL" } % playeruuid % worlduuid);
 
 	this->rawquery(querycharinfo, &result);
 
 	fieldcount = mysql_num_fields(result);
 	rowcount = mysql_num_rows(result);
 
-	// printf("rowcount = %d\n", (int) rowcount);
-
-	charinfo = "[";
 	if (rowcount > 0) {
 		row = mysql_fetch_row(result);
-		for (int fieldpos = 0; fieldpos < fieldcount; fieldpos++) {
-			if (printcomma) {
-				charinfo += ",";
-			}
-			switch (typearray[fieldpos]) {
-			case 1:
-				charinfo += "\"";
-				break;
-			case 2:
-				charinfo += "[";
-				if (row[fieldpos] != NULL)
-					charinfo += "\"";
-				break;
-			default:
-				charinfo += "";
-			}
+		if (row[6] != NULL && row[13] != NULL && row[15] != NULL) {
+			std::string charuuid = row[6];
 
-			if (row[fieldpos] != NULL) {
-				charinfo += row[fieldpos];
+			auto it = charactercache.find(charuuid);
+			if (it != charactercache.end()) {
+				character = static_cast<character_mysql*>((void*)it->second);
 			} else {
-				charinfo += "";
+				character = new character_mysql;
+				charactercache.insert(std::make_pair(charuuid, (cache_base*) character));
 			}
 
-			switch (typearray[fieldpos]) {
-			case 1:
-				charinfo += "\"";
-				break;
-			case 2:
-				if (row[fieldpos] != NULL)
-					charinfo += "\"";
-				charinfo += "]";
-				break;
+			for (int fieldpos = 0; fieldpos < fieldcount; fieldpos++) {
+				if (row[fieldpos] != NULL) {
+					character->setData(fieldpos, row[fieldpos]);
+				} else {
+					character->setData(fieldpos, "");
+					character->is_null[fieldpos] = (my_bool) 1;
+				}
 			}
-			printcomma = true;
 		}
 	}
-	charinfo += "]";
 
 	mysql_free_result(result);
 
-	return charinfo;
+	if (character != 0) {
+		return character->getAsArmaString();
+	}
+
+	return "[]";
 }
 
 
-std::string mysql_db_handler::createChar(std::string playeruuid, std::string animationstate, float direction,
-		int positiontype, float positionx, float positiony, float positionz, std::string classname,
-		std::string hitpoints, std::string variables, std::string persistentvariables, std::string textures,
-		std::string inventoryuniform, std::string inventoryvest, std::string inventorybackpack, std::string uniform,
-		std::string vest, std::string backpack, std::string headgear, std::string googles, std::string primaryweapon,
-		std::string secondaryweapon, std::string handgun, std::string tools, std::string currentweapon) {
+std::string mysql_db_handler::createChar(std::map<std::string, cache_base*> &charactercache, ext_arguments &extArgument) {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
 
+	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+
 	// char info
 	std::string charuuid = "";
-	std::string death_persistent_variables_uuid = "";
+	std::string persistent_variables_uuid = "";
 	std::string shareable_variables_uuid = "";
 
 	/* for testing purpose, check if there is an existing character, if yes return its uuid */
@@ -498,8 +494,6 @@ std::string mysql_db_handler::createChar(std::string playeruuid, std::string ani
 			"WHERE `player_on_world_has_character`.`player_uuid` = CAST(0x%s AS BINARY) "
 			"AND `player_on_world_has_character`.`world_uuid` =  CAST(0x%s AS BINARY) "
 			"AND `player_on_world_has_character`.`killinfo_uuid` IS NULL" } % playeruuid % worlduuid);
-
-
 
 	this->rawquery(query, &result);
 
@@ -518,12 +512,17 @@ std::string mysql_db_handler::createChar(std::string playeruuid, std::string ani
 	mysql_free_result(result);
 
 	if (charuuid == "") {
+		charuuid = orderedUUID();
+		character_mysql* character = new character_mysql;
+		character->setData(extArgument);
+		character->setData(PROTOCOL_DBCALL_ARGUMENT_CHARUUID, charuuid);
+		charactercache.insert(std::make_pair(charuuid, (cache_base*) character));
+
 		/* get the uuid for the Death Persistent Variables */
-		query = str(boost::format { "SELECT HEX(`death_persistent_variables_uuid`) "
-				"FROM `player_on_world_has_death_persistent_variables` "
+		query = str(boost::format { "SELECT HEX(`persistent_variables_uuid`) "
+				"FROM `player_on_world_has_persistent_variables` "
 				"WHERE `player_uuid` = CAST(0x%s AS BINARY) "
 				"AND `world_uuid` = CAST(0x%s AS BINARY)" } % playeruuid % worlduuid);
-
 
 		this->rawquery(query, &result);
 
@@ -535,32 +534,47 @@ std::string mysql_db_handler::createChar(std::string playeruuid, std::string ani
 			row = mysql_fetch_row(result);
 
 			if (row[0] != NULL) {
-				death_persistent_variables_uuid = row[0];
+				persistent_variables_uuid = row[0];
 			}
 		}
 
 		mysql_free_result(result);
 
 		/* if there are no Death Persistent Variables create some*/
-		if (death_persistent_variables_uuid == "") {
-			death_persistent_variables_uuid = orderedUUID();
+		if (persistent_variables_uuid == "") {
+			persistent_variables_uuid = orderedUUID();
+			character->setData(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABUUID, persistent_variables_uuid);
 
-			query = str(
-					boost::format { "INSERT INTO `death_persistent_variables` (`uuid`, `persistentvariables`) "
-							"VALUES (CAST(0x%s AS BINARY), \"%s\"); " } % death_persistent_variables_uuid
-							% persistentvariables);
+			query = "INSERT INTO `persistent_variables` (`persistentvariables`, `uuid`) VALUES (?, UNHEX(?))";
 
+			this->preparedStatementQuery(query, character->mysql_bind+14);
 
-			this->rawquery(query);
-
-			query = str(boost::format { "INSERT INTO `player_on_world_has_death_persistent_variables` "
-					"(`player_uuid`, `world_uuid`, `death_persistent_variables_uuid`) "
+			query = str(boost::format { "INSERT INTO `player_on_world_has_persistent_variables` "
+					"(`player_uuid`, `world_uuid`, `persistent_variables_uuid`) "
 					"VALUES (CAST(0x%s AS BINARY), "
 					"CAST(0x%s AS BINARY), "
-					"CAST(0x%s AS BINARY));" } % playeruuid % worlduuid % death_persistent_variables_uuid);
-
+					"CAST(0x%s AS BINARY));" } % playeruuid % worlduuid % persistent_variables_uuid);
 
 			this->rawquery(query);
+		} else {
+			character->setData(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABUUID, persistent_variables_uuid);
+			query = str(boost::format { "SELECT `persistentvariables` "
+							"FROM `persistent_variables` "
+							"WHERE `persistent_variables`.`uuid` = CAST(0x%s AS BINARY)"
+							} % persistent_variables_uuid);
+
+			this->rawquery(query, &result);
+
+			rowcount = mysql_num_rows(result);
+
+			if (rowcount > 0) {
+				row = mysql_fetch_row(result);
+
+				if (row[0] != NULL) {
+					character->setData(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABLES, row[0]);
+				}
+			}
+			mysql_free_result(result);
 		}
 
 		/* get alive linked character shareables */
@@ -574,11 +588,9 @@ std::string mysql_db_handler::createChar(std::string playeruuid, std::string ani
 				"AND `player_on_world_has_character`.`killinfo_uuid` IS NULL "
 				"AND `player_on_world_has_character`.`world_uuid` IN  ( "
 				"SELECT `world_uuid` "
-				"FROM `player_on_world_has_death_persistent_variables` "
-				"WHERE `death_persistent_variables_uuid` = CAST(0x%s AS BINARY) "
-				") LIMIT 1" } % playeruuid % death_persistent_variables_uuid);
-
-
+				"FROM `player_on_world_has_persistent_variables` "
+				"WHERE `persistent_variables_uuid` = CAST(0x%s AS BINARY) "
+				") LIMIT 1" } % playeruuid % persistent_variables_uuid);
 
 		this->rawquery(query, &result);
 
@@ -599,50 +611,62 @@ std::string mysql_db_handler::createChar(std::string playeruuid, std::string ani
 		/* if there are no Death Persistent Variables create some*/
 		if (shareable_variables_uuid == "") {
 			shareable_variables_uuid = orderedUUID();
+			character->setData(PROTOCOL_DBCALL_ARGUMENT_CHARSHAREUUID, shareable_variables_uuid);
 
 			query = str(
-					boost::format { "INSERT INTO `charactershareables` (`uuid`, `classname`, `hitpoints`, "
-							"`variables`, `death_persistent_variables_uuid`, `textures`, "
-							"`inventoryuniform`, `inventoryvest`, `inventorybackpack`, "
-							" `uniform`, `vest`, `backpack`, "
-							"`headgear`, `googles`, `primaryweapon`, "
-							"`secondaryweapon`, `handgun`, `tools`, "
-							"`currentweapon`) "
-							"VALUES (CAST(0x%s AS BINARY), "
-							"\"%s\", \"%s\", "
-							"\"%s\", CAST(0x%s AS BINARY), "
-							"\"%s\", \"%s\", "
-							"\"%s\", \"%s\", "
-							"\"%s\", \"%s\", \"%s\", "
-							"\"%s\", \"%s\", \"%s\", "
-							"\"%s\", \"%s\", \"%s\", "
-							"\"%s\")" } % shareable_variables_uuid % classname % hitpoints % variables
-							% death_persistent_variables_uuid % textures % inventoryuniform % inventoryvest
-							% inventorybackpack % uniform % vest % backpack % headgear % googles % primaryweapon
-							% secondaryweapon % handgun % tools % currentweapon);
+					boost::format { "INSERT INTO `charactershareables` (`classname`, `hitpoints`, "
+							"`variables`, `textures`, `gear`, "
+							"`currentweapon`, `uuid`, `persistent_variables_uuid`) "
+							"VALUES (?, ?, ?, ?, ?, ?, UNHEX(?), CAST(0x%s AS BINARY))" } % persistent_variables_uuid);
 
+			this->preparedStatementQuery(query, character->mysql_bind+7);
+		} else {
+			character->setData(PROTOCOL_DBCALL_ARGUMENT_CHARSHAREUUID, shareable_variables_uuid);
 
+			query = str(boost::format { "SELECT `classname`, `hitpoints`, "
+							"`variables`, `textures`, `gear`, `currentweapon`"
+							"FROM `charactershareables` "
+							"WHERE `charactershareables`.`uuid` = CAST(0x%s AS BINARY)"
+							} % shareable_variables_uuid);
 
-			this->rawquery(query);
+			this->rawquery(query, &result);
+
+			rowcount = mysql_num_rows(result);
+
+			if (rowcount > 0) {
+				row = mysql_fetch_row(result);
+
+				if (row[0] != NULL) {
+					character->setData(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME, row[0]);
+				}
+				if (row[1] != NULL) {
+					character->setData(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS, row[1]);
+				}
+				if (row[2] != NULL) {
+					character->setData(PROTOCOL_DBCALL_ARGUMENT_VARIABLES, row[2]);
+				}
+				if (row[3] != NULL) {
+					character->setData(PROTOCOL_DBCALL_ARGUMENT_TEXTURES, row[3]);
+				}
+				if (row[4] != NULL) {
+					character->setData(PROTOCOL_DBCALL_ARGUMENT_GEAR, row[4]);
+				}
+				if (row[5] != NULL) {
+					character->setData(PROTOCOL_DBCALL_ARGUMENT_CURRENTWEAPON, row[5]);
+				}
+			}
+			mysql_free_result(result);
 		}
 
-		/* add character world specific data */
-		/* add character to world */
-		charuuid = orderedUUID();
-
 		query = str(
-				boost::format { "INSERT INTO `character` (`uuid`, `animationstate`, `direction`, "
+				boost::format { "INSERT INTO `character` (`animationstate`, `direction`, "
 						"`positiontype`, `positionx`, `positiony`, "
-						"`positionz`, `charactershareables_uuid`) "
-						"VALUES (CAST(0x%s AS BINARY), "
-						"\"%s\", %s, "
-						"%s, %s, %s, "
-						"%s, CAST(0x%s AS BINARY)); " } % charuuid % animationstate % direction % positiontype
-						% positionx % positiony % positionz % shareable_variables_uuid);
+						"`positionz`, `uuid`, `charactershareables_uuid`) "
+						"VALUES (?, ?, ?, ?, ?, ?, "
+						"UNHEX(?), CAST(0x%s AS BINARY))" } % shareable_variables_uuid);
 
+		this->preparedStatementQuery(query, character->mysql_bind);
 
-
-		this->rawquery(query);
 		query = str(boost::format { "INSERT INTO `player_on_world_has_character` (`player_uuid`, `world_uuid`, "
 				"`character_uuid`, `killinfo_uuid`) "
 				"VALUES (CAST(0x%s AS BINARY), "
@@ -650,88 +674,50 @@ std::string mysql_db_handler::createChar(std::string playeruuid, std::string ani
 				"CAST(0x%s AS BINARY), "
 				"NULL)" } % playeruuid % worlduuid % charuuid);
 
-
-
 		this->rawquery(query);
-
 	}
 
 	return charuuid;
 }
 
-std::string mysql_db_handler::updateChar(std::string charuuid, std::string animationstate, float direction, int positiontype,
-		float positionx, float positiony, float positionz, std::string classname, std::string hitpoints,
-		std::string variables, std::string persistentvariables, std::string textures, std::string inventoryuniform,
-		std::string inventoryvest, std::string inventorybackpack, std::string uniform, std::string vest,
-		std::string backpack, std::string headgear, std::string googles, std::string primaryweapon,
-		std::string secondaryweapon, std::string handgun, std::string tools, std::string currentweapon) {
+std::string mysql_db_handler::updateChar(std::map<std::string, cache_base*> &charactercache, ext_arguments &extArgument) {
+	std::string charuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
+	character_mysql* character = 0;
 
-	std::string query = str(
-			boost::format { "UPDATE `characterview` "
-					"SET `animationstate` = \"%s\", "
-					"`direction` = %s, "
-					"`positiontype` = %s, "
-					"`positionx` = %s, "
-					"`positiony` = %s, "
-					"`positionz` = %s "
-					" WHERE `characterview`.`uuid` = CAST(0x%s AS BINARY);" } % animationstate % direction
-					% positiontype % positionx % positiony % positionz % charuuid);
+	auto it = charactercache.find(charuuid);
+	if (it != charactercache.end()) {
+		character = static_cast<character_mysql*>((void*)it->second);
+	} else {
+		throw std::runtime_error("could not find character to update: " + charuuid);
+	}
 
+	std::string query = "UPDATE `character` "
+					"SET `animationstate` = ?, "
+					"`direction` = ?, "
+					"`positiontype` = ?, "
+					"`positionx` = ?, "
+					"`positiony` = ?, "
+					"`positionz` = ? "
+					" WHERE `character`.`uuid` = UNHEX(?)";
 
-	this->rawquery(query);
+	this->preparedStatementQuery(query, character->mysql_bind);
 
-	query = str(
-			boost::format { "UPDATE `characterview` "
-					"SET `classname` = \"%s\", "
-					"`hitpoints` = \"%s\", "
-					"`variables` = \"%s\", "
-					"`textures` = \"%s\", "
-					"`inventoryuniform` = \"%s\", "
-					"`inventoryvest` = \"%s\", "
-					"`inventorybackpack` = \"%s\", "
-					"`uniform` = \"%s\", "
-					"`vest` = \"%s\", "
-					"`backpack` = \"%s\", "
-					"`headgear` = \"%s\", "
-					"`googles` = \"%s\", "
-					"`primaryweapon` = \"%s\", "
-					"`secondaryweapon` = \"%s\", "
-					"`handgun` = \"%s\", "
-					"`tools` = \"%s\", "
-					"`currentweapon` = \"%s\" "
-					" WHERE `characterview`.`uuid` = CAST(0x%s AS BINARY);" } % classname % hitpoints % variables
-					% textures % inventoryuniform % inventoryvest % inventorybackpack % uniform % vest % backpack
-					% headgear % googles % primaryweapon % secondaryweapon % handgun % tools % currentweapon
-					% charuuid);
+	query = "UPDATE `charactershareables` "
+					"SET `classname` = ?, "
+					"`hitpoints` = ?, "
+					"`variables` = ?, "
+					"`textures` = ?, "
+					"`gear` = ?, "
+					"`currentweapon` = ? "
+					" WHERE `charactershareables`.`uuid` = UNHEX(?)";
 
+	this->preparedStatementQuery(query, character->mysql_bind+7);
 
-	this->rawquery(query);
+	query = "UPDATE `persistent_variables` "
+			"SET `persistentvariables` = ? "
+			"WHERE `persistent_variables`.`uuid` = UNHEX(?)";
 
-	query = str(boost::format { "UPDATE `characterview` "
-			"SET `persistentvariables` = \"%s\" "
-			"WHERE `characterview`.`uuid` = CAST(0x%s AS BINARY);" } % persistentvariables % charuuid);
-
-
-	this->rawquery(query);
-
-	return charuuid;
-}
-
-std::string mysql_db_handler::locupdateChar(std::string charuuid, std::string animationstate, float direction,
-		int positiontype, float positionx, float positiony, float positionz) {
-	std::string query = str(
-			boost::format { "UPDATE `characterview` "
-					"SET `animationstate` = \"%s\", "
-					"`direction` = %s, "
-					"`positiontype` = %s, "
-					"`positionx` = %s, "
-					"`positiony` = %s, "
-					"`positionz` = %s "
-					" WHERE `characterview`.`uuid` = CAST(0x%s AS BINARY);" } % animationstate % direction
-					% positiontype % positionx % positiony % positionz % charuuid);
-
-
-	this->rawquery(query);
+	this->preparedStatementQuery(query, character->mysql_bind+14);
 
 	return charuuid;
 }
@@ -781,286 +767,142 @@ std::string mysql_db_handler::killChar(std::string charuuid, std::string attacke
 	return killuuid;
 }
 
-std::string mysql_db_handler::loadObject(std::string objectuuid) {
+std::string mysql_db_handler::loadObject(std::map<std::string, cache_base*> &objectcache, ext_arguments &extArgument) {
+	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+	object_mysql* object = 0;
+
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
-	bool printcommatwo = false;
+	std::string query =
+	str(boost::format{"SELECT `object`.`classname`, `object`.`priority`, `object`.`type`, `object`.`accesscode`, "
+						"`object`.`locked`, HEX(`object`.`player_uuid`), `object`.`hitpoints`, `object`.`damage`, "
+						"`object`.`fuel`, `object`.`fuelcargo`, `object`.`repaircargo`, `object`.`items`, "
+						"`object`.`magazinesturret`, "
+						"`object`.`variables`, `object`.`animationstate`, `object`.`textures`, `object`.`direction`, "
+						"`object`.`positiontype`, `object`.`positionx`, `object`.`positiony`, `object`.`positionz`, "
+						"`object`.`positionadvanced`, `object`.`reservedone`, `object`.`reservedtwo`, "
+						"HEX(`object`.`uuid`), "
+						"HEX(`world_has_objects`.`parentobject_uuid`), "
+						"HEX(`player`.`uuid`) "
+						"FROM `world_has_objects` "
+						"INNER JOIN `object` "
+						" ON `world_has_objects`.`object_uuid` = `object`.`uuid` "
+						"LEFT JOIN `player` "
+						" ON `object`.`player_uuid` = `player`.`uuid` "
+						"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY) "
+						"AND `world_has_objects`.`killinfo_uuid` IS NULL "
+						"ORDER BY `object`.priority ASC, `world_has_objects`.`parentobject_uuid` ASC"} % objectuuid);
 
-	// char info
-	std::string objectinfo = "";
-
-	std::string query = str(boost::format {
-			"SELECT HEX(`object`.`uuid`), HEX(`world_has_objects`.`parentobject_uuid`), "
-					"`object`.`classname`, `object`.`priority`, `object`.`visible`, `object`.`accesscode`, "
-					"`object`.`locked`, HEX(`object`.`player_uuid`), `object`.`hitpoints`, `object`.`damage`, "
-					"`object`.`fuel`, `object`.`fuelcargo`, `object`.`repaircargo`, `object`.`items`, "
-					"`object`.`magazinesturret`, "
-					"`object`.`variables`, `object`.`animationstate`, `object`.`textures`, `object`.`direction`, "
-					"`object`.`positiontype`, `object`.`positionx`, `object`.`positiony`, `object`.`positionz`, "
-					"`object`.`positionadvanced`, `object`.`reservedone`, `object`.`reservedtwo`, "
-					"GROUP_CONCAT(`player`.`steamid` SEPARATOR '\", \"') AS friendlist "
-					"FROM `world_has_objects` "
-					"INNER JOIN `object` "
-					" ON `world_has_objects`.`object_uuid` = `object`.`uuid` "
-					"LEFT JOIN `player_is_friend_with_player` "
-					" ON `object`.`player_uuid` = `player_is_friend_with_player`.`player1_uuid` "
-					"LEFT JOIN `player` "
-					" ON `player_is_friend_with_player`.`player2_uuid` = `player`.`uuid` "
-					"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY) "
-					"GROUP BY `object`.`uuid` "
-					"ORDER BY `object`.priority ASC, `world_has_objects`.`parentobject_uuid` ASC" } % objectuuid);
-
-	char typearray[] = { 1, // HEX(`object`.`uuid`)
-			1, // HEX(`world_has_objects`.`parentobject_uuid`)
-			1, // `object`.`classname`
-			0, // `object`.`priority`
-			0, // `object`.`visible`
-			1, // `object`.`accesscode`
-			0, // `object`.`locked`
-			1, // HEX(`object`.`player_uuid`)
-			0, // `object`.`hitpoints`
-			0, // `object`.`damage`
-			0, // `object`.`fuel`
-			0, // `object`.`fuelcargo`
-			0, // `object`.`repaircargo`
-			0, // `object`.`items`
-			0, // `object`.`magazinesturret`
-			0, // `object`.`variables`
-			0, // `object`.`animationstate`
-			0, // `object`.`textures`
-			0, // `object`.`direction`
-			0, // `object`.`positiontype`
-			0, // `object`.`positionx`
-			0, // `object`.`positiony`
-			0, // `object`.`positionz`
-			0, // `object`.`positionadvanced`
-			0, // `object`.`reservedone`
-			0, // `object`.`reservedtwo`
-			2  // GROUP_CONCAT(`player`.`steamid` SEPARATOR '\", \"') AS friendlist
-			};
-
-
-
-	//this->rawquery("SELECT HEX(uuid) FROM `world` WHERE uuid = CAST(0x11e66ac83e75277882c510bf48883ace AS BINARY)", &result);
 	this->rawquery(query, &result);
 
 	fieldcount = mysql_num_fields(result);
 	rowcount = mysql_num_rows(result);
 
-	// printf("fieldcount = %d\n", (int) fieldcount);
-	// printf("rowcount = %d\n", (int) rowcount);
-
-	objectinfo = "[";
-	if (rowcount > 0) {
+//	for (int rowpos = 0; rowpos < rowcount; rowpos++) {
 		row = mysql_fetch_row(result);
-
-		for (int fieldpos = 0; fieldpos < fieldcount; fieldpos++) {
-			if (printcommatwo) {
-				objectinfo += ",";
-			}
-			switch (typearray[fieldpos]) {
-			case 1:
-				objectinfo += "\"";
-				break;
-			case 2:
-				objectinfo += "[";
-				if (row[fieldpos] != NULL)
-					objectinfo += "\"";
-				break;
-			default:
-				objectinfo += "";
-			}
-
-			if (row[fieldpos] != NULL) {
-				objectinfo += row[fieldpos];
+		if (row[24] != NULL) {
+			auto it = objectcache.find(objectuuid);
+			if (it != objectcache.end()) {
+				object = static_cast<object_mysql*>((void*)it->second);
 			} else {
-				objectinfo += "";
+				object = new object_mysql;
+				objectcache.insert(std::make_pair(objectuuid, (cache_base*) object));
 			}
 
-			switch (typearray[fieldpos]) {
-			case 1:
-				objectinfo += "\"";
-				break;
-			case 2:
-				if (row[fieldpos] != NULL)
-					objectinfo += "\"";
-				objectinfo += "]";
-				break;
+			for (int fieldpos = 0; fieldpos < fieldcount && fieldpos < 27; fieldpos++) {
+				if (row[fieldpos] != NULL) {
+					object->setData(fieldpos, row[fieldpos]);
+				} else {
+					object->setNull(fieldpos);
+				}
 			}
-			printcommatwo = true;
 		}
-	}
-	objectinfo += "]";
+//	}
 
 	mysql_free_result(result);
 
-	return objectinfo;
+	return object->getAsArmaString();
 }
+#include <unistd.h>
+std::string mysql_db_handler::createObject(std::map<std::string, cache_base*> &objectcache, ext_arguments &extArgument) {
+	std::string objectuuid;
 
-std::string mysql_db_handler::createObject(std::string classname,
-		int priority, int visible, std::string accesscode, int locked,
-		std::string player_uuid, std::string hitpoints, float damage,
-		float fuel, float fuelcargo, float repaircargo, std::string items,
-		std::string magazinesturret, std::string variables,
-		std::string animationstate, std::string textures, float direction,
-		int positiontype, float positionx, float positiony, float positionz,
-		std::string positionadvanced, std::string reservedone, std::string reservedtwo) {
+	object_mysql* object = new object_mysql;
+	object->setData(extArgument);
 
-	std::string objectuuid = orderedUUID();
-
-	this->createObject(objectuuid, classname, priority, visible, accesscode,
-			locked, player_uuid, hitpoints, damage, fuel, fuelcargo,
-			repaircargo, items, magazinesturret, variables, animationstate,
-			textures, direction, positiontype, positionx, positiony, positionz,
-			positionadvanced, reservedone, reservedtwo);
-
-	return objectuuid;
-}
-
-std::string mysql_db_handler::createObject(std::string objectuuid, std::string classname,
-		int priority, int visible, std::string accesscode, int locked,
-		std::string player_uuid, std::string hitpoints, float damage,
-		float fuel, float fuelcargo, float repaircargo, std::string items,
-		std::string magazinesturret, std::string variables,
-		std::string animationstate, std::string textures, float direction,
-		int positiontype, float positionx, float positiony, float positionz,
-		std::string positionadvanced, std::string reservedone, std::string reservedtwo) {
-
-	std::string query;
-
-	if (player_uuid == "") {
-		query = str(
-				boost::format { "INSERT INTO `object` (`uuid`, `classname`, `priority`, `timelastused`, "
-						"`timecreated`, `visible`, `accesscode`, `locked`, `player_uuid`, `hitpoints`, "
-						"`damage`, `fuel`, `fuelcargo`, `repaircargo`, `items`, `magazinesturret`, "
-						"`variables`, `animationstate`, `textures`, `direction`, `positiontype`, "
-						"`positionx`, `positiony`, `positionz`, "
-						"`positionadvanced`, `reservedone`, `reservedtwo`) "
-						"VALUES (CAST(0x%s AS BINARY), \"%s\", %s, now(), "
-						"now(), %s, \"%s\", %s, NULL, \"%s\", "
-						"%s, %s, %s, %s, \"%s\", \"%s\", \"%s\", "
-						"\"%s\", \"%s\", %s, %s, %s, %s, %s, "
-						"\"%s\", \"%s\", \"%s\")" } % objectuuid % classname % priority % visible % accesscode % locked
-						% hitpoints % damage % fuel % fuelcargo % repaircargo % items
-						% magazinesturret % variables % animationstate % textures % direction % positiontype % positionx
-						% positiony % positionz % positionadvanced % reservedone % reservedtwo);
-	} else {
-		query = str(
-				boost::format { "INSERT INTO `object` (`uuid`, `classname`, `priority`, `timelastused`, "
-						"`timecreated`, `visible`, `accesscode`, `locked`, `player_uuid`, `hitpoints`, "
-						"`damage`, `fuel`, `fuelcargo`, `repaircargo`, `items`, `magazinesturret`, "
-						"`variables`, `animationstate`, `textures`, `direction`, `positiontype`, "
-						"`positionx`, `positiony`, `positionz`, "
-						"`positionadvanced`, `reservedone`, `reservedtwo`) "
-						"VALUES (CAST(0x%s AS BINARY), \"%s\", %s, now(), "
-						"now(), %s, \"%s\", %s, CAST(0x%s AS BINARY), \"%s\", "
-						"%s, %s, %s, %s, \"%s\", \"%s\", \"%s\", "
-						"\"%s\", \"%s\", %s, %s, %s, %s, %s, "
-						"\"%s\", \"%s\", \"%s\")" } % objectuuid % classname % priority % visible % accesscode % locked	% player_uuid
-						% hitpoints % damage % fuel % fuelcargo % repaircargo % items
-						% magazinesturret % variables % animationstate % textures % direction % positiontype % positionx
-						% positiony % positionz	% positionadvanced % reservedone % reservedtwo);
+	try {
+		objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+	} catch (std::runtime_error const& e) {
+		objectuuid = orderedUUID();
+		object->setData(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID, objectuuid);
 	}
 
+	objectcache.insert(std::make_pair(objectuuid, (cache_base*) object));
 
+	std::string query = "INSERT INTO `object` (`classname`, `priority`, `timelastused`, "
+							"`timecreated`, `type`, `accesscode`, `locked`, `player_uuid`, `hitpoints`, "
+							"`damage`, `fuel`, `fuelcargo`, `repaircargo`, `items`, `magazinesturret`, "
+							"`variables`, `animationstate`, `textures`, `direction`, `positiontype`, "
+							"`positionx`, `positiony`, `positionz`, "
+							"`positionadvanced`, `reservedone`, `reservedtwo`, `uuid`) "
+							"VALUES (?, ?, now(), "
+							"now(), ?, ?, ?, UNHEX(?), ?, "
+							"?, ?, ?, ?, ?, ?, ?, "
+							"?, ?, ?, ?, ?, ?, ?, "
+							"?, ?, ?, UNHEX(?))";
 
-	this->rawquery(query);
+	this->preparedStatementQuery(query, object->mysql_bind);
 
 	query = str(boost::format { "INSERT INTO `world_has_objects` (`world_uuid`, `object_uuid`) "
 			"VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY))" } % worlduuid % objectuuid);
 
-
 	this->rawquery(query);
 
 	return objectuuid;
 }
 
-std::string mysql_db_handler::updateObject(std::string objectuuid, std::string classname,
-		int priority, int visible, std::string accesscode, int locked,
-		std::string player_uuid, std::string hitpoints, float damage,
-		float fuel, float fuelcargo, float repaircargo, std::string items,
-		std::string magazinesturret, std::string variables,
-		std::string animationstate, std::string textures, float direction,
-		int positiontype, float positionx, float positiony, float positionz,
-		std::string positionadvanced, std::string reservedone, std::string reservedtwo) {
+std::string mysql_db_handler::updateObject(std::map<std::string, cache_base*> &objectcache, ext_arguments &extArgument) {
+	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+	object_mysql* object = 0;
 
-	std::string query;
+	auto it = objectcache.find(objectuuid);
+	if (it != objectcache.end()) {
+		object = static_cast<object_mysql*>((void*)it->second);
+	} else {
+		throw std::runtime_error("could not find object to update: " + objectuuid);
+	}
 
-		if (player_uuid == "") {
-			query = str(
-					boost::format { "UPDATE `object` "
-									"SET `classname` = \"%s\", "
-									"    `priority` = %s, "
-									"    `visible` = \"%s\","
-									"    `accesscode` = \"%s\", "
-									"    `locked` = \"%s\", "
-									"    `player_uuid` = NULL, "
-									"    `hitpoints` = \"%s\", "
-									"    `damage` = %s, "
-									"    `fuel` = %s, "
-									"    `fuelcargo` = %s, "
-									"    `repaircargo` = %s, "
-									"    `items` = \"%s\", "
-									"    `magazinesturret` = \"%s\", "
-									"    `variables` = \"%s\", "
-									"    `animationstate` = \"%s\", "
-									"    `textures` = \"%s\", "
-									"    `direction` = %s, "
-									"    `positiontype` = %s, "
-									"    `positionx` = %s, "
-									"    `positiony` = %s, "
-									"    `positionz` = %s, "
-									"    `positionadvanced` = \"%s\", "
-									"    `reservedone` = \"%s\", "
-									"    `reservedtwo` = \"%s\" "
-									"WHERE `object`.`uuid` = CAST(0x%s AS BINARY);" }
-									% classname % priority % visible % accesscode % locked
-									% hitpoints % damage % fuel % fuelcargo % repaircargo % items
-									% magazinesturret % variables % animationstate % textures % direction
-									% positiontype % positionx % positiony % positionz
-									% positionadvanced % reservedone % reservedtwo % objectuuid);
-		} else {
-			query = str(
-					boost::format { "UPDATE `object` "
-									"SET `classname` = \"%s\", "
-									"    `priority` = %s, "
-									"    `visible` = \"%s\","
-									"    `accesscode` = \"%s\", "
-									"    `locked` = \"%s\", "
-									"    `player_uuid` = CAST(0x%s AS BINARY), "
-									"    `hitpoints` = \"%s\", "
-									"    `damage` = %s, "
-									"    `fuel` = %s, "
-									"    `fuelcargo` = %s, "
-									"    `repaircargo` = %s, "
-									"    `items` = \"%s\", "
-									"    `magazinesturret` = \"%s\", "
-									"    `variables` = \"%s\", "
-									"    `animationstate` = \"%s\", "
-									"    `textures` = \"%s\", "
-									"    `direction` = %s, "
-									"    `positiontype` = %s, "
-									"    `positionx` = %s, "
-									"    `positiony` = %s, "
-									"    `positionz` = %s, "
-									"    `positionadvanced` = \"%s\", "
-									"    `reservedone` = \"%s\", "
-									"    `reservedtwo` = \"%s\" "
-									"WHERE `object`.`uuid` = CAST(0x%s AS BINARY);" }
-									% classname % priority % visible % accesscode % locked
-									% player_uuid % hitpoints % damage % fuel % fuelcargo % repaircargo % items
-									% magazinesturret % variables % animationstate % textures % direction
-									% positiontype % positionx % positiony % positionz
-									% positionadvanced % reservedone % reservedtwo % objectuuid);
-		}
+	std::string query = "UPDATE `object` "
+						"SET `classname` = ?, "
+						"    `priority` = ?, "
+						"    `type` = ?,"
+						"    `accesscode` = ?, "
+						"    `locked` = ?, "
+						"    `player_uuid` = UNHEX(?), "
+						"    `hitpoints` = ?, "
+						"    `damage` = ?, "
+						"    `fuel` = ?, "
+						"    `fuelcargo` = ?, "
+						"    `repaircargo` = ?, "
+						"    `items` = ?, "
+						"    `magazinesturret` = ?, "
+						"    `variables` = ?, "
+						"    `animationstate` = ?, "
+						"    `textures` = ?, "
+						"    `direction` = ?, "
+						"    `positiontype` = ?, "
+						"    `positionx` = ?, "
+						"    `positiony` = ?, "
+						"    `positionz` = ?, "
+						"    `positionadvanced` = ?, "
+						"    `reservedone` = ?, "
+						"    `reservedtwo` = ? "
+						"WHERE `object`.`uuid` = UNHEX(?);";
+	this->preparedStatementQuery(query, object->mysql_bind);
 
-
-
-		this->rawquery(query);
-
-		return objectuuid;
+	return objectuuid;
 }
 
 std::string mysql_db_handler::killObject(std::string objectuuid, std::string attackeruuid, std::string type,
@@ -1105,111 +947,189 @@ std::string mysql_db_handler::killObject(std::string objectuuid, std::string att
 	return killuuid;
 }
 
-std::vector< std::vector<std::string> > mysql_db_handler::dumpObjects() {
+//std::vector<cache_base*> mysql_db_handler::dumpObjects(std::map<std::string, cache_base*> &objectcache) {
+//	std::vector<cache_base*> objectList;
+//	MYSQL_BIND input_params[1];
+//	int        status;
+//
+//	long unsigned int length = 35;
+//	char buffer[35] = "0x";
+//	memcpy (buffer+2, worlduuid.c_str(), 33);
+//	buffer[34] = 0;
+//
+//	input_params[0].buffer_type = MYSQL_TYPE_STRING;
+//	input_params[0].buffer = (void*) buffer;
+//	input_params[0].length = &length;
+//	input_params[0].is_null = 0;
+//
+//	MYSQL_STMT *stmt;
+//	stmt = mysql_stmt_init(connection);
+//	if (!stmt)
+//	{
+//	  printf("Could not initialize statement\n");
+//	  exit(1);
+//	}
+//
+//	std::string query = "SELECT HEX(`object`.`uuid`), "
+//							"`object`.`classname`, `object`.`priority`, `object`.`type`, `object`.`accesscode`, "
+//							"`object`.`locked`, HEX(`object`.`player_uuid`), `object`.`hitpoints`, `object`.`damage`, "
+//							"`object`.`fuel`, `object`.`fuelcargo`, `object`.`repaircargo`, `object`.`items`, "
+//							"`object`.`magazinesturret`, "
+//							"`object`.`variables`, `object`.`animationstate`, `object`.`textures`, `object`.`direction`, "
+//							"`object`.`positiontype`, `object`.`positionx`, `object`.`positiony`, `object`.`positionz`, "
+//							"`object`.`positionadvanced`, `object`.`reservedone`, `object`.`reservedtwo`, "
+//							"HEX(`world_has_objects`.`parentobject_uuid`), "
+//							"HEX(`player`.`uuid`) "
+//							"FROM `world_has_objects` "
+//							"INNER JOIN `object` "
+//							" ON `world_has_objects`.`object_uuid` = `object`.`uuid` "
+//							"LEFT JOIN `player` "
+//							" ON `object`.`player_uuid` = `player`.`uuid` "
+//							"WHERE `world_has_objects`.`world_uuid` = CAST(? AS BINARY) "
+//							"OR `world_has_objects`.`killinfo_uuid` IS NULL "
+//							"ORDER BY `object`.priority ASC, `world_has_objects`.`parentobject_uuid` ASC";
+//
+//	status = mysql_stmt_prepare(stmt, query.c_str(), query.size() + 1);
+//	test_stmt_error(stmt, status);
+//
+//	status = mysql_stmt_bind_param(stmt, input_params);
+//	test_stmt_error(stmt, status);
+//
+//	status = mysql_stmt_execute(stmt);
+//	test_stmt_error(stmt, status);
+//
+//	do {
+//		int i;
+//		int num_fields;       /* number of columns in result */
+//		MYSQL_FIELD *fields;  /* for result set metadata */
+//
+//		/* the column count is > 0 if there is a result set */
+//		/* 0 if the result is only the final status packet */
+//		num_fields = mysql_stmt_field_count(stmt);
+//
+//		if (num_fields > objectCacheMaxElements) {
+//			throw std::runtime_error("to many fields in dump objects:" + std::to_string(num_fields));
+//		}
+//
+//		if (num_fields > 0)
+//		{
+//			MYSQL_RES *rs_metadata = mysql_stmt_result_metadata(stmt);
+//
+//			fields = mysql_fetch_fields(rs_metadata);
+//
+//			object_mysql* object = new object_mysql;
+//
+//			for (i = 0; i < num_fields; ++i)
+//			{
+//				if (object->mysql_bind[i].buffer_type != fields[i].type && fields[i].type != 252) {
+//					throw std::runtime_error("unexpected field type in dump objects field " + std::to_string(i) +
+//							std::string(" has type ") + std::to_string(object->mysql_bind[i].buffer_type) +
+//							std::string(" but got type ") + std::to_string(fields[i].type));
+//				}
+//			}
+//
+//			/* fetch and display result set rows */
+//			while (1)
+//			{
+//				for (unsigned int arraypos = 0; arraypos < num_fields; arraypos++) {
+//					if (object->mysql_bind[arraypos].buffer_type == MYSQL_TYPE_VAR_STRING) {
+//						if (object->mysql_bind[arraypos].buffer == 0) {
+//							char * pointer = new char[64];
+//							object->mysql_bind[arraypos].buffer = pointer;
+//							object->mysql_bind[arraypos].buffer_length = 64;
+//						}
+//					}
+//				}
+//
+//				status = mysql_stmt_bind_result(stmt, object->mysql_bind);
+//				test_stmt_error(stmt, status);
+//
+//				status = mysql_stmt_fetch(stmt);
+//
+//				if (status == 1 || status == MYSQL_NO_DATA) {
+////					delete object;
+//					break;
+//				}
+//
+//				std::string uuid = (char*) object->mysql_bind[0].buffer;
+//				objectList.push_back((cache_base*) object);
+//				objectcache.insert(std::make_pair(uuid, (cache_base*) object));
+//
+//				object_mysql* object = new object_mysql;
+//			}
+//
+//			mysql_free_result(rs_metadata); /* free metadata */
+//		}
+//
+//		/* more results? -1 = no, >0 = error, 0 = yes (keep looking) */
+//		status = mysql_stmt_next_result(stmt);
+//		if (status > 0) {
+//			test_stmt_error(stmt, status);
+//		}
+//
+//	} while (status == 0);
+//
+//	return objectList;
+//}
+
+std::vector<cache_base*> mysql_db_handler::dumpObjects(std::map<std::string, cache_base*> &objectcache) {
+	std::vector<cache_base*> objectList;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
 	std::string query =
-	str(boost::format{"SELECT HEX(`object`.`uuid`), HEX(`world_has_objects`.`parentobject_uuid`), "
-						"`object`.`classname`, `object`.`priority`, `object`.`visible`, `object`.`accesscode`, "
+	str(boost::format{"SELECT `object`.`classname`, `object`.`priority`, `object`.`type`, `object`.`accesscode`, "
 						"`object`.`locked`, HEX(`object`.`player_uuid`), `object`.`hitpoints`, `object`.`damage`, "
 						"`object`.`fuel`, `object`.`fuelcargo`, `object`.`repaircargo`, `object`.`items`, "
 						"`object`.`magazinesturret`, "
 						"`object`.`variables`, `object`.`animationstate`, `object`.`textures`, `object`.`direction`, "
 						"`object`.`positiontype`, `object`.`positionx`, `object`.`positiony`, `object`.`positionz`, "
 						"`object`.`positionadvanced`, `object`.`reservedone`, `object`.`reservedtwo`, "
-						"GROUP_CONCAT(`player`.`steamid` SEPARATOR '\", \"') AS friendlist "
+						"HEX(`object`.`uuid`), "
+						"HEX(`world_has_objects`.`parentobject_uuid`), "
+						"HEX(`player`.`uuid`) "
 						"FROM `world_has_objects` "
 						"INNER JOIN `object` "
 						" ON `world_has_objects`.`object_uuid` = `object`.`uuid` "
-						"LEFT JOIN `player_is_friend_with_player` "
-						" ON `object`.`player_uuid` = `player_is_friend_with_player`.`player1_uuid` "
 						"LEFT JOIN `player` "
-						" ON `player_is_friend_with_player`.`player2_uuid` = `player`.`uuid` "
+						" ON `object`.`player_uuid` = `player`.`uuid` "
 						"WHERE `world_has_objects`.`world_uuid` = CAST(0x%s AS BINARY) "
 						"AND `world_has_objects`.`killinfo_uuid` IS NULL "
-						"GROUP BY `object`.`uuid` "
 						"ORDER BY `object`.priority ASC, `world_has_objects`.`parentobject_uuid` ASC"} % worlduuid);
-
-	char typearray[] = {
-			1, // HEX(`object`.`uuid`)
-			1, // HEX(`world_has_objects`.`parentobject_uuid`)
-			1, // `object`.`classname`
-			0, // `object`.`priority`
-			0, // `object`.`visible`
-			1, // `object`.`accesscode`
-			0, // `object`.`locked`
-			1, // HEX(`object`.`player_uuid`)
-			0, // `object`.`hitpoints`
-			0, // `object`.`damage`
-			0, // `object`.`fuel`
-			0, // `object`.`fuelcargo`
-			0, // `object`.`repaircargo`
-			0, // `object`.`items`
-			0, // `object`.`magazinesturret`
-			0, // `object`.`variables`
-			0, // `object`.`animationstate`
-			0, // `object`.`textures`
-			0, // `object`.`direction`
-			0, // `object`.`positiontype`
-			0, // `object`.`positionx`
-			0, // `object`.`positiony`
-			0, // `object`.`positionz`
-			0, // `object`.`positionadvanced`
-			0, // `object`.`reservedone`
-			0, // `object`.`reservedtwo`
-			2  // GROUP_CONCAT(`player`.`steamid` SEPARATOR '\", \"') AS friendlist
-	};
-
 
 	this->rawquery(query, &result);
 
 	fieldcount = mysql_num_fields(result);
 	rowcount = mysql_num_rows(result);
 
-	// printf("fieldcount = %d\n", (int)fieldcount);
-	// printf("rowcount = %d\n", (int)rowcount);
-
-	std::vector< std::vector<std::string> > resultmatrix (rowcount, std::vector<std::string>(fieldcount));
-
 	for (int rowpos = 0; rowpos < rowcount; rowpos++) {
 		row = mysql_fetch_row(result);
-		for (int fieldpos = 0; fieldpos < fieldcount; fieldpos++) {
-			switch (typearray[fieldpos]) {
-			case 1:
-				resultmatrix[rowpos][fieldpos] = "\"";
-				break;
-			case 2:
-				resultmatrix[rowpos][fieldpos] = "[";
-				if (row[fieldpos] != NULL)
-					resultmatrix[rowpos][fieldpos] += "\"";
-				break;
-			default:
-				resultmatrix[rowpos][fieldpos] = "";
-			}
+		if (row[24] != NULL) {
+			std::string uuid = row[24];
 
-			if (row[fieldpos] != NULL) {
-				resultmatrix[rowpos][fieldpos] += row[fieldpos];
-			} else {
-				resultmatrix[rowpos][fieldpos] += "";
-			}
+			object_mysql* object = new object_mysql;
+			objectList.push_back((cache_base*) object);
+			objectcache.insert(std::make_pair(uuid, (cache_base*) object));
 
-			switch (typearray[fieldpos]) {
-			case 1:
-				resultmatrix[rowpos][fieldpos] += "\"";
-				break;
-			case 2:
-				if (row[fieldpos] != NULL)
-					resultmatrix[rowpos][fieldpos] += "\"";
-				resultmatrix[rowpos][fieldpos] += "]";
-				break;
+			for (int fieldpos = 0; fieldpos < fieldcount && fieldpos < 27; fieldpos++) {
+				if (row[fieldpos] != NULL) {
+					object->setData(fieldpos, row[fieldpos]);
+				} else {
+					object->setNull(fieldpos);
+				}
 			}
 		}
 	}
 
 	mysql_free_result(result);
 
-	return resultmatrix;
+	return objectList;
 }
 
+void mysql_db_handler::test_stmt_error(MYSQL_STMT *stmt, int status) {
+  if (status)
+  {
+	  throw std::runtime_error(std::string("MYSQLERROR") + std::string(mysql_stmt_error(stmt)) + std::string(" Errornumber: ") + std::to_string(mysql_stmt_errno(stmt)));
+  }
+}

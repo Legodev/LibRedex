@@ -1,18 +1,18 @@
 /* redex.cpp
  *
- * Copyright 2016-2017 Desolation Redux
+ * Copyright 2016-2018 Desolation Redux
  *
  * Author: Legodev <legodevgit@mailbox.org>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Affero General Public License for more details.
  */
 
 #include <unistd.h>
@@ -34,17 +34,38 @@
 
 redex::redex() {
 	extFunctions.insert(
-				std::make_pair(std::string(PROTOCOL_LIBARY_FUNCTION_TERMINATE_ALL),
-						boost::bind(&redex::terminateAll, this, _1, _2)));
+			std::make_pair(
+					std::string(PROTOCOL_LIBARY_FUNCTION_TERMINATE_ALL),
+					std::make_tuple(
+							boost::bind(&redex::terminateAll, this, _1, _2),
+							SYNC_MAGIC)));
 	extFunctions.insert(
-				std::make_pair(std::string(PROTOCOL_LIBARY_FUNCTION_RECEIVE_MESSAGE),
-						boost::bind(&redex::rcvmsg, this, _1, _2)));
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ASYNC_SATE),
+					std::make_tuple(
+							boost::bind(&redex::chkmsg, this, _1, _2),
+							SYNC_MAGIC)));
 	extFunctions.insert(
-					std::make_pair(std::string(PROTOCOL_LIBARY_FUNCTION_CHECK_MESSAGE_STATE),
-							boost::bind(&redex::chkmsg, this, _1, _2)));
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ASYNC_MSG),
+					std::make_tuple(
+							boost::bind(&redex::rcvasmsg, this, _1, _2),
+							SYNC_MAGIC)));
 	extFunctions.insert(
-						std::make_pair(std::string(PROTOCOL_LIBARY_FUNCTION_CHECK_VERSION),
-								boost::bind(&redex::version, this, _1, _2)));
+			std::make_pair(std::string(PROTOCOL_LIBARY_FUNCTION_RECEIVE_MESSAGE),
+					std::make_tuple(
+							boost::bind(&redex::rcvmsg, this, _1, _2),
+							SYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_LIBARY_FUNCTION_CHECK_MESSAGE_STATE),
+					std::make_tuple(
+							boost::bind(&redex::chkmsg, this, _1, _2),
+							SYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_LIBARY_FUNCTION_CHECK_VERSION),
+					std::make_tuple(
+							boost::bind(&redex::version, this, _1, _2),
+							SYNC_MAGIC)));
 
 	if (access(CONFIG_FILE_NAME, F_OK) == -1) {
 		std::ofstream logfile;
@@ -53,20 +74,55 @@ redex::redex() {
 		logfile.flush();
 		logfile.close();
 	} else {
+		// spawn some idle work
+		REDEXioServiceWork.reset( new boost::asio::io_service::work(REDEXioService) );
+
+		boost::property_tree::ptree configtree;
+		boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);
+
+		unsigned int poolsize = configtree.get<unsigned int>("gamesettings.poolsize");
+
+		if (poolsize < 1) {
+			poolsize = 1;
+		}
+
+		for (unsigned int i = 0; i < poolsize; i++) {
+			asyncthreadpool.create_thread(
+					boost::bind(static_cast<std::size_t (boost::asio::io_service::*)()>(&boost::asio::io_service::run), &REDEXioService)
+			);
+		}
+
 		extModules.emplace_back(new dbcon(extFunctions));
 		extModules.emplace_back(new fileio(extFunctions));
 		extModules.emplace_back(new datetime(extFunctions));
 		extModules.emplace_back(new randomlist(extFunctions));
 	}
-
 	return;
 }
 
 redex::~redex() {
+	REDEXioServiceWork.reset(); // stop all idle work!
+	REDEXioService.stop(); // terminate all work
+	// commented because of a bug with boost thread pool if join_all gets executed in process detach
+	//asyncthreadpool.join_all(); // get rid of all threads
+
 	return;
 }
 
 void redex::terminate() {
+	REDEXioServiceWork.reset(); // stop all idle work!
+
+	// wait until all jobs are finished
+	while (!REDEXioService.stopped()) {
+		boost::thread::yield();
+	}
+
+	// should not be needed
+	REDEXioService.stop();
+
+	// get rid of all threads
+	asyncthreadpool.join_all();
+
 	for (auto &module : extModules) {
 	    module->terminateHandler();
 	}
@@ -87,20 +143,23 @@ std::string redex::processCallExtension(const char *function, const char **args,
 
 	EXT_FUNCTIONS::iterator it = extFunctions.find(extFunction);
 	if (it != extFunctions.end()) {
-		const EXT_FUNCTION &func(it->second);
+		EXT_FUNCTION_INFO funcinfo = it->second;
 
-		try {
-			returnString = func(extFunction, extArguments);
-		} catch (std::exception const& e) {
-			std::string error = e.what();
-			int i = 0;
-			while ((i = error.find("\"", i)) != std::string::npos) {
-				error.insert(i, "\"");
-				i += 2;
-			}
-			returnString = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\",\"";
-			returnString += error;
-			returnString += "\"]";
+		switch (std::get<1>(funcinfo)) {
+		case SYNC_MAGIC:
+			returnString = syncCall(funcinfo, extArguments);
+			break;
+
+		case ASYNC_MAGIC:
+			returnString = asyncCall(funcinfo, extArguments);
+			break;
+
+		case QUIET_MAGIC:
+			returnString = quietCall(funcinfo, extArguments);
+			break;
+
+		default:
+			throw std::runtime_error("unknown function class");
 		}
 
 	} else {
@@ -116,6 +175,66 @@ std::string redex::processCallExtension(const char *function, const char **args,
 	}
 
 	return returnString;
+}
+
+std::string redex::syncCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgument) {
+	const EXT_FUNCTION &func(std::get<0>(funcinfo));
+	std::string returnString = "code to be changed";
+
+	try {
+		returnString = func(returnString, extArgument);
+	} catch (std::exception const& e) {
+		throw std::runtime_error(e.what());
+	}
+
+	return returnString;
+}
+
+std::string redex::asyncCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgument) {
+	ext_arguments copyextArgument = extArgument;
+	PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier = PROTOCOL_IDENTIFIER_GENERATOR;
+
+	REDEXioService.post(boost::bind(&redex::asyncCallProcessor, this, funcinfo, extArgument, messageIdentifier));
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ASYNC) + "\",\"" + messageIdentifier + "\"]" ;
+}
+
+std::string redex::quietCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgument) {
+	ext_arguments copyextArgument = extArgument;
+	PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier = "";
+
+	REDEXioService.post(boost::bind(&redex::asyncCallProcessor, this, funcinfo, extArgument, messageIdentifier));
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_QUIET) + "\",\"\"]" ;
+}
+
+void redex::asyncCallProcessor(EXT_FUNCTION_INFO funcinfo, ext_arguments extArgument, PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier) {
+	std::string returnString;
+	std::queue<std::string> stringqueue;
+
+	try {
+		returnString = this->syncCall(funcinfo, extArgument);
+	} catch (std::exception const& e) {
+		std::string error = e.what();
+		int i = 0;
+		while ((i = error.find("\"", i)) != std::string::npos) {
+			error.insert(i, "\"");
+			i += 2;
+		}
+		returnString = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\",\"";
+		returnString += error;
+		returnString += "\"]";
+	}
+
+	if (messageIdentifier != "") {
+		stringqueue.push(returnString);
+
+		msgmutex.lock();
+		msgmap.insert(std::make_pair(messageIdentifier, stringqueue));
+		msgmutex.unlock();
+	}
+
+	return;
 }
 
 std::string redex::multipartMSGGenerator(std::string returnString, int outputSize) {
@@ -168,6 +287,36 @@ std::string redex::terminateAll(std::string extFunction, ext_arguments &extArgum
 	return "DONE";
 }
 
+std::string redex::rcvasmsg(std::string &extFunction, ext_arguments &extArgument) {
+	PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier = extArgument.get<PROTOCOL_IDENTIFIER_DATATYPE>(PROTOCOL_IDENTIFIER_NAME);
+	std::queue<std::string> *stringqueue;
+	std::string returnString;
+
+	msgmutex.lock();
+	MESSAGE_MAP::iterator it = msgmap.find(messageIdentifier);
+	msgmutex.unlock();
+
+	// check if message object was found
+	if (it == msgmap.end()) {
+		returnString = PROTOCOL_MESSAGE_NOT_EXISTING;
+	} else {
+		// extract message object
+		stringqueue = &it->second;
+
+		if (!stringqueue->empty()) {
+			returnString = stringqueue->front();
+		} else {
+			returnString = "";
+		}
+
+		msgmutex.lock();
+		msgmap.erase (it);
+		msgmutex.unlock();
+	}
+
+	return returnString;
+}
+
 std::string redex::rcvmsg(std::string extFunction, ext_arguments &extArguments) {
 	PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier = extArguments.get<PROTOCOL_IDENTIFIER_DATATYPE>(PROTOCOL_IDENTIFIER_NAME);
 	std::queue<std::string> *stringqueue;
@@ -202,7 +351,7 @@ std::string redex::rcvmsg(std::string extFunction, ext_arguments &extArguments) 
 }
 
 std::string redex::chkmsg(std::string extFunction, ext_arguments &extArguments) {
-	PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier = extArguments.get<PROTOCOL_IDENTIFIER_DATATYPE>("messageIdentifier");
+	PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier = extArguments.get<PROTOCOL_IDENTIFIER_DATATYPE>(PROTOCOL_IDENTIFIER_NAME);
 	std::queue<PROTOCOL_IDENTIFIER_DATATYPE> *stringqueue;
 	std::string returnString;
 

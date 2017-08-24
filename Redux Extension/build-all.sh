@@ -28,4 +28,6 @@ make
 cp -f libredex_x64.dll ../../Binaries
 cd ..
 ####
-cd ..
+cd ../Binaries
+mkdir -p Release/
+cp libredex*.so libredex*.dll Release/
