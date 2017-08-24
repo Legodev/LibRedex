@@ -31,7 +31,7 @@ object_mysql::object_mysql() {
 	if (objectvariablemap.empty()) {
 		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME, 0));
 		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_PRIORITY, 1));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_TYPE, 2));
+		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_OBJECTTYPE, 2));
 		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_ACCESSCODE, 3));
 		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_LOCKED, 4));
 		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID, 5));
