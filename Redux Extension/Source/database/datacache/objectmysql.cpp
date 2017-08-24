@@ -203,7 +203,7 @@ int object_mysql::setData(unsigned int arraypos, std::string variableValue) {
 
 	if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_TINY) {
 		signed char * pointer = (signed char *) mysql_bind[arraypos].buffer;
-		// lexical_cast casts all 8 bit values as character not as number
+		// lexical_cast casts all 8 bit values as character not as number ( 0 becomes 48 instead of 0)
 		// * pointer = boost::lexical_cast<signed char>(variableValue);
 		* pointer = (signed char) boost::lexical_cast<int>(variableValue);
 	}

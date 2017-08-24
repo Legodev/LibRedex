@@ -298,21 +298,21 @@ std::string redex::rcvasmsg(std::string &extFunction, ext_arguments &extArgument
 
 	// check if message object was found
 	if (it == msgmap.end()) {
-		throw std::runtime_error("Message " + messageIdentifier + " does not exist");
-	}
-
-	// extract message object
-	stringqueue = &it->second;
-
-	if (!stringqueue->empty()) {
-		returnString = stringqueue->front();
+		returnString = PROTOCOL_MESSAGE_NOT_EXISTING;
 	} else {
-		returnString = "";
-	}
+		// extract message object
+		stringqueue = &it->second;
 
-	msgmutex.lock();
-	msgmap.erase (it);
-	msgmutex.unlock();
+		if (!stringqueue->empty()) {
+			returnString = stringqueue->front();
+		} else {
+			returnString = "";
+		}
+
+		msgmutex.lock();
+		msgmap.erase (it);
+		msgmutex.unlock();
+	}
 
 	return returnString;
 }

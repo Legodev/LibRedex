@@ -127,9 +127,7 @@ print(out)
 #print(out)
 
 
-out= instance.ExecuteAndPrint("initdb", [
-                               "poolsize", "4",
-                               "worlduuid", "11e66ac33a4ccd1c82c510bf-48883ace"])
+out= instance.ExecuteAndPrint("initdb", ["worlduuid", "11e71379043c8906833008626681de3d"])
 print(out)
 sleep(1)
  
@@ -265,35 +263,35 @@ sleep(1)
 #print(out)
 # 
 #print("\n\n")
-##out= instance.ExecuteAndPrint("createObject", [
-                              ##"classname", stringgenerator(8),
-                              ##"priority", "2", 
-                              ##"type", "1", 
-                              ##"accesscode", "", 
-                              ##"locked", "0", 
-                              ##"playeruuid", "",
-                              ##"hitpoints", "[]",  
-                              ##"damage", "0.1", 
-                              ##"fuel", "0.9", 
-                              ##"fuelcargo", "0.0", 
-                              ##"repaircargo", "0.0",
-                              ##"items", "[]", 
-                              ##"magazinesturret", "[]", 
-                              ##"variables", "[]",
-                              ##"animationstate", "[]", 
-                              ##"textures", "[]", 
-                              ##"direction", "23.5", 
-                              ##"positiontype", "0", 
-                              ##"positionx", "21.42", 
-                              ##"positiony", "666.9", 
-                              ##"positionz", "133.7",
-                              ##"positionadvanced", "[[1,2,3]]", 
-                              ##"reservedone", "[]", 
-                              ##"reservedtwo", "[]"])
+out= instance.ExecuteAndPrint("createObject", [
+                              "classname", stringgenerator(8),
+                              "priority", "2", 
+                              "type", "1", 
+                              "accesscode", "", 
+                              "locked", "0", 
+                              "playeruuid", "",
+                              "hitpoints", "[]",  
+                              "damage", "0.1", 
+                              "fuel", "0.9", 
+                              "fuelcargo", "0.0", 
+                              "repaircargo", "0.0",
+                              "items", "[]", 
+                              "magazinesturret", "[]", 
+                              "variables", "[]",
+                              "animationstate", "[]", 
+                              "textures", "[]", 
+                              "direction", "23.5", 
+                              "positiontype", "0", 
+                              "positionx", "21.42", 
+                              "positiony", "666.9", 
+                              "positionz", "133.7",
+                              "positionadvanced", "[[1,2,3]]", 
+                              "reservedone", "[]", 
+                              "reservedtwo", "[]"])
 #out= instance.ExecuteAndPrint("createObject", [
                               #"classname", stringgenerator(8),
                               #"priority", "2"])
-#print(out)
+print(out)
 #compiledout = ast.literal_eval(out)
 #objectuuid = compiledout[1]
 #print(objectuuid)
