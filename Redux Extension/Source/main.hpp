@@ -43,10 +43,10 @@
 #include <map>
 
 #include "constants.hpp"
-extern std::map<std::string, unsigned int> objectvariablemap;
-std::map<std::string, unsigned int> objectvariablemap;
-extern std::map<std::string, unsigned int> charactervariablemap;
-std::map<std::string, unsigned int> charactervariablemap;
+extern std::map<std::string, unsigned int> * objectvariablemap;
+std::map<std::string, unsigned int> * objectvariablemap = 0;
+extern std::map<std::string, unsigned int> * charactervariablemap;
+std::map<std::string, unsigned int> * charactervariablemap = 0;
 
 #include "redex.hpp"
 redex * extension = 0;
@@ -81,6 +81,14 @@ static void init(void)
 //    testfile.flush();
 //#endif
 
+	if (charactervariablemap == 0) {
+		charactervariablemap = new std::map<std::string, unsigned int>;
+	}
+
+	if (objectvariablemap == 0) {
+		objectvariablemap = new std::map<std::string, unsigned int>;
+	}
+
     if (extension == 0) {
         extension = new redex();
     }
@@ -99,13 +107,35 @@ static void destroy(void)
     
     if (extension != 0) {
 #ifdef DEBUG
-        testfile << "deleting object" << std::endl;
+        testfile << "deleting extension object" << std::endl;
 #endif
         delete extension;
 #ifdef DEBUG
-        testfile << "resetting pointer" << std::endl;
+        testfile << "resetting extension pointer" << std::endl;
 #endif
         extension = 0;
+    }
+
+    if (charactervariablemap != 0) {
+#ifdef DEBUG
+        testfile << "deleting charactervariablemap object" << std::endl;
+#endif
+        delete charactervariablemap;
+#ifdef DEBUG
+        testfile << "resetting charactervariablemap pointer" << std::endl;
+#endif
+        charactervariablemap = 0;
+    }
+
+    if (objectvariablemap != 0) {
+#ifdef DEBUG
+        testfile << "deleting objectvariablemap object" << std::endl;
+#endif
+        delete objectvariablemap;
+#ifdef DEBUG
+        testfile << "resetting objectvariablemap pointer" << std::endl;
+#endif
+        objectvariablemap = 0;
     }
 
 #ifdef DEBUG

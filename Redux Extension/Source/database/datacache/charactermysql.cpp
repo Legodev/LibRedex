@@ -28,27 +28,27 @@ character_mysql::character_mysql() {
 		mysql_bind[arraypos].is_null = &is_null[arraypos];
 	}
 
-	if (charactervariablemap.empty()) {
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE, 0));
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_DIRECTION, 1));
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE, 2));
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONX, 3));
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONY, 4));
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ, 5));
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_CHARUUID, 6));
+	if (charactervariablemap->empty()) {
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE, 0));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_DIRECTION, 1));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE, 2));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONX, 3));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONY, 4));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ, 5));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_CHARUUID, 6));
 
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME, 7));
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS, 8));
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_VARIABLES, 9));
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_TEXTURES, 10));
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_GEAR, 11));
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_CURRENTWEAPON, 12));
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_CHARSHAREUUID, 13));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME, 7));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS, 8));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_VARIABLES, 9));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_TEXTURES, 10));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_GEAR, 11));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_CURRENTWEAPON, 12));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_CHARSHAREUUID, 13));
 
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABLES, 14));
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABUUID, 15));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABLES, 14));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABUUID, 15));
 
-		charactervariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID, 16));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID, 16));
 	}
 
 
@@ -92,7 +92,7 @@ character_mysql::~character_mysql() {
 
 void character_mysql::freeStrings() {
 	for (unsigned int arraypos = 0; arraypos < characterCacheMaxElements; arraypos++) {
-		if (mysql_bind[arraypos].buffer != 0) {
+		if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_VAR_STRING && mysql_bind[arraypos].buffer != 0) {
 			free(mysql_bind[arraypos].buffer);
 			mysql_bind[arraypos].buffer = 0;
 			mysql_bind[arraypos].buffer_length = 0;
@@ -110,8 +110,8 @@ int character_mysql::setNull(unsigned int arraypos) {
 }
 
 int character_mysql::setData(std::string variableName, std::string variableValue) {
-	auto it = charactervariablemap.find(variableName);
-	if (it != charactervariablemap.end()) {
+	auto it = charactervariablemap->find(variableName);
+	if (it != charactervariablemap->end()) {
 		unsigned int arraypos = it->second;
 
 		setData(arraypos, variableValue);
@@ -129,8 +129,8 @@ int character_mysql::setData(ext_arguments &extArgument) {
 	std::list<std::string> keyList = extArgument.getKeys();
 
 	for(auto const &key : keyList) {
-		auto it = charactervariablemap.find(key);
-		if (it != charactervariablemap.end()) {
+		auto it = charactervariablemap->find(key);
+		if (it != charactervariablemap->end()) {
 			unsigned int arraypos = it->second;
 			std::string variableValue = extArgument.get<std::string>(key);
 

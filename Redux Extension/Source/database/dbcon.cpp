@@ -140,11 +140,26 @@ dbcon::dbcon(EXT_FUNCTIONS &extFunctions) {
 dbcon::~dbcon() {
 	intptr_t dbhandlerpointer;
 	base_db_handler *dbhandler;
+	cache_base* tmp;
 
 	// while there is an handler call disconnect
 	while (dbhandlerpool.pop(dbhandlerpointer)) {
 		dbhandler = (base_db_handler*) dbhandlerpointer;
 		dbhandler->disconnect();
+	}
+
+	for (auto it = objectcache.cbegin(); it != objectcache.cend(); ++it)
+	{
+		tmp = it->second;
+		delete tmp;
+		objectcache.erase(it);
+	}
+
+	for (auto it = charactercache.cbegin(); it != charactercache.cend(); ++it)
+	{
+		tmp = it->second;
+		delete tmp;
+		charactercache.erase(it);
 	}
 
 	poolinitialized = false;
@@ -153,9 +168,9 @@ dbcon::~dbcon() {
 
 std::string dbcon::spawnHandler(std::string &extFunction, ext_arguments &extArgument) {
 	std::string worlduuid = extArgument.getUUID("worlduuid");
+	int i = 0;
 
 	if (!poolinitialized) {
-		int i;
 		std::string type;
 		std::string hostname;
 		std::string user;
@@ -200,7 +215,7 @@ std::string dbcon::spawnHandler(std::string &extFunction, ext_arguments &extArgu
 		/* for the beginning we want to have some spare pool handlers */
 		dbhandlerpool.reserve(poolsize + 3);
 
-		for (i = 0; i < poolsize+1; i++) {
+		for (i = 0; i < poolsize; i++) {
 			if (boost::iequals(type, "MYSQL")) {
 				std::cout << "creating mysql_db_handler" << std::endl;
 				dbhandler = new (mysql_db_handler);
@@ -223,7 +238,7 @@ std::string dbcon::spawnHandler(std::string &extFunction, ext_arguments &extArgu
 		throw std::runtime_error("Threads already spawned");
 	}
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",1337]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + std::to_string(i) + "]";
 }
 
 std::string dbcon::terminateHandler(std::string &extFunction, ext_arguments &extArgument) {

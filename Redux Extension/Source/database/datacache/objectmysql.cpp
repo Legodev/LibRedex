@@ -28,32 +28,32 @@ object_mysql::object_mysql() {
 		mysql_bind[arraypos].is_null = &is_null[arraypos];
 	}
 
-	if (objectvariablemap.empty()) {
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME, 0));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_PRIORITY, 1));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_OBJECTTYPE, 2));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_ACCESSCODE, 3));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_LOCKED, 4));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID, 5));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS, 6));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_DAMAGE, 7));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_FUEL, 8));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_FUELCARGO, 9));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_REPAIRCARGO, 10));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_ITEMS, 11));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_MAGAZINESTURRET, 12));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_VARIABLES, 13));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE, 14));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_TEXTURES, 15));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_DIRECTION, 16));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE, 17));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONX, 18));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONY, 19));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ, 20));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONADVANCED, 21));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_RESERVEDONE, 22));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_RESERVEDTWO, 23));
-		objectvariablemap.insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID, 24));
+	if (objectvariablemap->empty()) {
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_CLASSNAME, 0));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_PRIORITY, 1));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_OBJECTTYPE, 2));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_ACCESSCODE, 3));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_LOCKED, 4));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID, 5));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_HITPOINTS, 6));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_DAMAGE, 7));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_FUEL, 8));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_FUELCARGO, 9));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_REPAIRCARGO, 10));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_ITEMS, 11));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_MAGAZINESTURRET, 12));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_VARIABLES, 13));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_ANIMATIONSTATE, 14));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_TEXTURES, 15));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_DIRECTION, 16));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONTYPE, 17));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONX, 18));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONY, 19));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONZ, 20));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_POSITIONADVANCED, 21));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_RESERVEDONE, 22));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_RESERVEDTWO, 23));
+		objectvariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID, 24));
 	}
 
 	mysql_bind[0].buffer_type = MYSQL_TYPE_VAR_STRING; // classname =  "uninitializedobject"
@@ -117,7 +117,7 @@ object_mysql::~object_mysql() {
 
 void object_mysql::freeStrings() {
 	for (unsigned int arraypos = 0; arraypos < objectCacheMaxElements; arraypos++) {
-		if (mysql_bind[arraypos].buffer != 0) {
+		if (mysql_bind[arraypos].buffer_type == MYSQL_TYPE_VAR_STRING && mysql_bind[arraypos].buffer != 0) {
 			free(mysql_bind[arraypos].buffer);
 			mysql_bind[arraypos].buffer = 0;
 			mysql_bind[arraypos].buffer_length = 0;
@@ -135,8 +135,8 @@ int object_mysql::setNull(unsigned int arraypos) {
 }
 
 int object_mysql::setData(std::string variableName, std::string variableValue) {
-	auto it = objectvariablemap.find(variableName);
-	if (it != objectvariablemap.end()) {
+	auto it = objectvariablemap->find(variableName);
+	if (it != objectvariablemap->end()) {
 		unsigned int arraypos = it->second;
 
 		setData(arraypos, variableValue);
@@ -154,8 +154,8 @@ int object_mysql::setData(ext_arguments &extArgument) {
 	std::list<std::string> keyList = extArgument.getKeys();
 
 	for(auto const &key : keyList) {
-		auto it = objectvariablemap.find(key);
-		if (it != objectvariablemap.end()) {
+		auto it = objectvariablemap->find(key);
+		if (it != objectvariablemap->end()) {
 			unsigned int arraypos = it->second;
 			std::string variableValue = extArgument.get<std::string>(key);
 
