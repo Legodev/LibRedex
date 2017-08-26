@@ -25,6 +25,7 @@
 #include <sstream>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <cassert>
 #include <exception>
 #include <stdexcept>
@@ -81,6 +82,7 @@ redex::redex() {
 		boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);
 
 		unsigned int poolsize = configtree.get<unsigned int>("gamesettings.poolsize");
+		std::string type = configtree.get<std::string>("database.type");
 
 		if (poolsize < 1) {
 			poolsize = 1;
@@ -92,7 +94,10 @@ redex::redex() {
 			);
 		}
 
-		extModules.emplace_back(new mysql_db_handler(extFunctions));
+		if (boost::iequals(type, "MYSQL")) {
+			extModules.emplace_back(new mysql_db_handler(extFunctions));
+		}
+
 		extModules.emplace_back(new fileio(extFunctions));
 		extModules.emplace_back(new datetime(extFunctions));
 		extModules.emplace_back(new randomlist(extFunctions));
