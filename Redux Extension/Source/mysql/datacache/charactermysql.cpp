@@ -16,7 +16,7 @@
  */
 
 #include "constants.hpp"
-#include "database/datacache/charactermysql.hpp"
+#include "mysql/datacache/charactermysql.hpp"
 #include <string.h>
 #include <boost/lexical_cast.hpp>
 

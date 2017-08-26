@@ -1,4 +1,4 @@
-/* charactermysql.hpp
+/* objectmysql.hpp
  *
  * Copyright 2016-2018 Desolation Redux
  *
@@ -15,18 +15,18 @@
  * GNU Affero General Public License for more details.
  */
 
-#ifndef SOURCE_DATABASE_DATACACHE_CHARACTERMYSQL_HPP_
-#define SOURCE_DATABASE_DATACACHE_CHARACTERMYSQL_HPP_
+#ifndef SOURCE_DATABASE_DATACACHE_OBJECTMYSQL_HPP_
+#define SOURCE_DATABASE_DATACACHE_OBJECTMYSQL_HPP_
 
-#include "database/datacache/cachebase.hpp"
+#include "extbase.hpp"
 #include <mysql.h>
 
-#define characterCacheMaxElements 17
+#define objectCacheMaxElements 27
 
-class character_mysql: virtual public cache_base {
+class object_mysql {
 public:
-	character_mysql();
-	~character_mysql();
+	object_mysql();
+	~object_mysql();
 
 	int setNull(unsigned int arraypos);
 	int setData(std::string variableName, std::string variableValue);
@@ -36,34 +36,32 @@ public:
 	bool isDirty() { return dirty; };
 	bool cleanDirty() {
 		dirty = false;
-		dirtytablecharacter = false;
-		dirtytableshareables = false;
-		dirtytablepersistentvariables = false;
 		return true;
 	};
 
 	std::string getAsArmaString();
 
-	MYSQL_BIND mysql_bind[characterCacheMaxElements];
-	my_bool is_null[characterCacheMaxElements];
-	long unsigned int length [characterCacheMaxElements];
-
-	bool dirtytablecharacter = false;
-	bool dirtytableshareables = false;
-	bool dirtytablepersistentvariables = false;
+	MYSQL_BIND mysql_bind[objectCacheMaxElements];
+	my_bool is_null[objectCacheMaxElements];
+	long unsigned int length [objectCacheMaxElements];
 
 private:
 	bool dirty = false;
 
+	int priority = 10001;
+	signed char type = 3;
+	signed char locked 	= 0;
+	float damage = 1.0;
+	float fuel = 1.0;
+	float fuelcargo = 0.0;
+	float repaircargo = 0.0;
 	float direction = 0.0;
 	signed char positiontype = 0;
 	float positionx = 0.0;
 	float positiony = 0.0;
 	float positionz = 0.0;
 
-	long unsigned int test = 32;
-
 	void freeStrings();
 };
 
-#endif /* SOURCE_DATABASE_DATACACHE_CHARACTERMYSQL_HPP_ */
+#endif /* SOURCE_DATABASE_DATACACHE_OBJECTMYSQL_HPP_ */

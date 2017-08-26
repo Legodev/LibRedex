@@ -15,15 +15,22 @@
  * GNU Affero General Public License for more details.
  */
 
+#include <cassert>
 #include <exception>
 #include <stdexcept>
-#include <boost/format.hpp>
-#include "database/mysql.hpp"
-#include "utils/uuid.hpp"
-#include "database/datacache/charactermysql.hpp"
-#include "database/datacache/objectmysql.hpp"
 
-mysql_db_handler::mysql_db_handler() {
+#include <boost/bind.hpp>
+#include <boost/foreach.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/format.hpp>
+
+#include "mysql/mysql.hpp"
+#include "utils/uuid.hpp"
+#include "mysql/datacache/charactermysql.hpp"
+#include "mysql/datacache/objectmysql.hpp"
+
+mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 	this->hostname = "";
 	this->user = "";
 	this->password = "";
@@ -41,54 +48,330 @@ mysql_db_handler::mysql_db_handler() {
 
 	this->worlduuid = "";
 
-	connection = mysql_init(NULL);
+	extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_EXECUTE_INIT_DB),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::spawnHandler, this, _1, _2),
+								SYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_EXECUTE_TERMINATE_DB),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::terminateHandler, this, _1, _2),
+								SYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_UUID),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::intergetUUID, this, _1, _2),
+								SYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ECHO_STRING),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interecho, this, _1, _2),
+								SYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_DB_VERSION),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interdbVersion, this, _1, _2),
+								SYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_PLAYER),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interloadPlayer, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_AV_CHARS),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interloadAvChars, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_LINK_CHARS),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interlinkChars, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_CHAR),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interloadChar, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_CHAR),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::intercreateChar, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_CHAR),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interupdateChar, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_DECLARE_CHAR_DEATH),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interkillChar, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_OBJECT),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interloadObject, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_OBJECT),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::intercreateObject, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_QUIET_CREATE_OBJECT),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interqcreateObject, this, _1, _2),
+								QUIET_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_OBJECT),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interupdateObject, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_DECLARE_OBJECT_DEATH),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interkillObject, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DUMP_OBJECTS),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interdumpObjects, this, _1, _2),
+								ASYNC_MAGIC)));
+}
+
+mysql_db_handler::~mysql_db_handler() {
+	disconnect();
+	return;
+}
+
+std::string mysql_db_handler::spawnHandler(std::string &extFunction, ext_arguments &extArgument) {
+	std::string worlduuid = extArgument.getUUID("worlduuid");
+	int i = 0;
+
+	if (!poolinitialized) {
+		std::string type;
+		std::string hostname;
+		std::string user;
+		std::string password;
+		std::string database;
+		unsigned int port = 0;
+
+		bool whitelistonly;
+		bool allowsteamapi;
+		bool vaccheckban;
+		unsigned int vacmaxcount;
+		unsigned int vacignoredays;
+
+		boost::property_tree::ptree configtree;
+		boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);
+
+		unsigned int poolsize = configtree.get<unsigned int>("gamesettings.poolsize");
+
+		if (poolsize < 1) {
+			poolsize = 1;
+		}
+
+		type = configtree.get<std::string>("database.type");
+		hostname = configtree.get<std::string>("database.hostname");
+		user = configtree.get<std::string>("database.user");
+		password = configtree.get<std::string>("database.password");
+		database = configtree.get<std::string>("database.dbname");
+		port = configtree.get<unsigned int>("database.port");
+
+		whitelistonly = configtree.get<bool>("gamesettings.whitelistonly");
+		allowsteamapi = configtree.get<bool>("gamesettings.allowsteamapi");
+
+		vaccheckban = configtree.get<bool>("gamesettings.vaccheckban");
+		vacmaxcount = configtree.get<unsigned int>("gamesettings.vacmaxcount");
+		vacignoredays = configtree.get<unsigned int>("gamesettings.vacignoredays");
+
+		this->hostname = hostname;
+		this->user = user;
+		this->password = password;
+		this->database = database;
+		this->port = port;
+	//	this->socket = NULL;
+	//	this->flag = 0;
+
+		this->whitelistonly = whitelistonly;
+		this->allowsteamapi = allowsteamapi;
+		this->vaccheckban = vaccheckban;
+
+		this->vacmaxcount = vacmaxcount;
+		this->vacignoredays = vacignoredays;
+
+		this->worlduuid = worlduuid;
+
+		if (!connectionpool.is_lock_free()) {
+			throw std::runtime_error("connectionpool is not lock free");
+		}
+
+		/* for the beginning we want to have some spare pool handlers */
+		connectionpool.reserve(poolsize + 3);
+
+		for (i = 0; i < poolsize; i++) {
+			MYSQL * connection = connect();
+
+			connectionpool.bounded_push((intptr_t) connection);
+
+			if (i == 0) {
+				checkWorldUUID();
+			}
+		}
+
+		poolinitialized = true;
+	} else {
+		throw std::runtime_error("Threads already spawned");
+	}
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + std::to_string(i) + "]";
+}
+
+MYSQL * mysql_db_handler::connect() {
+	MYSQL * connection = mysql_init(NULL);
 
 	if (connection == NULL) {
 		throw std::runtime_error("problem while initializing mysql_db_handler: " + std::string(mysql_error(connection)));
 	}
-}
-
-mysql_db_handler::~mysql_db_handler() {
-	mysql_close(connection);
-	return;
-}
-
-void mysql_db_handler::connect(std::string hostname, std::string user, std::string password, std::string database,
-		unsigned int port, bool whitelistonly, bool allowsteamapi, bool vaccheckban, unsigned int vacmaxcount,
-		unsigned int vacignoredays, std::string worlduuid) {
-	this->hostname = hostname;
-	this->user = user;
-	this->password = password;
-	this->database = database;
-	this->port = port;
-//	this->socket = NULL;
-//	this->flag = 0;
-
-	this->whitelistonly = whitelistonly;
-	this->allowsteamapi = allowsteamapi;
-	this->vaccheckban = vaccheckban;
-
-	this->vacmaxcount = vacmaxcount;
-	this->vacignoredays = vacignoredays;
-
-	this->worlduuid = worlduuid;
 
 	mysql_options(connection, MYSQL_OPT_RECONNECT, &reconnect);
 
 	if (mysql_real_connect(connection, this->hostname.c_str(),
 			this->user.c_str(), this->password.c_str(), this->database.c_str(),
 			this->port, this->socket.c_str(), this->flag) == NULL) {
-		throw std::runtime_error(
-				"connection problem while initializing mysql_db_handler: "
-						+ std::string(mysql_error(connection)));
+		mysql_close(connection);
+		throw std::runtime_error("connection problem while initializing mysql_db_handler: "	+ std::string(mysql_error(connection)));
+	}
+
+	return connection;
+}
+
+void mysql_db_handler::disconnect() {
+	intptr_t connectionpointer;
+	MYSQL *connection;
+
+	// prevent new requests
+	poolcleanup = true;
+
+	// while there is an handler call disconnect
+	while (connectionpool.pop(connectionpointer)) {
+		connection = (MYSQL *) connectionpointer;
 		mysql_close(connection);
 	}
+
+	poolcleanup = false;
+	poolinitialized = false;
+	return;
+}
+
+MYSQL * mysql_db_handler::getconnection() {
+	intptr_t connectionpointer;
+	MYSQL *connection = 0;
+
+	// try to get an db connection
+	while (!connectionpool.pop(connectionpointer));
+
+	try {
+		connection = (MYSQL *) connectionpointer;
+	} catch (std::exception const& e) {
+		// always return the connection
+		connectionpool.bounded_push(connectionpointer);
+		connection = 0;
+		throw std::runtime_error(e.what());
+	}
+
+	return connection;
+}
+
+void mysql_db_handler::returnconnection(MYSQL * connection) {
+	intptr_t connectionpointer = (intptr_t) connection;
+	connectionpool.bounded_push(connectionpointer);
 
 	return;
 }
 
-void mysql_db_handler::disconnect() {
-	mysql_close(connection);
+void mysql_db_handler::rawquery(std::string query) {
+	MYSQL *connection = getconnection();
+
+	if (mysql_real_query(connection, query.c_str(), query.size())) {
+		throw std::runtime_error(
+				"error while executing query: "
+						+ query
+						+ std::string(" ---- ERROR MESSAGE: ")
+						+ std::string(mysql_error(connection)));
+	}
+
+	returnconnection(connection);
+	return;
+}
+
+void mysql_db_handler::rawquery(std::string query, MYSQL_RES **result) {
+	MYSQL *connection = getconnection();
+
+	if (mysql_real_query(connection, query.c_str(), query.size())) {
+		throw std::runtime_error(
+				"error while executing query: "
+						+ query
+						+ std::string(" ---- ERROR MESSAGE: ")
+						+ std::string(mysql_error(connection)));
+	}
+
+	*result = mysql_store_result(connection);
+
+	if (*result == NULL) {
+		throw std::runtime_error(
+				"error while getting the result: "
+						+ query
+						+ std::string(" ---- ERROR MESSAGE: ")
+						+ std::string(mysql_error(connection)));
+	}
+
+	returnconnection(connection);
+	return;
+}
+
+void mysql_db_handler::preparedStatementQuery(std::string query, MYSQL_BIND input_params[]) {
+	MYSQL *connection = getconnection();
+	int        status;
+
+	MYSQL_STMT *stmt;
+	stmt = mysql_stmt_init(connection);
+	if (!stmt)
+	{
+		throw std::runtime_error("Could not initialize statement\n");
+	}
+
+	status = mysql_stmt_prepare(stmt, query.c_str(), query.size() + 1);
+	test_stmt_error(stmt, status);
+
+	status = mysql_stmt_bind_param(stmt, input_params);
+	test_stmt_error(stmt, status);
+
+	status = mysql_stmt_execute(stmt);
+	test_stmt_error(stmt, status);
+
+	status = mysql_stmt_close(stmt);
+	test_stmt_error(stmt, status);
+
+	returnconnection(connection);
 	return;
 }
 
@@ -122,67 +405,143 @@ void mysql_db_handler::checkWorldUUID() {
 	}
 };
 
-void mysql_db_handler::rawquery(std::string query) {
-//	printf("%s\n", query.c_str());
+std::string mysql_db_handler::terminateHandler(std::string &extFunction, ext_arguments &extArgument) {
+	terminateHandler();
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
+}
 
-	if (mysql_real_query(connection, query.c_str(), query.size())) {
-		throw std::runtime_error(
-				"error while executing query: "
-						+ query
-						+ std::string(" ---- ERROR MESSAGE: ")
-						+ std::string(mysql_error(connection)));
-	}
-
+void mysql_db_handler::terminateHandler() {
+	disconnect();
 	return;
 }
 
-void mysql_db_handler::rawquery(std::string query, MYSQL_RES **result) {
-//	printf("%s\n", query.c_str());
-
-	if (mysql_real_query(connection, query.c_str(), query.size())) {
-		throw std::runtime_error(
-				"error while executing query: "
-						+ query
-						+ std::string(" ---- ERROR MESSAGE: ")
-						+ std::string(mysql_error(connection)));
-	}
-
-	*result = mysql_store_result(connection);
-
-	if (*result == NULL) {
-		throw std::runtime_error(
-				"error while getting the result: "
-						+ query
-						+ std::string(" ---- ERROR MESSAGE: ")
-						+ std::string(mysql_error(connection)));
-	}
-
-	return;
+std::string mysql_db_handler::intergetUUID(std::string &extFunction, ext_arguments &extArgument) {
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + orderedUUID() + "\"]";
 }
 
-void mysql_db_handler::preparedStatementQuery(std::string query, MYSQL_BIND input_params[]) {
-	int        status;
+std::string mysql_db_handler::interecho(std::string &extFunction, ext_arguments &extArgument) {
+	std::string echostring = extArgument.get<std::string>("echostring");
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + echostring + "\"]";
+}
 
-	MYSQL_STMT *stmt;
-	stmt = mysql_stmt_init(connection);
-	if (!stmt)
-	{
-		throw std::runtime_error("Could not initialize statement\n");
+std::string mysql_db_handler::interdbVersion(std::string &extFunction, ext_arguments &extArgument) {
+	std::string version = querydbversion();
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + version + "\"]";
+}
+
+
+std::string mysql_db_handler::interloadPlayer(std::string &extFunction, ext_arguments &extArgument) {
+	std::string nickname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_NICKNAME);
+	std::string steamid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_STEAMID);
+	std::string playerinfo = loadPlayer(nickname, steamid);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + playerinfo + "]";
+}
+
+std::string mysql_db_handler::interloadAvChars(std::string &extFunction, ext_arguments &extArgument) {
+	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string result = loadAvChars(playeruuid);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + result + "]";
+}
+
+std::string mysql_db_handler::interlinkChars(std::string &extFunction, ext_arguments &extArgument) {
+	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string variabuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_VARIABUUID);
+	std::string result = linkChars(playeruuid, variabuuid);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + result + "]";
+}
+
+std::string mysql_db_handler::interloadChar(std::string &extFunction, ext_arguments &extArgument) {
+	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string characterdata = loadChar(playeruuid);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + characterdata + "]";
+}
+
+std::string mysql_db_handler::intercreateChar(std::string &extFunction, ext_arguments &extArgument) {
+	std::string characterdata = createChar(extArgument);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + characterdata + "\"]";
+}
+
+std::string mysql_db_handler::interupdateChar(std::string &extFunction, ext_arguments &extArgument) {
+	std::string result = updateChar(extArgument);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
+}
+
+std::string mysql_db_handler::interkillChar(std::string &extFunction, ext_arguments &extArgument) {
+	std::string charuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
+	std::string attackeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
+	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTTYPE);
+	std::string weapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
+	float distance = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DISTANCE);
+
+	std::string result = killChar(charuuid, attackeruuid, type, weapon, distance);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
+}
+
+std::string mysql_db_handler::interloadObject(std::string &extFunction, ext_arguments &extArgument) {
+	std::string result = loadObject(extArgument);
+
+	returnconnection(connection);
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + result + "]";
+}
+
+std::string mysql_db_handler::intercreateObject(std::string &extFunction, ext_arguments &extArgument) {
+	std::string result = createObject(extArgument);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
+}
+
+std::string mysql_db_handler::interqcreateObject(std::string &extFunction, ext_arguments &extArgument) {
+	std::string result = this->createObject(extArgument);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
+}
+
+std::string mysql_db_handler::interupdateObject(std::string &extFunction, ext_arguments &extArgument) {
+	std::string result = updateObject(extArgument);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
+}
+
+std::string mysql_db_handler::interkillObject(std::string &extFunction, ext_arguments &extArgument) {
+	std::string charuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+	std::string attackeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
+	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTTYPE);
+	std::string weapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
+	float distance = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DISTANCE);
+
+	std::string result = killObject(charuuid, attackeruuid, type, weapon, distance);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
+}
+
+std::string mysql_db_handler::interdumpObjects(std::string &extFunction, ext_arguments &extArgument) {
+	std::string matrix;
+	bool placecommaone = false;
+	bool placecommatwo = false;
+
+	std::vector<object_mysql *> objectList = dumpObjects();
+	matrix = "[";
+	for (object_mysql * object : objectList) {
+			if (placecommaone) {
+					matrix += ",";
+			}
+
+			matrix += object->getAsArmaString();
+
+			placecommaone = true;
 	}
+	matrix += "]";
 
-	status = mysql_stmt_prepare(stmt, query.c_str(), query.size() + 1);
-	test_stmt_error(stmt, status);
-
-	status = mysql_stmt_bind_param(stmt, input_params);
-	test_stmt_error(stmt, status);
-
-	status = mysql_stmt_execute(stmt);
-	test_stmt_error(stmt, status);
-
-	status = mysql_stmt_close(stmt);
-	test_stmt_error(stmt, status);
-
-	return;
+	returnconnection(connection);
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + matrix + "]";
 }
 
 std::string mysql_db_handler::querydbversion() {
@@ -414,7 +773,7 @@ std::string mysql_db_handler::linkChars(std::string playeruuid, std::string vari
 	return playeruuid;
 }
 
-std::string mysql_db_handler::loadChar(std::map<std::string, cache_base*> &charactercache, std::string playeruuid) {
+std::string mysql_db_handler::loadChar(std::string playeruuid) {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
@@ -448,10 +807,10 @@ std::string mysql_db_handler::loadChar(std::map<std::string, cache_base*> &chara
 
 			auto it = charactercache.find(charuuid);
 			if (it != charactercache.end()) {
-				character = static_cast<character_mysql*>((void*)it->second);
+				character = it->second;
 			} else {
 				character = new character_mysql;
-				charactercache.insert(std::make_pair(charuuid, (cache_base*) character));
+				charactercache.insert(std::make_pair(charuuid, character));
 			}
 
 			for (int fieldpos = 0; fieldpos < fieldcount; fieldpos++) {
@@ -475,7 +834,7 @@ std::string mysql_db_handler::loadChar(std::map<std::string, cache_base*> &chara
 }
 
 
-std::string mysql_db_handler::createChar(std::map<std::string, cache_base*> &charactercache, ext_arguments &extArgument) {
+std::string mysql_db_handler::createChar(ext_arguments &extArgument) {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
@@ -499,8 +858,6 @@ std::string mysql_db_handler::createChar(std::map<std::string, cache_base*> &cha
 
 	rowcount = mysql_num_rows(result);
 
-	// printf("rowcount = %d\n", (int) rowcount);
-
 	if (rowcount > 0) {
 		row = mysql_fetch_row(result);
 
@@ -516,7 +873,7 @@ std::string mysql_db_handler::createChar(std::map<std::string, cache_base*> &cha
 		character_mysql* character = new character_mysql;
 		character->setData(extArgument);
 		character->setData(PROTOCOL_DBCALL_ARGUMENT_CHARUUID, charuuid);
-		charactercache.insert(std::make_pair(charuuid, (cache_base*) character));
+		charactercache.insert(std::make_pair(charuuid, character));
 
 		/* get the uuid for the Death Persistent Variables */
 		query = str(boost::format { "SELECT HEX(`persistent_variables_uuid`) "
@@ -680,7 +1037,7 @@ std::string mysql_db_handler::createChar(std::map<std::string, cache_base*> &cha
 	return charuuid;
 }
 
-std::string mysql_db_handler::updateChar(std::map<std::string, cache_base*> &charactercache, ext_arguments &extArgument) {
+std::string mysql_db_handler::updateChar(ext_arguments &extArgument) {
 	std::string charuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
 	character_mysql* character = 0;
 
@@ -767,7 +1124,7 @@ std::string mysql_db_handler::killChar(std::string charuuid, std::string attacke
 	return killuuid;
 }
 
-std::string mysql_db_handler::loadObject(std::map<std::string, cache_base*> &objectcache, ext_arguments &extArgument) {
+std::string mysql_db_handler::loadObject(ext_arguments &extArgument) {
 	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 	object_mysql* object = 0;
 
@@ -800,7 +1157,7 @@ std::string mysql_db_handler::loadObject(std::map<std::string, cache_base*> &obj
 	fieldcount = mysql_num_fields(result);
 	rowcount = mysql_num_rows(result);
 
-//	for (int rowpos = 0; rowpos < rowcount; rowpos++) {
+	if (rowcount > 0) {
 		row = mysql_fetch_row(result);
 		if (row[24] != NULL) {
 			auto it = objectcache.find(objectuuid);
@@ -808,7 +1165,7 @@ std::string mysql_db_handler::loadObject(std::map<std::string, cache_base*> &obj
 				object = static_cast<object_mysql*>((void*)it->second);
 			} else {
 				object = new object_mysql;
-				objectcache.insert(std::make_pair(objectuuid, (cache_base*) object));
+				objectcache.insert(std::make_pair(objectuuid, object));
 			}
 
 			for (int fieldpos = 0; fieldpos < fieldcount && fieldpos < 27; fieldpos++) {
@@ -819,14 +1176,19 @@ std::string mysql_db_handler::loadObject(std::map<std::string, cache_base*> &obj
 				}
 			}
 		}
-//	}
+	}
 
 	mysql_free_result(result);
 
-	return object->getAsArmaString();
+	if (object != 0) {
+		return object->getAsArmaString();
+	}
+
+	return "[]";
+
 }
-#include <unistd.h>
-std::string mysql_db_handler::createObject(std::map<std::string, cache_base*> &objectcache, ext_arguments &extArgument) {
+
+std::string mysql_db_handler::createObject(ext_arguments &extArgument) {
 	std::string objectuuid;
 
 	object_mysql* object = new object_mysql;
@@ -839,7 +1201,7 @@ std::string mysql_db_handler::createObject(std::map<std::string, cache_base*> &o
 		object->setData(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID, objectuuid);
 	}
 
-	objectcache.insert(std::make_pair(objectuuid, (cache_base*) object));
+	objectcache.insert(std::make_pair(objectuuid, object));
 
 	std::string query = "INSERT INTO `object` (`classname`, `priority`, `timelastused`, "
 							"`timecreated`, `type`, `accesscode`, `locked`, `player_uuid`, `hitpoints`, "
@@ -863,7 +1225,7 @@ std::string mysql_db_handler::createObject(std::map<std::string, cache_base*> &o
 	return objectuuid;
 }
 
-std::string mysql_db_handler::updateObject(std::map<std::string, cache_base*> &objectcache, ext_arguments &extArgument) {
+std::string mysql_db_handler::updateObject(ext_arguments &extArgument) {
 	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 	object_mysql* object = 0;
 
@@ -947,133 +1309,8 @@ std::string mysql_db_handler::killObject(std::string objectuuid, std::string att
 	return killuuid;
 }
 
-//std::vector<cache_base*> mysql_db_handler::dumpObjects(std::map<std::string, cache_base*> &objectcache) {
-//	std::vector<cache_base*> objectList;
-//	MYSQL_BIND input_params[1];
-//	int        status;
-//
-//	long unsigned int length = 35;
-//	char buffer[35] = "0x";
-//	memcpy (buffer+2, worlduuid.c_str(), 33);
-//	buffer[34] = 0;
-//
-//	input_params[0].buffer_type = MYSQL_TYPE_STRING;
-//	input_params[0].buffer = (void*) buffer;
-//	input_params[0].length = &length;
-//	input_params[0].is_null = 0;
-//
-//	MYSQL_STMT *stmt;
-//	stmt = mysql_stmt_init(connection);
-//	if (!stmt)
-//	{
-//	  printf("Could not initialize statement\n");
-//	  exit(1);
-//	}
-//
-//	std::string query = "SELECT HEX(`object`.`uuid`), "
-//							"`object`.`classname`, `object`.`priority`, `object`.`type`, `object`.`accesscode`, "
-//							"`object`.`locked`, HEX(`object`.`player_uuid`), `object`.`hitpoints`, `object`.`damage`, "
-//							"`object`.`fuel`, `object`.`fuelcargo`, `object`.`repaircargo`, `object`.`items`, "
-//							"`object`.`magazinesturret`, "
-//							"`object`.`variables`, `object`.`animationstate`, `object`.`textures`, `object`.`direction`, "
-//							"`object`.`positiontype`, `object`.`positionx`, `object`.`positiony`, `object`.`positionz`, "
-//							"`object`.`positionadvanced`, `object`.`reservedone`, `object`.`reservedtwo`, "
-//							"HEX(`world_has_objects`.`parentobject_uuid`), "
-//							"HEX(`player`.`uuid`) "
-//							"FROM `world_has_objects` "
-//							"INNER JOIN `object` "
-//							" ON `world_has_objects`.`object_uuid` = `object`.`uuid` "
-//							"LEFT JOIN `player` "
-//							" ON `object`.`player_uuid` = `player`.`uuid` "
-//							"WHERE `world_has_objects`.`world_uuid` = CAST(? AS BINARY) "
-//							"OR `world_has_objects`.`killinfo_uuid` IS NULL "
-//							"ORDER BY `object`.priority ASC, `world_has_objects`.`parentobject_uuid` ASC";
-//
-//	status = mysql_stmt_prepare(stmt, query.c_str(), query.size() + 1);
-//	test_stmt_error(stmt, status);
-//
-//	status = mysql_stmt_bind_param(stmt, input_params);
-//	test_stmt_error(stmt, status);
-//
-//	status = mysql_stmt_execute(stmt);
-//	test_stmt_error(stmt, status);
-//
-//	do {
-//		int i;
-//		int num_fields;       /* number of columns in result */
-//		MYSQL_FIELD *fields;  /* for result set metadata */
-//
-//		/* the column count is > 0 if there is a result set */
-//		/* 0 if the result is only the final status packet */
-//		num_fields = mysql_stmt_field_count(stmt);
-//
-//		if (num_fields > objectCacheMaxElements) {
-//			throw std::runtime_error("to many fields in dump objects:" + std::to_string(num_fields));
-//		}
-//
-//		if (num_fields > 0)
-//		{
-//			MYSQL_RES *rs_metadata = mysql_stmt_result_metadata(stmt);
-//
-//			fields = mysql_fetch_fields(rs_metadata);
-//
-//			object_mysql* object = new object_mysql;
-//
-//			for (i = 0; i < num_fields; ++i)
-//			{
-//				if (object->mysql_bind[i].buffer_type != fields[i].type && fields[i].type != 252) {
-//					throw std::runtime_error("unexpected field type in dump objects field " + std::to_string(i) +
-//							std::string(" has type ") + std::to_string(object->mysql_bind[i].buffer_type) +
-//							std::string(" but got type ") + std::to_string(fields[i].type));
-//				}
-//			}
-//
-//			/* fetch and display result set rows */
-//			while (1)
-//			{
-//				for (unsigned int arraypos = 0; arraypos < num_fields; arraypos++) {
-//					if (object->mysql_bind[arraypos].buffer_type == MYSQL_TYPE_VAR_STRING) {
-//						if (object->mysql_bind[arraypos].buffer == 0) {
-//							char * pointer = new char[64];
-//							object->mysql_bind[arraypos].buffer = pointer;
-//							object->mysql_bind[arraypos].buffer_length = 64;
-//						}
-//					}
-//				}
-//
-//				status = mysql_stmt_bind_result(stmt, object->mysql_bind);
-//				test_stmt_error(stmt, status);
-//
-//				status = mysql_stmt_fetch(stmt);
-//
-//				if (status == 1 || status == MYSQL_NO_DATA) {
-////					delete object;
-//					break;
-//				}
-//
-//				std::string uuid = (char*) object->mysql_bind[0].buffer;
-//				objectList.push_back((cache_base*) object);
-//				objectcache.insert(std::make_pair(uuid, (cache_base*) object));
-//
-//				object_mysql* object = new object_mysql;
-//			}
-//
-//			mysql_free_result(rs_metadata); /* free metadata */
-//		}
-//
-//		/* more results? -1 = no, >0 = error, 0 = yes (keep looking) */
-//		status = mysql_stmt_next_result(stmt);
-//		if (status > 0) {
-//			test_stmt_error(stmt, status);
-//		}
-//
-//	} while (status == 0);
-//
-//	return objectList;
-//}
-
-std::vector<cache_base*> mysql_db_handler::dumpObjects(std::map<std::string, cache_base*> &objectcache) {
-	std::vector<cache_base*> objectList;
+std::vector<object_mysql *> mysql_db_handler::dumpObjects() {
+	std::vector<object_mysql *> objectList;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
@@ -1109,8 +1346,8 @@ std::vector<cache_base*> mysql_db_handler::dumpObjects(std::map<std::string, cac
 			std::string uuid = row[24];
 
 			object_mysql* object = new object_mysql;
-			objectList.push_back((cache_base*) object);
-			objectcache.insert(std::make_pair(uuid, (cache_base*) object));
+			objectList.push_back(object);
+			objectcache.insert(std::make_pair(uuid, object));
 
 			for (int fieldpos = 0; fieldpos < fieldcount && fieldpos < 27; fieldpos++) {
 				if (row[fieldpos] != NULL) {

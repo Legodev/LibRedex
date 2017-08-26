@@ -92,7 +92,7 @@ redex::redex() {
 			);
 		}
 
-		extModules.emplace_back(new dbcon(extFunctions));
+		extModules.emplace_back(new mysql_db_handler(extFunctions));
 		extModules.emplace_back(new fileio(extFunctions));
 		extModules.emplace_back(new datetime(extFunctions));
 		extModules.emplace_back(new randomlist(extFunctions));

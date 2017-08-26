@@ -32,7 +32,7 @@
 #include <boost/thread/tss.hpp>
 #include "constants.hpp"
 #include "extbase.hpp"
-#include "database/dbcon.hpp"
+#include "mysql/mysql.hpp"
 #include "fileio/fileio.hpp"
 #include "datetime/datetime.hpp"
 #include "randomlist/randomlist.hpp"
