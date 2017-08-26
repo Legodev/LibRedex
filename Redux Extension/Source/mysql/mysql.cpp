@@ -159,6 +159,21 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 
 mysql_db_handler::~mysql_db_handler() {
 	disconnect();
+
+	for (auto it = objectcache.cbegin(); it != objectcache.cend(); ++it)
+	{
+		object_mysql object = it->second;
+		delete object;
+		objectcache.erase(it);
+	}
+
+	for (auto it = charactercache.cbegin(); it != charactercache.cend(); ++it)
+	{
+		character_mysql character = it->second;
+		delete character;
+		charactercache.erase(it);
+	}
+
 	return;
 }
 
