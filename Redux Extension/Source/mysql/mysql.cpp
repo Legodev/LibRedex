@@ -435,14 +435,11 @@ std::string mysql_db_handler::intergetUUID(std::string &extFunction, ext_argumen
 }
 
 std::string mysql_db_handler::interecho(std::string &extFunction, ext_arguments &extArgument) {
-	std::string echostring = extArgument.get<std::string>("echostring");
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + echostring + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + extArgument.get<std::string>("echostring") + "\"]";
 }
 
 std::string mysql_db_handler::interdbVersion(std::string &extFunction, ext_arguments &extArgument) {
-	std::string version = querydbversion();
-
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + version + "\"]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + querydbversion() + "\"]";
 }
 
 
@@ -559,6 +556,8 @@ std::string mysql_db_handler::interdumpObjects(std::string &extFunction, ext_arg
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + matrix + "]";
 }
 
+/* SQL Querys */
+
 std::string mysql_db_handler::querydbversion() {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -567,7 +566,7 @@ std::string mysql_db_handler::querydbversion() {
 	this->rawquery("SELECT VERSION()", &result);
 
 	row = mysql_fetch_row(result);
-	//fieldcount = mysql_num_fields(*result);
+
 	version = row[0];
 
 	mysql_free_result(result);
@@ -600,19 +599,9 @@ std::string mysql_db_handler::loadPlayer(std::string nickname, std::string steam
 			" AND `player_on_world_has_persistent_variables`.`world_uuid` =  CAST(0x%s AS BINARY) "
 			"WHERE `player`.`steamid` = \"%s\" "} % worlduuid % steamid);
 
-	char typearrayplayerinfo[] = {
-			1, // HEX(`actualplayer`.`uuid`)
-			1, // HEX(`player_on_world_has_persistent_variables`.`persistent_variables_uuid`)
-			2, // GROUP_CONCAT(`player`.`steamid` SEPARATOR '\", \"') AS mainclanuuid
-			0, // (CASE WHEN (NOW() < `actualplayer`.`banenddate`) THEN "true" ELSE "false" END) AS BANNED`
-			0  // `actualplayer`.`banreason
-	};
-
 	this->rawquery(queryplayerinfo, &result);
 
 	rowcount = mysql_num_rows(result);
-
-	// printf("rowcount = %d\n", (int)rowcount);
 
 	if (rowcount > 0) {
 		row = mysql_fetch_row(result);
@@ -718,9 +707,6 @@ std::string mysql_db_handler::loadAvChars(std::string playeruuid) {
 
 	fieldcount = mysql_num_fields(result);
 	rowcount = mysql_num_rows(result);
-
-	// printf("fieldcount = %d\n", (int) fieldcount);
-	// printf("rowcount = %d\n", (int) rowcount);
 
 	charinfo = "[";
 
@@ -900,8 +886,6 @@ std::string mysql_db_handler::createChar(ext_arguments &extArgument) {
 
 		rowcount = mysql_num_rows(result);
 
-		// printf("rowcount = %d\n", (int) rowcount);
-
 		if (rowcount > 0) {
 			row = mysql_fetch_row(result);
 
@@ -967,8 +951,6 @@ std::string mysql_db_handler::createChar(ext_arguments &extArgument) {
 		this->rawquery(query, &result);
 
 		rowcount = mysql_num_rows(result);
-
-		// printf("rowcount = %d\n", (int) rowcount);
 
 		if (rowcount > 0) {
 			row = mysql_fetch_row(result);
