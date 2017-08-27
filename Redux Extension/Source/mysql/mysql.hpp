@@ -47,9 +47,6 @@ public:
 	std::string spawnHandler(std::string &extFunction, ext_arguments &extArgument);
 	void terminateHandler();
 	std::string terminateHandler(std::string &extFunction, ext_arguments &extArgument);
-	std::string processDBCall(std::string &extFunction, ext_arguments &extArgument);
-
-
 
 private:
 		MYSQL *connection;
