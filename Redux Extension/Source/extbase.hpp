@@ -193,7 +193,4 @@ typedef boost::function<std::string(std::string &extFunction, ext_arguments &ext
 typedef std::tuple<EXT_FUNCTION, int> EXT_FUNCTION_INFO;
 typedef std::map<std::string, EXT_FUNCTION_INFO> EXT_FUNCTIONS;
 
-extern std::map<std::string, unsigned int> * objectvariablemap;
-extern std::map<std::string, unsigned int> * charactervariablemap;
-
 #endif /* SOURCE_EXTBASE_HPP_ */

@@ -43,10 +43,6 @@
 #include <map>
 
 #include "constants.hpp"
-extern std::map<std::string, unsigned int> * objectvariablemap;
-std::map<std::string, unsigned int> * objectvariablemap = 0;
-extern std::map<std::string, unsigned int> * charactervariablemap;
-std::map<std::string, unsigned int> * charactervariablemap = 0;
 
 #include "redex.hpp"
 redex * extension = 0;
@@ -75,28 +71,9 @@ std::string escapeChars(std::string input) {
 
 static void init(void)
 {
-//#ifdef DEBUG
-//    testfile.open("LibRedExLogFile.txt", std::ios::out | std::ios::trunc);
-//    testfile << "starting init" << std::endl;
-//    testfile.flush();
-//#endif
-
-	if (charactervariablemap == 0) {
-		charactervariablemap = new std::map<std::string, unsigned int>;
-	}
-
-	if (objectvariablemap == 0) {
-		objectvariablemap = new std::map<std::string, unsigned int>;
-	}
-
     if (extension == 0) {
         extension = new redex();
     }
-
-//#ifdef DEBUG
-//    testfile << "done init" << std::endl;
-//    testfile.flush();
-//#endif
 }
 
 static void destroy(void)
@@ -114,28 +91,6 @@ static void destroy(void)
         testfile << "resetting extension pointer" << std::endl;
 #endif
         extension = 0;
-    }
-
-    if (charactervariablemap != 0) {
-#ifdef DEBUG
-        testfile << "deleting charactervariablemap object" << std::endl;
-#endif
-        delete charactervariablemap;
-#ifdef DEBUG
-        testfile << "resetting charactervariablemap pointer" << std::endl;
-#endif
-        charactervariablemap = 0;
-    }
-
-    if (objectvariablemap != 0) {
-#ifdef DEBUG
-        testfile << "deleting objectvariablemap object" << std::endl;
-#endif
-        delete objectvariablemap;
-#ifdef DEBUG
-        testfile << "resetting objectvariablemap pointer" << std::endl;
-#endif
-        objectvariablemap = 0;
     }
 
 #ifdef DEBUG

@@ -30,6 +30,11 @@
 #include "mysql/datacache/charactermysql.hpp"
 #include "mysql/datacache/objectmysql.hpp"
 
+extern std::map<std::string, unsigned int> * objectvariablemap;
+std::map<std::string, unsigned int> * objectvariablemap = 0;
+extern std::map<std::string, unsigned int> * charactervariablemap;
+std::map<std::string, unsigned int> * charactervariablemap = 0;
+
 mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 	this->hostname = "";
 	this->user = "";
@@ -47,6 +52,15 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 	this->vacignoredays = 0;
 
 	this->worlduuid = "";
+
+
+	if (charactervariablemap == 0) {
+		charactervariablemap = new std::map<std::string, unsigned int>;
+	}
+
+	if (objectvariablemap == 0) {
+		objectvariablemap = new std::map<std::string, unsigned int>;
+	}
 
 	extFunctions.insert(
 				std::make_pair(
@@ -173,6 +187,16 @@ mysql_db_handler::~mysql_db_handler() {
 		delete character;
 		charactercache.erase(it);
 	}
+
+    if (charactervariablemap != 0) {
+        delete charactervariablemap;
+        charactervariablemap = 0;
+    }
+
+    if (objectvariablemap != 0) {
+        delete objectvariablemap;
+        objectvariablemap = 0;
+    }
 
 	return;
 }

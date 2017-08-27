@@ -20,6 +20,8 @@
 #include <string.h>
 #include <boost/lexical_cast.hpp>
 
+extern std::map<std::string, unsigned int> * objectvariablemap;
+
 object_mysql::object_mysql() {
 	memset(mysql_bind, 0, sizeof (mysql_bind));
 
