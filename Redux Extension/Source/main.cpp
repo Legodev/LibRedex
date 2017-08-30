@@ -22,7 +22,7 @@ extern "C"
 	void RVExtension(char *output, int outputSize, const char *function)
 	{
 #ifdef DEBUG
-			testfile << "REQUEST " << function << std::endl;
+			testfile << "\t\t ARMAIO-REQUEST " << function << std::endl;
 			testfile.flush();
 #endif
 			std::string errstr = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\", \"";
@@ -30,7 +30,7 @@ extern "C"
 			errstr += "\"]";
 			strncpy(output, errstr.c_str(), outputSize);
 #ifdef DEBUG
-			testfile << "ERROR " << errstr << std::endl;
+			testfile << "\t\t ARMAIO-ERROR " << errstr << std::endl;
 			testfile.flush();
 #endif
 	}
@@ -42,22 +42,23 @@ extern "C"
 	{
 		try {
 #ifdef DEBUG
-			testfile << "REQUEST " << function << std::endl;
+			testfile << "\t\t ARMAIO-REQUEST " << function << std::endl;
 			testfile.flush();
 			for (int i = 0; i < argsCnt; i++) {
-				testfile << "Argument " << i << ": " << args[i] << " - Escaped: " << escapeChars(args[i]) << std::endl;
+				testfile << "\t\t ARMAIO-Argument " << i << ": " << args[i] << std::endl;
 				testfile.flush();
 			}
 #endif
 			std::string returnString = extension->processCallExtension(function, args, argsCnt, outputSize);
 #ifdef DEBUG
-			testfile << "RETURN " << returnString << std::endl;
+			testfile << "\t\t ARMAIO-RETURN " << returnString << std::endl;
 			testfile.flush();
 #endif
 			strncpy(output, returnString.c_str(), outputSize);
 			return;
 		} catch (std::exception const& e) {
 			std::string error = e.what();
+
 			int i = 0;
 			while ((i = error.find("\"", i)) != std::string::npos) {
 				error.insert(i, "\"");
@@ -68,7 +69,7 @@ extern "C"
 			errstr += "\"]";
 			strncpy(output, errstr.c_str(), outputSize);
 #ifdef DEBUG
-			testfile << "ERROR " << errstr << std::endl;
+			testfile << "\t\t ARMAIO-ERROR " << errstr << std::endl;
 			testfile.flush();
 #endif
 		}

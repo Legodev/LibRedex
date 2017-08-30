@@ -30,6 +30,13 @@
 #include "mysql/datacache/charactermysql.hpp"
 #include "mysql/datacache/objectmysql.hpp"
 
+#ifdef DEBUG
+	#include <fstream>
+	#include <iostream>
+	#include <sstream>
+	extern std::ofstream testfile;
+#endif
+
 extern std::map<std::string, unsigned int> * objectvariablemap;
 std::map<std::string, unsigned int> * objectvariablemap = 0;
 extern std::map<std::string, unsigned int> * charactervariablemap;
@@ -266,8 +273,12 @@ std::string mysql_db_handler::spawnHandler(std::string &extFunction, ext_argumen
 		/* for the beginning we want to have some spare pool handlers */
 		connectionpool.reserve(poolsize + 3);
 
-		for (i = 0; i < poolsize; i++) {
+		for (i = 0; i <= poolsize; i++) {
 			MYSQL * connection = connect();
+#ifdef DEBUG
+			testfile << "CREATED NEW DB POINTER " << static_cast<void*>(connection) << std::endl;
+			testfile.flush();
+#endif
 
 			connectionpool.bounded_push((intptr_t) connection);
 
@@ -327,14 +338,15 @@ MYSQL * mysql_db_handler::getconnection() {
 
 	// try to get an db connection
 	while (!connectionpool.pop(connectionpointer));
+	connection = (MYSQL *) connectionpointer;
 
-	try {
-		connection = (MYSQL *) connectionpointer;
-	} catch (std::exception const& e) {
-		// always return the connection
-		connectionpool.bounded_push(connectionpointer);
-		connection = 0;
-		throw std::runtime_error(e.what());
+#ifdef DEBUG
+			testfile << "GOT DB POINTER " << static_cast<void*>(connection) << std::endl;
+			testfile.flush();
+#endif
+
+	if (connection == 0) {
+		std::runtime_error("connection problem while getting mysql_db_handler: got a NULLPOINTER");
 	}
 
 	return connection;
@@ -343,6 +355,11 @@ MYSQL * mysql_db_handler::getconnection() {
 void mysql_db_handler::returnconnection(MYSQL * connection) {
 	intptr_t connectionpointer = (intptr_t) connection;
 	connectionpool.bounded_push(connectionpointer);
+
+#ifdef DEBUG
+			testfile << "RETURNED DB POINTER " << static_cast<void*>(connection) << std::endl;
+			testfile.flush();
+#endif
 
 	return;
 }
@@ -524,7 +541,6 @@ std::string mysql_db_handler::interkillChar(std::string &extFunction, ext_argume
 std::string mysql_db_handler::interloadObject(std::string &extFunction, ext_arguments &extArgument) {
 	std::string result = loadObject(extArgument);
 
-	returnconnection(connection);
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + result + "]";
 }
 
@@ -535,7 +551,7 @@ std::string mysql_db_handler::intercreateObject(std::string &extFunction, ext_ar
 }
 
 std::string mysql_db_handler::interqcreateObject(std::string &extFunction, ext_arguments &extArgument) {
-	std::string result = this->createObject(extArgument);
+	std::string result = createObject(extArgument);
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
@@ -576,7 +592,6 @@ std::string mysql_db_handler::interdumpObjects(std::string &extFunction, ext_arg
 	}
 	matrix += "]";
 
-	returnconnection(connection);
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + matrix + "]";
 }
 

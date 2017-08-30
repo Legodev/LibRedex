@@ -33,6 +33,10 @@
 #include "redex.hpp"
 #include "utils/uuid.hpp"
 
+#ifdef DEBUG
+	extern std::ofstream testfile;
+#endif
+
 redex::redex() {
 	extFunctions.insert(
 			std::make_pair(
@@ -221,6 +225,10 @@ void redex::asyncCallProcessor(EXT_FUNCTION_INFO funcinfo, ext_arguments extArgu
 		returnString = this->syncCall(funcinfo, extArgument);
 	} catch (std::exception const& e) {
 		std::string error = e.what();
+#ifdef DEBUG
+			testfile << "INTERNAL ERROR " << error << std::endl;
+			testfile.flush();
+#endif
 		int i = 0;
 		while ((i = error.find("\"", i)) != std::string::npos) {
 			error.insert(i, "\"");
