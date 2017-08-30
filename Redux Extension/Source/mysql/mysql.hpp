@@ -49,7 +49,6 @@ public:
 	std::string terminateHandler(std::string &extFunction, ext_arguments &extArgument);
 
 private:
-		MYSQL *connection;
 		boost::lockfree::queue<intptr_t, boost::lockfree::fixed_sized<false>> connectionpool{1};
 
 		std::string hostname;
