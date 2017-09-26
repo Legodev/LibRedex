@@ -529,7 +529,7 @@ std::string mysql_db_handler::interupdateChar(std::string &extFunction, ext_argu
 std::string mysql_db_handler::interkillChar(std::string &extFunction, ext_arguments &extArgument) {
 	std::string charuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
 	std::string attackeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
-	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTTYPE);
+	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TYPE);
 	std::string weapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
 	float distance = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DISTANCE);
 
@@ -565,7 +565,7 @@ std::string mysql_db_handler::interupdateObject(std::string &extFunction, ext_ar
 std::string mysql_db_handler::interkillObject(std::string &extFunction, ext_arguments &extArgument) {
 	std::string charuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 	std::string attackeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
-	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_OBJECTTYPE);
+	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TYPE);
 	std::string weapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
 	float distance = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DISTANCE);
 
