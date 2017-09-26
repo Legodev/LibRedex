@@ -1084,6 +1084,8 @@ std::string mysql_db_handler::updateChar(ext_arguments &extArgument) {
 		throw std::runtime_error("could not find character to update: " + charuuid);
 	}
 
+	character->setData(extArgument);
+
 	std::string query = "UPDATE `character` "
 					"SET `animationstate` = ?, "
 					"`direction` = ?, "
@@ -1271,6 +1273,8 @@ std::string mysql_db_handler::updateObject(ext_arguments &extArgument) {
 	} else {
 		throw std::runtime_error("could not find object to update: " + objectuuid);
 	}
+
+	object->setData(extArgument);
 
 	std::string query = "UPDATE `object` "
 						"SET `classname` = ?, "
