@@ -51,6 +51,17 @@ public:
 		return keyList;
 	}
 
+	bool keyExists(std::string identifier) {
+		std::string Argument;
+
+		ARGUMENT_MAP::iterator it = argmap.find(identifier);
+		if (it != argmap.end()) {
+			return true;
+		}
+
+		return false;
+	}
+
 	template<typename ReturnType>
 	ReturnType get(std::string identifier) {
 		std::string Argument;

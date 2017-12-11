@@ -140,7 +140,7 @@ private:
 		std::string createObject(ext_arguments &extArgument);
 		std::string updateObject(ext_arguments &extArgument);
 		std::string killObject(std::string objectuuid, std::string attackeruuid, std::string type, std::string weapon, float distance);
-		std::vector<object_mysql *> dumpObjects();
+		std::vector<object_mysql *> dumpObjects(ext_arguments &extArgument);
 
 };
 

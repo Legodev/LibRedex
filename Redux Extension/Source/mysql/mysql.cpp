@@ -579,7 +579,7 @@ std::string mysql_db_handler::interdumpObjects(std::string &extFunction, ext_arg
 	bool placecommaone = false;
 	bool placecommatwo = false;
 
-	std::vector<object_mysql *> objectList = dumpObjects();
+	std::vector<object_mysql *> objectList = dumpObjects(extArgument);
 	matrix = "[";
 	for (object_mysql * object : objectList) {
 			if (placecommaone) {
@@ -1349,7 +1349,7 @@ std::string mysql_db_handler::killObject(std::string objectuuid, std::string att
 	return killuuid;
 }
 
-std::vector<object_mysql *> mysql_db_handler::dumpObjects() {
+std::vector<object_mysql *> mysql_db_handler::dumpObjects(ext_arguments &extArgument) {
 	std::vector<object_mysql *> objectList;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -1374,6 +1374,12 @@ std::vector<object_mysql *> mysql_db_handler::dumpObjects() {
 						"WHERE `world_has_objects`.`world_uuid` = CAST(0x%s AS BINARY) "
 						"AND `world_has_objects`.`killinfo_uuid` IS NULL "
 						"ORDER BY `object`.priority ASC, `world_has_objects`.`parentobject_uuid` ASC"} % worlduuid);
+
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_OFFSET) && extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_LIMIT)) {
+		unsigned int offset = extArgument.get<unsigned int>(PROTOCOL_DBCALL_ARGUMENT_OFFSET);
+		unsigned int limit = extArgument.get<unsigned int>(PROTOCOL_DBCALL_ARGUMENT_LIMIT);
+		query += " LIMIT " + std::to_string(offset) + "," + std::to_string(limit);
+	}
 
 	this->rawquery(query, &result);
 
