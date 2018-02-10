@@ -297,7 +297,7 @@ std::string redex::multipartMSGGenerator(std::string returnString, int outputSiz
 std::string redex::terminateAll(std::string extFunction, ext_arguments &extArguments) {
 	this->terminate();
 
-	return "DONE";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
 }
 
 std::string redex::rcvasmsg(std::string &extFunction, ext_arguments &extArgument) {
