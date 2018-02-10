@@ -137,6 +137,12 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 								ASYNC_MAGIC)));
 		extFunctions.insert(
 				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_QUIET_UPDATE_CHAR),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interupdateChar, this, _1, _2),
+								QUIET_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
 						std::string(PROTOCOL_DBCALL_FUNCTION_DECLARE_CHAR_DEATH),
 						std::make_tuple(
 								boost::bind(&mysql_db_handler::interkillChar, this, _1, _2),
@@ -165,6 +171,12 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 						std::make_tuple(
 								boost::bind(&mysql_db_handler::interupdateObject, this, _1, _2),
 								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_QUIET_UPDATE_OBJECT),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interupdateObject, this, _1, _2),
+								QUIET_MAGIC)));
 		extFunctions.insert(
 				std::make_pair(
 						std::string(PROTOCOL_DBCALL_FUNCTION_DECLARE_OBJECT_DEATH),
