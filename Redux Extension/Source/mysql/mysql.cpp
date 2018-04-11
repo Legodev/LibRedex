@@ -497,8 +497,8 @@ std::string mysql_db_handler::interdbVersion(std::string &extFunction, ext_argum
 
 
 std::string mysql_db_handler::interloadPlayer(std::string &extFunction, ext_arguments &extArgument) {
-	std::string nickname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_NICKNAME);
-	std::string steamid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_STEAMID);
+	std::string nickname = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_NICKNAME);
+	std::string steamid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_STEAMID);
 	std::string playerinfo = loadPlayer(nickname, steamid);
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + playerinfo + "]";
@@ -541,8 +541,8 @@ std::string mysql_db_handler::interupdateChar(std::string &extFunction, ext_argu
 std::string mysql_db_handler::interkillChar(std::string &extFunction, ext_arguments &extArgument) {
 	std::string charuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
 	std::string attackeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
-	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TYPE);
-	std::string weapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
+	std::string type = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_TYPE);
+	std::string weapon = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
 	float distance = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DISTANCE);
 
 	std::string result = killChar(charuuid, attackeruuid, type, weapon, distance);
@@ -577,8 +577,8 @@ std::string mysql_db_handler::interupdateObject(std::string &extFunction, ext_ar
 std::string mysql_db_handler::interkillObject(std::string &extFunction, ext_arguments &extArgument) {
 	std::string charuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 	std::string attackeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
-	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TYPE);
-	std::string weapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
+	std::string type = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_TYPE);
+	std::string weapon = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
 	float distance = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DISTANCE);
 
 	std::string result = killObject(charuuid, attackeruuid, type, weapon, distance);
