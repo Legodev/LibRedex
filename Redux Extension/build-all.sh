@@ -29,5 +29,8 @@ cp -f libredex_x64.dll ../../Binaries
 cd ..
 ####
 cd ../Binaries
-mkdir -p Release/
-cp libredex*.so libredex*.dll Release/
+mkdir -p Windows/Release/
+mkdir -p Linux/Release/
+mkdir -p LinuxAlt/Release/
+cp libredex*.dll Windows/Release/
+cp libredex*.so Linux/Release/

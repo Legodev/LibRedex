@@ -31,3 +31,8 @@ cd ..
 cd ../Binaries
 mkdir -p Debug
 mv libredex*.so libredex*.dll Debug/
+mkdir -p Windows/Debug/
+mkdir -p Linux/Debug/
+mkdir -p LinuxAlt/Debug/
+cp libredex*.dll Windows/Debug/
+cp libredex*.so Linux/Debug/

@@ -393,6 +393,6 @@ std::string redex::chkmsg(std::string extFunction, ext_arguments &extArguments) 
 }
 
 std::string redex::version(std::string extFunction, ext_arguments &extArguments) {
-	return DLLVERSIONSTRING;
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + std::string(DLLVERSIONSTRING) + "]";
 }
 
