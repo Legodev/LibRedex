@@ -23,7 +23,7 @@ extern "C"
 	{
 #ifdef DEBUG
 			std::time_t result = std::time(nullptr);
-			testfile << std::asctime(std::localtime(&result)) << "\t\t ARMAIO-REQUEST " << function << std::endl;
+			testfile << std::put_time(std::localtime(&result), "%F %T") << "\t\t ARMAIO-REQUEST " << function << std::endl;
 			testfile.flush();
 #endif
 			std::string errstr = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\", \"";
@@ -32,7 +32,7 @@ extern "C"
 			strncpy(output, errstr.c_str(), outputSize);
 #ifdef DEBUG
 			result = std::time(nullptr);
-			testfile << std::asctime(std::localtime(&result)) << "\t\t ARMAIO-ERROR " << errstr << std::endl;
+			testfile << std::put_time(std::localtime(&result), "%F %T") << "\t\t ARMAIO-ERROR " << errstr << std::endl;
 			testfile.flush();
 #endif
 	}
@@ -48,18 +48,18 @@ extern "C"
 		try {
 #ifdef DEBUG
 			result = std::time(nullptr);
-			testfile << std::asctime(std::localtime(&result)) << "\t\t ARMAIO-REQUEST " << function << std::endl;
+			testfile << std::put_time(std::localtime(&result), "%F %T") << "\t\t ARMAIO-REQUEST " << function << std::endl;
 			testfile.flush();
 			for (int i = 0; i < argsCnt; i++) {
 				result = std::time(nullptr);
-				testfile << std::asctime(std::localtime(&result)) << "\t\t ARMAIO-Argument " << i << ": " << args[i] << std::endl;
+				testfile << std::put_time(std::localtime(&result), "%F %T") << "\t\t ARMAIO-Argument " << i << ": " << args[i] << std::endl;
 				testfile.flush();
 			}
 #endif
 			std::string returnString = extension->processCallExtension(function, args, argsCnt, outputSize);
 #ifdef DEBUG
 			result = std::time(nullptr);
-			testfile << std::asctime(std::localtime(&result)) << "\t\t ARMAIO-RETURN " << returnString << std::endl;
+			testfile << std::put_time(std::localtime(&result), "%F %T") << "\t\t ARMAIO-RETURN " << returnString << std::endl;
 			testfile.flush();
 #endif
 			strncpy(output, returnString.c_str(), outputSize);
@@ -78,7 +78,7 @@ extern "C"
 			strncpy(output, errstr.c_str(), outputSize);
 #ifdef DEBUG
 			result = std::time(nullptr);
-			testfile << std::asctime(std::localtime(&result)) << "\t\t ARMAIO-ERROR " << errstr << std::endl;
+			testfile << std::put_time(std::localtime(&result), "%F %T") << "\t\t ARMAIO-ERROR " << errstr << std::endl;
 			testfile.flush();
 #endif
 		}
