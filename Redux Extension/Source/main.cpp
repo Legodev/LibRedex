@@ -42,9 +42,12 @@ extern "C"
 {
 	void RVExtensionArgs(char *output, int outputSize, const char *function, const char **args, int argsCnt)
 	{
+#ifdef DEBUG
+		std::time_t result;
+#endif
 		try {
 #ifdef DEBUG
-			std::time_t result = std::time(nullptr);
+			result = std::time(nullptr);
 			testfile << std::asctime(std::localtime(&result)) << "\t\t ARMAIO-REQUEST " << function << std::endl;
 			testfile.flush();
 			for (int i = 0; i < argsCnt; i++) {
