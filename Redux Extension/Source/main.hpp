@@ -35,6 +35,8 @@
 #ifdef DEBUG
 #include <fstream>
 #include <mutex>
+#include <ctime>
+#include <iostream>
 #endif
 
 #include <sstream>

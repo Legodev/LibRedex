@@ -22,7 +22,8 @@ extern "C"
 	void RVExtension(char *output, int outputSize, const char *function)
 	{
 #ifdef DEBUG
-			testfile << "\t\t ARMAIO-REQUEST " << function << std::endl;
+			std::time_t result = std::time(nullptr);
+			testfile << std::asctime(std::localtime(&result)) << "\t\t ARMAIO-REQUEST " << function << std::endl;
 			testfile.flush();
 #endif
 			std::string errstr = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\", \"";
@@ -30,7 +31,8 @@ extern "C"
 			errstr += "\"]";
 			strncpy(output, errstr.c_str(), outputSize);
 #ifdef DEBUG
-			testfile << "\t\t ARMAIO-ERROR " << errstr << std::endl;
+			result = std::time(nullptr);
+			testfile << std::asctime(std::localtime(&result)) << "\t\t ARMAIO-ERROR " << errstr << std::endl;
 			testfile.flush();
 #endif
 	}
@@ -42,16 +44,19 @@ extern "C"
 	{
 		try {
 #ifdef DEBUG
-			testfile << "\t\t ARMAIO-REQUEST " << function << std::endl;
+			std::time_t result = std::time(nullptr);
+			testfile << std::asctime(std::localtime(&result)) << "\t\t ARMAIO-REQUEST " << function << std::endl;
 			testfile.flush();
 			for (int i = 0; i < argsCnt; i++) {
-				testfile << "\t\t ARMAIO-Argument " << i << ": " << args[i] << std::endl;
+				result = std::time(nullptr);
+				testfile << std::asctime(std::localtime(&result)) << "\t\t ARMAIO-Argument " << i << ": " << args[i] << std::endl;
 				testfile.flush();
 			}
 #endif
 			std::string returnString = extension->processCallExtension(function, args, argsCnt, outputSize);
 #ifdef DEBUG
-			testfile << "\t\t ARMAIO-RETURN " << returnString << std::endl;
+			result = std::time(nullptr);
+			testfile << std::asctime(std::localtime(&result)) << "\t\t ARMAIO-RETURN " << returnString << std::endl;
 			testfile.flush();
 #endif
 			strncpy(output, returnString.c_str(), outputSize);
@@ -69,7 +74,8 @@ extern "C"
 			errstr += "\"]";
 			strncpy(output, errstr.c_str(), outputSize);
 #ifdef DEBUG
-			testfile << "\t\t ARMAIO-ERROR " << errstr << std::endl;
+			result = std::time(nullptr);
+			testfile << std::asctime(std::localtime(&result)) << "\t\t ARMAIO-ERROR " << errstr << std::endl;
 			testfile.flush();
 #endif
 		}
