@@ -379,6 +379,11 @@ void mysql_db_handler::returnconnection(MYSQL * connection) {
 void mysql_db_handler::rawquery(std::string query) {
 	MYSQL *connection = getconnection();
 
+#ifdef DEBUG
+			testfile << "QUERY: " << query << std::endl;
+			testfile.flush();
+#endif
+
 	if (mysql_real_query(connection, query.c_str(), query.size())) {
 		throw std::runtime_error(
 				"error while executing query: "
@@ -393,6 +398,11 @@ void mysql_db_handler::rawquery(std::string query) {
 
 void mysql_db_handler::rawquery(std::string query, MYSQL_RES **result) {
 	MYSQL *connection = getconnection();
+
+#ifdef DEBUG
+			testfile << "QUERY " << query << std::endl;
+			testfile.flush();
+#endif
 
 	if (mysql_real_query(connection, query.c_str(), query.size())) {
 		throw std::runtime_error(
@@ -419,6 +429,11 @@ void mysql_db_handler::rawquery(std::string query, MYSQL_RES **result) {
 void mysql_db_handler::preparedStatementQuery(std::string query, MYSQL_BIND input_params[]) {
 	MYSQL *connection = getconnection();
 	int        status;
+
+#ifdef DEBUG
+			testfile << "QUERY " << query << std::endl;
+			testfile.flush();
+#endif
 
 	MYSQL_STMT *stmt;
 	stmt = mysql_stmt_init(connection);

@@ -31,5 +31,5 @@ cd ..
 cd ../Binaries
 mkdir -p Windows/Release/
 mkdir -p Linux/Release/
-cp libredex*.dll Windows/Release/
-cp libredex*.so Linux/Release/
+mv libredex*.dll Windows/Release/
+mv libredex*.so Linux/Release/
