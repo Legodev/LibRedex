@@ -120,16 +120,22 @@ print(out)
 #out= instance.ExecuteAndPrint("getRandomNumberList", ["type","int","amount","20","start","-10","end","10"])
 #print(out)
 #print("\n\n")
-#out= instance.ExecuteAndPrint("getEpochTime", [])
-#print(out)
-#print("\n\n")
-#out= instance.ExecuteAndPrint("getDateTimeArray", [])
-#print(out)
-
-
-out= instance.ExecuteAndPrint("initdb", ["worlduuid", "11e71379043c8906833008626681de3d"])
+out= instance.ExecuteAndPrint("getUnixTime", [])
 print(out)
-sleep(1)
+print("sleeping 2 seconds")
+sleep(2)
+out= instance.ExecuteAndPrint("getUnixTime", [])
+print(out)
+print("\n\n")
+
+print("\n\n")
+out= instance.ExecuteAndPrint("getDateTimeArray", [])
+print(out)
+
+
+#out= instance.ExecuteAndPrint("initdb", ["worlduuid", "11e71379043c8906833008626681de3d"])
+#print(out)
+#sleep(1)
  
 #print("\n\n")
 #out= instance.ExecuteAndPrint("loadPlayer", [
@@ -263,31 +269,31 @@ sleep(1)
 #print(out)
 # 
 #print("\n\n")
-out= instance.ExecuteAndPrint("createObject", [
-                              "classname", stringgenerator(8),
-                              "priority", "2", 
-                              "type", "1", 
-                              "accesscode", "", 
-                              "locked", "0", 
-                              "playeruuid", "",
-                              "hitpoints", "[]",  
-                              "damage", "0.1", 
-                              "fuel", "0.9", 
-                              "fuelcargo", "0.0", 
-                              "repaircargo", "0.0",
-                              "items", "[]", 
-                              "magazinesturret", "[]", 
-                              "variables", "[]",
-                              "animationstate", "[]", 
-                              "textures", "[]", 
-                              "direction", "23.5", 
-                              "positiontype", "0", 
-                              "positionx", "21.42", 
-                              "positiony", "666.9", 
-                              "positionz", "133.7",
-                              "positionadvanced", "[[1,2,3]]", 
-                              "reservedone", "[]", 
-                              "reservedtwo", "[]"])
+#out= instance.ExecuteAndPrint("createObject", [
+                              #"classname", stringgenerator(8),
+                              #"priority", "2", 
+                              #"type", "1", 
+                              #"accesscode", "", 
+                              #"locked", "0", 
+                              #"playeruuid", "",
+                              #"hitpoints", "[]",  
+                              #"damage", "0.1", 
+                              #"fuel", "0.9", 
+                              #"fuelcargo", "0.0", 
+                              #"repaircargo", "0.0",
+                              #"items", "[]", 
+                              #"magazinesturret", "[]", 
+                              #"variables", "[]",
+                              #"animationstate", "[]", 
+                              #"textures", "[]", 
+                              #"direction", "23.5", 
+                              #"positiontype", "0", 
+                              #"positionx", "21.42", 
+                              #"positiony", "666.9", 
+                              #"positionz", "133.7",
+                              #"positionadvanced", "[[1,2,3]]", 
+                              #"reservedone", "[]", 
+                              #"reservedtwo", "[]"])
 #out= instance.ExecuteAndPrint("createObject", [
                               #"classname", stringgenerator(8),
                               #"priority", "2"])
@@ -327,13 +333,13 @@ print(out)
 # 
 # print("\n\n")
 
-start = time.time()
+#start = time.time()
 
-out= instance.ExecuteAndPrint("dumpObjects", [])
-print(out)
+#out= instance.ExecuteAndPrint("dumpObjects", [])
+#print(out)
 
-end = time.time()
-print(end - start)
+#end = time.time()
+#print(end - start)
 # for x in range(0, 100):
 #     out= instance.ExecuteAndPrint("dumpObjects", [])
 #     print(out)

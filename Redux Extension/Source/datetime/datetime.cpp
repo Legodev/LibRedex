@@ -69,7 +69,8 @@ std::string datetime::getDateTimeArray(std::string &extFunction, ext_arguments &
 std::string datetime::getEpochTime(std::string &extFunction, ext_arguments &extArguments) {
 	std::stringstream returnString;
 	std::time_t now = std::time(0);
-	returnString << now;
+	std::time_t legoDevYear = now - 1468800000;
+	returnString << legoDevYear;
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + returnString.str() + "]";
 }
