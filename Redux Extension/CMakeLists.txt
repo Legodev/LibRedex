@@ -38,7 +38,7 @@ SET(BOOST_LIBRARYDIR /usr/lib${BITVALUE})
 
 SET(MYSQL_INCLUDE_DIR /usr/include/mysql)
 SET(MYSQL_LIBRARY /usr/lib${BITVALUE})
-SET(MYSQL_LIBRARY ssl dl z crypto mysqlclient.a)
+SET(MYSQL_LIBRARY ssl dl z crypto mysqlclient)
 
 FIND_PACKAGE(Threads REQUIRED)
 ENDIF(WIN32)
