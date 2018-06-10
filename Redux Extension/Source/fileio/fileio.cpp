@@ -32,16 +32,31 @@
 #include "fileio/fileio.hpp"
 
 fileio::fileio(EXT_FUNCTIONS &extFunctions) {
-	extFunctions.insert(std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_READ_FILE), std::make_tuple(boost::bind(&fileio::readFile, this, _1, _2),
-	SYNC_MAGIC)));
-	extFunctions.insert(std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_WRITE_FILE), std::make_tuple(boost::bind(&fileio::writeFile, this, _1, _2),
-	SYNC_MAGIC)));
-	extFunctions.insert(std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_APPEND_FILE), std::make_tuple(boost::bind(&fileio::appendFile, this, _1, _2),
-	SYNC_MAGIC)));
-	extFunctions.insert(std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_PLUGINSYSTEM_GETINITORDER), std::make_tuple(boost::bind(&fileio::GetInitOrder, this, _1, _2),
-	SYNC_MAGIC)));
-	extFunctions.insert(std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_PLUGINSYSTEM_GETCFGFILE), std::make_tuple(boost::bind(&fileio::GetCfgFile, this, _1, _2),
-	SYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_READ_FILE),
+					std::make_tuple(
+							boost::bind(&fileio::readFile, this, _1, _2),
+							SYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_WRITE_FILE),
+					std::make_tuple(
+							boost::bind(&fileio::writeFile, this, _1, _2),
+							SYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_APPEND_FILE),
+					std::make_tuple(
+							boost::bind(&fileio::appendFile, this, _1, _2),
+							SYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_PLUGINSYSTEM_GETINITORDER),
+					std::make_tuple(
+							boost::bind(&fileio::GetInitOrder, this, _1, _2),
+							SYNC_MAGIC)));
+	extFunctions.insert(
+				std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_PLUGINSYSTEM_GETCFGFILE),
+						std::make_tuple(
+								boost::bind(&fileio::GetCfgFile, this, _1, _2),
+								SYNC_MAGIC)));
 
 	boost::property_tree::ptree configtree;
 	boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);
