@@ -19,6 +19,17 @@
 
 extern "C"
 {
+	void RVExtensionVersion(char *output, int outputSize)
+	{
+		char version[] = DLLVERSIONSTRING;
+		//--- max outputSize is 32 bytes
+		strncpy(output, version, outputSize);
+		output[outputSize - 1] = '\0';
+	}
+}
+
+extern "C"
+{
 	void RVExtension(char *output, int outputSize, const char *function)
 	{
 #ifdef DEBUG
@@ -30,6 +41,7 @@ extern "C"
 			errstr += "Sorry RVExtension is not supported anymore";
 			errstr += "\"]";
 			strncpy(output, errstr.c_str(), outputSize);
+			output[outputSize - 1] = '\0';
 #ifdef DEBUG
 			result = std::time(nullptr);
 			testfile << std::put_time(std::localtime(&result), "%F %T") << "\t\t ARMAIO-ERROR " << errstr << std::endl;
@@ -76,6 +88,7 @@ extern "C"
 			errstr += error;
 			errstr += "\"]";
 			strncpy(output, errstr.c_str(), outputSize);
+			output[outputSize - 1] = '\0';
 #ifdef DEBUG
 			result = std::time(nullptr);
 			testfile << std::put_time(std::localtime(&result), "%F %T") << "\t\t ARMAIO-ERROR " << errstr << std::endl;

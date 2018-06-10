@@ -145,7 +145,7 @@ static void destroy(void)
 	#ifdef __cplusplus
 		extern "C" {
 	#endif
-
+	__declspec (dllexport) void RVExtensionVersion(char *output, int outputSize);
 	__declspec (dllexport) void RVExtension(char *output, int outputSize, const char *function);
 	__declspec (dllexport) void RVExtensionArgs(char *output, int outputSize, const char *function, const char **args, int argsCnt);
 
