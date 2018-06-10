@@ -20,14 +20,17 @@
 
 #ifdef __MINGW32__
 	#if _WIN64
+			#define RVExtensionVersion __stdcall RVExtensionVersion
 			#define RVExtension __stdcall RVExtension
 			#define RVExtensionArgs __stdcall RVExtensionArgs
 	#else
+			#define RVExtensionVersion __stdcall RVExtensionVersion
 			#define RVExtension __stdcall _RVExtension
 			#define RVExtensionArgs __stdcall _RVExtensionArgs
 	#endif
 #endif
 #ifdef _MSC_VER
+		#define RVExtensionVersion __stdcall RVExtensionVersion
 		#define RVExtension __stdcall RVExtension
 		#define RVExtensionArgs __stdcall RVExtensionArgs
 #endif
