@@ -765,16 +765,16 @@ std::string mysql_db_handler::loadPlayerGroups(std::string playeruuid) {
 		"SELECT HEX(`clan`.`uuid`) AS 'clan_uuid', HEX(`founder`.`uuid`) AS 'founder_uuid', `founder`.`steamid` AS 'founder_steamid', "
 		"`founder`.`lastnick` AS 'founder_nick', GROUP_CONCAT("
 		  "DISTINCT CONCAT('[\"', HEX(`player`.`uuid`), '\",\"' , `player`.`steamid`, '\",\"' , `player`.`lastnick`, '\",', "
-		  	  "`clan_memeber`.`rank`, ',\"', `clan_memeber`.`comment`, '\"]') "
+		  	  "`clan_member`.`rank`, ',\"', `clan_member`.`comment`, '\"]') "
 		  "SEPARATOR ','"
-		") AS 'clan_member'"
+		") AS 'clan_member_list'"
 		"FROM `clan` LEFT JOIN `player` AS `founder` ON `clan`.`founder_uuid` = `founder`.`uuid` "
-		"LEFT JOIN `clan_memeber` ON `clan`.`uuid` = `clan_memeber`.`clan_uuid` "
-		"LEFT JOIN `player` ON `clan_memeber`.`player_uuid` = `player`.`uuid`"
+		"LEFT JOIN `clan_member` ON `clan`.`uuid` = `clan_member`.`clan_uuid` "
+		"LEFT JOIN `player` ON `clan_member`.`player_uuid` = `player`.`uuid`"
 		"WHERE `clan`.`uuid` IN ("
-								"SELECT `clan_memeber`.`clan_uuid` "
-								"FROM `clan_memeber` "
-								"WHERE `clan_memeber`.`player_uuid` = CAST(0x%s AS BINARY)"
+								"SELECT `clan_member`.`clan_uuid` "
+								"FROM `clan_member` "
+								"WHERE `clan_member`.`player_uuid` = CAST(0x%s AS BINARY)"
 								")"
 		"GROUP BY `clan`.`uuid`" }
 							% playeruuid);
@@ -798,7 +798,7 @@ std::string mysql_db_handler::loadPlayerGroups(std::string playeruuid) {
 		row = mysql_fetch_row(result);
 
 		if (printcommaone) {
-			groupinfo += ",\n";
+			groupinfo += ",";
 			printcommaone = false;
 			printcommatwo = false;
 		}
