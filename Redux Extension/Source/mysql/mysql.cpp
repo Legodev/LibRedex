@@ -106,6 +106,12 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 								boost::bind(&mysql_db_handler::interloadPlayer, this, _1, _2),
 								ASYNC_MAGIC)));
 		extFunctions.insert(
+						std::make_pair(
+								std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_PLAYER_GROUPS),
+								std::make_tuple(
+										boost::bind(&mysql_db_handler::interloadPlayerGroups, this, _1, _2),
+										ASYNC_MAGIC)));
+		extFunctions.insert(
 				std::make_pair(
 						std::string(PROTOCOL_DBCALL_FUNCTION_AV_CHARS),
 						std::make_tuple(
@@ -519,6 +525,13 @@ std::string mysql_db_handler::interloadPlayer(std::string &extFunction, ext_argu
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + playerinfo + "]";
 }
 
+std::string mysql_db_handler::interloadPlayerGroups(std::string &extFunction, ext_arguments &extArgument) {
+	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string result = loadPlayerGroups(playeruuid);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + result + "]";
+}
+
 std::string mysql_db_handler::interloadAvChars(std::string &extFunction, ext_arguments &extArgument) {
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 	std::string result = loadAvChars(playeruuid);
@@ -735,6 +748,113 @@ std::string mysql_db_handler::loadPlayer(std::string nickname, std::string steam
 	return "[\"" + playeruuid + "\",\"" + persistent_variables_uuid + "\",\"" + mainclanuuid + "\",[" + banned + ",\"" + banreason +"\"]]";
 }
 
+std::string mysql_db_handler::loadPlayerGroups(std::string playeruuid) {
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	unsigned int fieldcount;
+	unsigned long long int rowcount;
+	bool printcommaone = false;
+	bool printcommatwo = false;
+
+	// char info
+	std::string groupinfo = "";
+
+	std::string querygroupinfo =
+			str(
+					boost::format {
+		"SELECT HEX(`clan`.`uuid`) AS 'clan_uuid', HEX(`founder`.`uuid`) AS 'founder_uuid', `founder`.`steamid` AS 'founder_steamid', "
+		"`founder`.`lastnick` AS 'founder_nick', GROUP_CONCAT("
+		  "DISTINCT CONCAT('[\"', HEX(`player`.`uuid`), '\",\"' , `player`.`steamid`, '\",\"' , `player`.`lastnick`, '\",', "
+		  	  "`clan_memeber`.`rank`, ',\"', `clan_memeber`.`comment`, '\"]') "
+		  "SEPARATOR ','"
+		") AS 'clan_member'"
+		"FROM `clan` LEFT JOIN `player` AS `founder` ON `clan`.`founder_uuid` = `founder`.`uuid` "
+		"LEFT JOIN `clan_memeber` ON `clan`.`uuid` = `clan_memeber`.`clan_uuid` "
+		"LEFT JOIN `player` ON `clan_memeber`.`player_uuid` = `player`.`uuid`"
+		"WHERE `clan`.`uuid` IN ("
+								"SELECT `clan_memeber`.`clan_uuid` "
+								"FROM `clan_memeber` "
+								"WHERE `clan_memeber`.`player_uuid` = CAST(0x%s AS BINARY)"
+								")"
+		"GROUP BY `clan`.`uuid`" }
+							% playeruuid);
+
+	char typearray[] = {
+			1, // HEX(`clan`.`uuid`)
+			1, // HEX(`founder`.`uuid`)
+			1, // `founder`.`steamid`
+			1, // `founder`.`lastnick`
+			3, // 'clan_member'
+			};
+
+	this->rawquery(querygroupinfo, &result);
+
+	fieldcount = mysql_num_fields(result);
+	rowcount = mysql_num_rows(result);
+
+	groupinfo = "[";
+
+	for (int rowpos = 0; rowpos < rowcount; rowpos++) {
+		row = mysql_fetch_row(result);
+
+		if (printcommaone) {
+			groupinfo += ",\n";
+			printcommaone = false;
+			printcommatwo = false;
+		}
+
+		groupinfo += "[";
+
+		for (int fieldpos = 0; fieldpos < fieldcount; fieldpos++) {
+			if (printcommatwo) {
+				groupinfo += ",";
+				printcommatwo = false;
+			}
+			switch (typearray[fieldpos]) {
+			case 1:
+				groupinfo += "\"";
+				break;
+			case 2:
+				groupinfo += "[";
+				if (row[fieldpos] != NULL)
+					groupinfo += "\"";
+				break;
+			case 3:
+				groupinfo += "[";
+				break;
+			default:
+				groupinfo += "";
+			}
+
+			if (row[fieldpos] != NULL) {
+				groupinfo += row[fieldpos];
+			} else {
+				groupinfo += "";
+			}
+
+			switch (typearray[fieldpos]) {
+			case 1:
+				groupinfo += "\"";
+				break;
+			case 2:
+				if (row[fieldpos] != NULL)
+					groupinfo += "\"";
+				groupinfo += "]";
+				break;
+			case 3:
+				groupinfo += "]";
+				break;
+			}
+			printcommatwo = true;
+		}
+		groupinfo += "]";
+		printcommaone = true;
+	}
+	groupinfo += "]";
+
+	return groupinfo;
+}
+
 std::string mysql_db_handler::loadAvChars(std::string playeruuid) {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -779,14 +899,18 @@ std::string mysql_db_handler::loadAvChars(std::string playeruuid) {
 	for (int rowpos = 0; rowpos < rowcount; rowpos++) {
 		row = mysql_fetch_row(result);
 
-		charinfo += "[";
 		if (printcommaone) {
 			charinfo += ",";
+			printcommaone = false;
+			printcommatwo = false;
 		}
+
+		charinfo += "[";
 
 		for (int fieldpos = 0; fieldpos < fieldcount; fieldpos++) {
 			if (printcommatwo) {
 				charinfo += ",";
+				printcommatwo = false;
 			}
 			switch (typearray[fieldpos]) {
 			case 1:

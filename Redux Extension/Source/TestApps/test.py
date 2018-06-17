@@ -133,15 +133,23 @@ out= instance.ExecuteAndPrint("getDateTimeArray", [])
 print(out)
 
 
-#out= instance.ExecuteAndPrint("initdb", ["worlduuid", "11e71379043c8906833008626681de3d"])
-#print(out)
-#sleep(1)
+out= instance.ExecuteAndPrint("initdb", ["worlduuid", "11e71379043c8906833008626681de3d"])
+print(out)
+sleep(1)
  
 #print("\n\n")
 #out= instance.ExecuteAndPrint("loadPlayer", [
                                #"nickname", "Lego",
                                #"steamid", "76561198025362180"])
-#print(out)
+                               
+print("\n\n")
+out= instance.ExecuteAndPrint("loadPlayerGroups", ["playeruuid", "11E7F2F32EFABF60B1F44A9292F0AA59"])
+print(out)
+
+print("\n\n")
+out= instance.ExecuteAndPrint("loadPlayerGroups", ["playeruuid", "11E7E4CF9D536DE097E04A9292F0AA59"])
+print(out)
+
 #compiledout = ast.literal_eval(out.replace('false', '"false"').replace('true', '"true"'))
 #playeruuid = compiledout[1][0]
  
@@ -297,7 +305,7 @@ print(out)
 #out= instance.ExecuteAndPrint("createObject", [
                               #"classname", stringgenerator(8),
                               #"priority", "2"])
-print(out)
+#print(out)
 #compiledout = ast.literal_eval(out)
 #objectuuid = compiledout[1]
 #print(objectuuid)
