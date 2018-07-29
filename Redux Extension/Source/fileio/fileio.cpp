@@ -58,11 +58,10 @@ fileio::fileio(EXT_FUNCTIONS &extFunctions) {
 								boost::bind(&fileio::GetCfgFile, this, _1, _2),
 								SYNC_MAGIC)));
 
-    boost::property_tree::ptree configtree;
-    boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);
+	boost::property_tree::ptree configtree;
+	boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);
 
-
-    for (auto& item : configtree.get_child("fileio.readonce")) {
+	for (auto& item : configtree.get_child("fileio.readonce")) {
 		readlist.insert(std::make_pair(item.second.get_value<std::string>(), 1));
 	}
 
@@ -81,51 +80,30 @@ fileio::~fileio() {
 	return;
 }
 
-#if defined(__linux__)
-boost::filesystem::path fileio::ToLowerIfNeeded(boost::filesystem::path Path) {
-	boost::filesystem::path loweredPath = boost::algorithm::to_lower_copy(Path.string());
+boost::filesystem::path fileio::GetConfigPath(std::string filename, bool useAsStartPath) {
+	const std::string toFind = boost::algorithm::to_lower_copy(filename);
 
-	if (boost::filesystem::exists(loweredPath)) {
-		return loweredPath;
+	auto begin = boost::filesystem::recursive_directory_iterator(this->configPath);
+	const auto end = boost::filesystem::recursive_directory_iterator();
+
+	for (; begin != end; ++begin) {
+		const std::string path = boost::algorithm::to_lower_copy(begin->path().string());
+		if (path.find(toFind) != std::string::npos) {
+			if (!boost::filesystem::is_directory(path)) {
+				if (useAsStartPath) {
+					// speedup future search by starting on the last searched directory
+					this->configPath = begin->path().parent_path();
+				}
+				return begin->path();
+			}
+		}
 	}
 
-	return Path;
-}
-#endif
-
-boost::filesystem::path fileio::GetConfigPath() {
-	boost::filesystem::path configPath = "@DesolationServer";
-	configPath /= "Config";
-
-	return configPath;
-
-#if defined(__linux__)
-	configPath = ToLowerIfNeeded(configPath);
-#endif
-
-	if (boost::filesystem::is_directory(configPath)) {
-		return configPath;
-	}
-
-
-	configPath = "Config";
-#if defined(__linux__)
-	configPath = ToLowerIfNeeded(configPath);
-#endif
-
-	if (boost::filesystem::is_directory(configPath)) {
-		return configPath;
-	}
-
-	throw std::runtime_error("could not find the config path try to lower all names and check the dll location");
+	throw std::runtime_error("could not find the configs path, i started searching on path: " + this->configPath.string());
 }
 
 std::string fileio::GetInitOrder(std::string &extFunction, ext_arguments &extArguments) {
-	boost::filesystem::path configPath = GetConfigPath();
-	configPath /= "PluginList.cfg";
-#if defined(__linux__)
-	configPath = ToLowerIfNeeded(configPath);
-#endif
+	boost::filesystem::path configPath = GetConfigPath("PluginList.cfg", true);
 
 	if (boost::filesystem::exists(configPath)) {
 		int charpos, linenum;
@@ -135,7 +113,9 @@ std::string fileio::GetInitOrder(std::string &extFunction, ext_arguments &extArg
 
 		linenum = 0;
 		while (std::getline(infile, line)) {
-			std::istringstream iss(line);
+			line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
+
+			//std::istringstream iss(line);
 
 			int i = 0;
 			while ((i = line.find("\"", i)) != std::string::npos) {
@@ -181,22 +161,15 @@ std::string fileio::GetInitOrder(std::string &extFunction, ext_arguments &extArg
 }
 
 std::string fileio::GetCfgFile(std::string &extFunction, ext_arguments &extArguments) {
-	boost::filesystem::path configPath = GetConfigPath();
-
 	std::string returnString = "[";
 	int filenum = 0;
 	int itemnum = 0;
 
 	for (std::string& filename : extArguments.get_simplelist<std::string>("configfiles")) {
-
 		boost::regex dirupexpression("\\.\\.");
 		filename = boost::regex_replace(filename, dirupexpression, "", boost::match_default | boost::format_all);
 
-		boost::filesystem::path filepath = configPath / (filename + ".cfg");
-
-#if defined(__linux__)
-		filepath = ToLowerIfNeeded(filepath);
-#endif
+		boost::filesystem::path filepath = GetConfigPath(filename + ".cfg");
 
 		if (filenum != 0) {
 			returnString += ",";
@@ -209,8 +182,8 @@ std::string fileio::GetCfgFile(std::string &extFunction, ext_arguments &extArgum
 
 			itemnum = 0;
 			BOOST_FOREACH(boost::property_tree::ptree::value_type &val, configtree) {
-			    // val.first is the name of the child.
-			    // val.second is the child tree.
+				// val.first is the name of the child.
+				// val.second is the child tree.
 				std::string key = val.first;
 				std::string value = val.second.get_value<std::string>();
 				int i = 0;
@@ -267,7 +240,7 @@ std::string fileio::readFile(std::string &extFunction, ext_arguments &extArgumen
 
 		linenum = 0;
 		while (std::getline(infile, line)) {
-			std::istringstream iss(line);
+			//std::istringstream iss(line);
 
 			// add second " to get the string after call compile to concatinate with the remaining parts
 			charpos = 0;
@@ -287,8 +260,8 @@ std::string fileio::readFile(std::string &extFunction, ext_arguments &extArgumen
 
 		returnString += "]";
 	} else {
-			throw std::runtime_error("cannot read file: " + filename);
-		}
+		throw std::runtime_error("cannot read file: " + filename);
+	}
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + filename + "]";
 }

@@ -95,6 +95,7 @@ private:
 		std::string interdbVersion(std::string &extFunction, ext_arguments &extArgument);
 
 		std::string interloadPlayer(std::string &extFunction, ext_arguments &extArgument);
+		std::string interloadPlayerGroups(std::string &extFunction, ext_arguments &extArgument);
 		std::string interloadAvChars(std::string &extFunction, ext_arguments &extArgument);
 		std::string interlinkChars(std::string &extFunction, ext_arguments &extArgument);
 		std::string interloadChar(std::string &extFunction, ext_arguments &extArgument);
@@ -129,6 +130,7 @@ private:
 
 		void checkWorldUUID();
 		std::string loadPlayer(std::string nickname, std::string steamid);
+		std::string loadPlayerGroups(std::string playeruuid);
 		std::string loadAvChars(std::string playeruuid);
 		std::string linkChars(std::string playeruuid, std::string variabuuid);
 		std::string loadChar(std::string playeruuid);

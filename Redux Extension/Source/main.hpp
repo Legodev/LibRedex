@@ -20,14 +20,17 @@
 
 #ifdef __MINGW32__
 	#if _WIN64
+			#define RVExtensionVersion __stdcall RVExtensionVersion
 			#define RVExtension __stdcall RVExtension
 			#define RVExtensionArgs __stdcall RVExtensionArgs
 	#else
+			#define RVExtensionVersion __stdcall RVExtensionVersion
 			#define RVExtension __stdcall _RVExtension
 			#define RVExtensionArgs __stdcall _RVExtensionArgs
 	#endif
 #endif
 #ifdef _MSC_VER
+		#define RVExtensionVersion __stdcall RVExtensionVersion
 		#define RVExtension __stdcall RVExtension
 		#define RVExtensionArgs __stdcall RVExtensionArgs
 #endif
@@ -145,7 +148,7 @@ static void destroy(void)
 	#ifdef __cplusplus
 		extern "C" {
 	#endif
-
+	__declspec (dllexport) void RVExtensionVersion(char *output, int outputSize);
 	__declspec (dllexport) void RVExtension(char *output, int outputSize, const char *function);
 	__declspec (dllexport) void RVExtensionArgs(char *output, int outputSize, const char *function, const char **args, int argsCnt);
 

@@ -40,6 +40,8 @@ private:
 	typedef std::map<std::string, int> FILE_IO_MAP;
 	FILE_IO_MAP readlist;
 	FILE_IO_MAP writelist;
+	
+	boost::filesystem::path configPath = ".";
 
 	std::string readFile(std::string &extFunction, ext_arguments &extArguments);
 	std::string writeFile(std::string &extFunction, ext_arguments &extArguments);
@@ -47,10 +49,7 @@ private:
 	std::string GetInitOrder(std::string &extFunction, ext_arguments &extArguments);
 	std::string GetCfgFile(std::string &extFunction, ext_arguments &extArguments);
 
-	boost::filesystem::path GetConfigPath();
-	#if defined(__linux__)
-	boost::filesystem::path ToLowerIfNeeded(boost::filesystem::path configPath);
-	#endif
+	boost::filesystem::path GetConfigPath(std::string filename, bool useAsStartPath = false);
 };
 
 
