@@ -21,10 +21,12 @@ extern "C"
 {
 	void RVExtensionVersion(char *output, int outputSize)
 	{
-		char version[] = DLLVERSIONSTRING;
-		//--- max outputSize is 32 bytes
-		strncpy(output, version, outputSize);
-		output[outputSize - 1] = '\0';
+		if (outputSize > 0) {
+			char version[] = DLLVERSIONSTRING;
+			//--- max outputSize is 32 bytes
+			strncpy(output, version, outputSize);
+			output[outputSize - 1] = '\0';
+		}
 	}
 }
 
@@ -32,6 +34,7 @@ extern "C"
 {
 	void RVExtension(char *output, int outputSize, const char *function)
 	{
+		if (outputSize > 0) {
 #ifdef DEBUG
 			std::time_t result = std::time(nullptr);
 			testfile << std::localtime(&result) << "\t\t ARMAIO-REQUEST " << function << std::endl;
@@ -47,6 +50,7 @@ extern "C"
 			testfile << std::localtime(&result) << "\t\t ARMAIO-ERROR " << errstr << std::endl;
 			testfile.flush();
 #endif
+		}
 	}
 }
 
@@ -54,46 +58,48 @@ extern "C"
 {
 	void RVExtensionArgs(char *output, int outputSize, const char *function, const char **args, int argsCnt)
 	{
+		if (outputSize > 0) {
 #ifdef DEBUG
-		std::time_t result;
+			std::time_t result;
 #endif
-		try {
+			try {
 #ifdef DEBUG
-			result = std::time(nullptr);
-			testfile << std::localtime(&result) << "\t\t ARMAIO-REQUEST " << function << std::endl;
-			testfile.flush();
-			for (int i = 0; i < argsCnt; i++) {
 				result = std::time(nullptr);
-				testfile << std::localtime(&result) << "\t\t ARMAIO-Argument " << i << ": " << args[i] << std::endl;
+				testfile << std::localtime(&result) << "\t\t ARMAIO-REQUEST " << function << std::endl;
 				testfile.flush();
-			}
+				for (int i = 0; i < argsCnt; i++) {
+					result = std::time(nullptr);
+					testfile << std::localtime(&result) << "\t\t ARMAIO-Argument " << i << ": " << args[i] << std::endl;
+					testfile.flush();
+				}
 #endif
-			std::string returnString = extension->processCallExtension(function, args, argsCnt, outputSize);
+				std::string returnString = extension->processCallExtension(function, args, argsCnt, outputSize);
 #ifdef DEBUG
-			result = std::time(nullptr);
-			testfile << std::localtime(&result) << "\t\t ARMAIO-RETURN " << returnString << std::endl;
-			testfile.flush();
+				result = std::time(nullptr);
+				testfile << std::localtime(&result) << "\t\t ARMAIO-RETURN " << returnString << std::endl;
+				testfile.flush();
 #endif
-			strncpy(output, returnString.c_str(), outputSize);
-			return;
-		} catch (std::exception const& e) {
-			std::string error = e.what();
+				strncpy(output, returnString.c_str(), outputSize);
+				return;
+			} catch (std::exception const& e) {
+				std::string error = e.what();
 
-			int i = 0;
-			while ((i = error.find("\"", i)) != std::string::npos) {
-				error.insert(i, "\"");
-				i += 2;
-			}
-			std::string errstr = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\", \"";
-			errstr += error;
-			errstr += "\"]";
-			strncpy(output, errstr.c_str(), outputSize);
-			output[outputSize - 1] = '\0';
+				int i = 0;
+				while ((i = error.find("\"", i)) != std::string::npos) {
+					error.insert(i, "\"");
+					i += 2;
+				}
+				std::string errstr = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\", \"";
+				errstr += error;
+				errstr += "\"]";
+				strncpy(output, errstr.c_str(), outputSize);
+				output[outputSize - 1] = '\0';
 #ifdef DEBUG
-			result = std::time(nullptr);
-			testfile << std::localtime(&result) << "\t\t ARMAIO-ERROR " << errstr << std::endl;
-			testfile.flush();
+				result = std::time(nullptr);
+				testfile << std::localtime(&result) << "\t\t ARMAIO-ERROR " << errstr << std::endl;
+				testfile.flush();
 #endif
+			}
 		}
 	}
 }
