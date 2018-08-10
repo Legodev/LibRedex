@@ -96,6 +96,8 @@ private:
 
 		std::string interloadPlayer(std::string &extFunction, ext_arguments &extArgument);
 		std::string interloadPlayerGroups(std::string &extFunction, ext_arguments &extArgument);
+		std::string whitelistPlayer(std::string &extFunction, ext_arguments &extArgument);
+		std::string unwhitelistPlayer(std::string &extFunction, ext_arguments &extArgument);
 		std::string interloadAvChars(std::string &extFunction, ext_arguments &extArgument);
 		std::string interlinkChars(std::string &extFunction, ext_arguments &extArgument);
 		std::string interloadChar(std::string &extFunction, ext_arguments &extArgument);

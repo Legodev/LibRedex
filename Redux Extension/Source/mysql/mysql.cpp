@@ -106,11 +106,23 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 								boost::bind(&mysql_db_handler::interloadPlayer, this, _1, _2),
 								ASYNC_MAGIC)));
 		extFunctions.insert(
-						std::make_pair(
-								std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_PLAYER_GROUPS),
-								std::make_tuple(
-										boost::bind(&mysql_db_handler::interloadPlayerGroups, this, _1, _2),
-										ASYNC_MAGIC)));
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_PLAYER_GROUPS),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interloadPlayerGroups, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_WHITELIST_PLAYER),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::whitelistPlayer, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_UNWHITELIST_PLAYER),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::unwhitelistPlayer, this, _1, _2),
+								ASYNC_MAGIC)));
 		extFunctions.insert(
 				std::make_pair(
 						std::string(PROTOCOL_DBCALL_FUNCTION_AV_CHARS),
@@ -853,6 +865,86 @@ std::string mysql_db_handler::loadPlayerGroups(std::string playeruuid) {
 	groupinfo += "]";
 
 	return groupinfo;
+}
+
+std::string mysql_db_handler::whitelistPlayer(std::string &extFunction, ext_arguments &extArgument) {
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	unsigned int fieldcount;
+	unsigned long long int rowcount;
+
+	std::string extplayeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string playeruuid = "";
+
+	std::string queryplayerinfo = str(boost::format { "SELECT HEX(`player`.`uuid`), "
+			"FROM `player` "
+			"WHERE `player`.`uuid` = CAST(0x%s AS BINARY) " } % worlduuid % extplayeruuid);
+
+	this->rawquery(queryplayerinfo, &result);
+
+	rowcount = mysql_num_rows(result);
+
+	if (rowcount > 0) {
+		row = mysql_fetch_row(result);
+		if (row[0] != NULL) {
+			playeruuid = row[0];
+		}
+	}
+
+	mysql_free_result(result);
+
+	if (playeruuid != "") {
+		std::string querywhitelist = str(boost::format { "INSER INTO `whitelist` (`world_uuid`, `player_uuid`)"
+				"VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY))" } % worlduuid % playeruuid);
+
+		this->rawquery(querywhitelist);
+
+	} else {
+		return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"player does not exist!\"]";
+	}
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
+}
+
+std::string mysql_db_handler::unwhitelistPlayer(std::string &extFunction, ext_arguments &extArgument) {
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	unsigned int fieldcount;
+	unsigned long long int rowcount;
+
+	std::string extplayeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string playeruuid = "";
+
+	std::string queryplayerinfo = str(boost::format { "SELECT HEX(`player`.`uuid`), "
+			"FROM `player` "
+			"WHERE `player`.`uuid` = CAST(0x%s AS BINARY) " } % worlduuid % extplayeruuid);
+
+	this->rawquery(queryplayerinfo, &result);
+
+	rowcount = mysql_num_rows(result);
+
+	if (rowcount > 0) {
+		row = mysql_fetch_row(result);
+		if (row[0] != NULL) {
+			playeruuid = row[0];
+		}
+	}
+
+	mysql_free_result(result);
+
+	if (playeruuid != "") {
+		std::string querywhitelist =
+				str(boost::format{"DELETE FROM `whitelist` "
+						"WHERE `whitelist`.`world_uuid` = CAST(0x%s AS BINARY) "
+						" AND `whitelist`.`player_uuid` = CAST(0x%s AS BINARY) "} % worlduuid % playeruuid);
+
+		this->rawquery(querywhitelist);
+
+	} else {
+		return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"player does not exist!\"]";
+	}
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
 }
 
 std::string mysql_db_handler::loadAvChars(std::string playeruuid) {
