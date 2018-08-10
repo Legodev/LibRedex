@@ -154,6 +154,19 @@ int character_mysql::setData(unsigned int arraypos, std::string variableValue) {
 		char * pointer = (char *) mysql_bind[arraypos].buffer;
 		int size = variableValue.size();
 
+		// the database text fields are of the MySQL datatype TEXT, which can store 64 Kibibytes data
+		// if our string is longer then these 64 Kibibytes we discard the data because truncation causes serious issues
+		if (size >= 65530) {
+			this->setNull(arraypos);
+
+			mysql_bind[arraypos].buffer = 0;
+			mysql_bind[arraypos].buffer_length = 0;
+			free(pointer);
+			pointer = 0;
+
+			return 0;
+		}
+
 		if (pointer == 0 || std::string(pointer) != variableValue) {
 			if (pointer != 0 && mysql_bind[arraypos].buffer_length < size) {
 				mysql_bind[arraypos].buffer = 0;
