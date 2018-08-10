@@ -1608,7 +1608,7 @@ std::vector<object_mysql *> mysql_db_handler::dumpObjects(ext_arguments &extArgu
 						"`object`.`positionadvanced`, `object`.`reservedone`, `object`.`reservedtwo`, "
 						"HEX(`object`.`uuid`), "
 						"HEX(`world_has_objects`.`parentobject_uuid`), "
-						"HEX(`player`.`uuid`) "
+						"HEX(`player`.`mainclan_uuid`) "
 						"FROM `world_has_objects` "
 						"INNER JOIN `object` "
 						" ON `world_has_objects`.`object_uuid` = `object`.`uuid` "
