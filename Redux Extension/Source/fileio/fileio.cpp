@@ -53,10 +53,10 @@ fileio::fileio(EXT_FUNCTIONS &extFunctions) {
 							boost::bind(&fileio::GetInitOrder, this, _1, _2),
 							SYNC_MAGIC)));
 	extFunctions.insert(
-				std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_PLUGINSYSTEM_GETCFGFILE),
-						std::make_tuple(
-								boost::bind(&fileio::GetCfgFile, this, _1, _2),
-								SYNC_MAGIC)));
+			std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_PLUGINSYSTEM_GETCFGFILE),
+					std::make_tuple(
+							boost::bind(&fileio::GetCfgFile, this, _1, _2),
+							SYNC_MAGIC)));
 
 	boost::property_tree::ptree configtree;
 	boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);
@@ -84,10 +84,14 @@ fileio::~fileio() {
 
 void fileio::terminateHandler() {
 	for (auto it = writelist.begin(); it != writelist.end(); ++it) {
-		if (it->second->is_open()) {
-			it->second->close();
+		if (it->second != 0) {
+			if (it->second->is_open()) {
+				it->second->close();
+			}
+			delete it->second;
+
+			it->second = 0;
 		}
-		delete it->second;
 	}
 	return;
 }
