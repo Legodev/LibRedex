@@ -70,13 +70,25 @@ fileio::fileio(EXT_FUNCTIONS &extFunctions) {
 	}
 
 	for (auto& item : configtree.get_child("fileio.write")) {
-		writelist.insert(std::make_pair(item.second.get_value<std::string>(), 0));
+		//std::ofstream file;
+		writelist.insert(std::make_pair(item.second.get_value<std::string>(), new std::ofstream()));
 	}
 
 	return;
 }
 
 fileio::~fileio() {
+	this->terminateHandler();
+	return;
+}
+
+void fileio::terminateHandler() {
+	for (auto it = writelist.begin(); it != writelist.end(); ++it) {
+		if (it->second->is_open()) {
+			it->second->close();
+		}
+		delete it->second;
+	}
 	return;
 }
 
@@ -267,9 +279,39 @@ std::string fileio::readFile(std::string &extFunction, ext_arguments &extArgumen
 }
 
 std::string fileio::writeFile(std::string &extFunction, ext_arguments &extArguments) {
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + "not implemented" + "\"]";
+	std::string filename = extArguments.get<std::string>("filename");
+	std::string message = extArguments.get<std::string>("message");
+
+	FILE_WRITE_MAP::iterator it = writelist.find(filename);
+	if (it != writelist.end()) {
+		if (!it->second->is_open()) {
+			it->second->open(filename, std::ios::out | std::ios::trunc);
+		}
+
+		*it->second << message << std::endl;
+		it->second->flush();
+	} else {
+		throw std::runtime_error("cannot open file: " + filename);
+	}
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + filename + "]";
 }
 
 std::string fileio::appendFile(std::string &extFunction, ext_arguments &extArguments) {
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + "not implemented" + "\"]";
+	std::string filename = extArguments.get<std::string>("filename");
+	std::string message = extArguments.get<std::string>("message");
+
+	FILE_WRITE_MAP::iterator it = writelist.find(filename);
+	if (it != writelist.end()) {
+		if (!it->second->is_open()) {
+			it->second->open(filename, std::ios::out | std::ios::app);
+		}
+
+		*it->second << message << std::endl;
+		it->second->flush();
+	} else {
+		throw std::runtime_error("cannot open file: " + filename);
+	}
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + filename + "]";
 }
