@@ -206,6 +206,22 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 						std::make_tuple(
 								boost::bind(&mysql_db_handler::interdumpObjects, this, _1, _2),
 								ASYNC_MAGIC)));
+
+		extFunctions.insert(
+				std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_OBJECT_WORLD_LINK),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::createObjectWorldLink, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_OBJECT_WORLD_LINK),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::updateObjectWorldLink, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DELETE_OBJECT_WORLD_LINK),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::deleteObjectWorldLink, this, _1, _2),
+								ASYNC_MAGIC)));
 }
 
 mysql_db_handler::~mysql_db_handler() {
@@ -1652,6 +1668,72 @@ std::vector<object_mysql *> mysql_db_handler::dumpObjects(ext_arguments &extArgu
 	mysql_free_result(result);
 
 	return objectList;
+}
+
+std::string mysql_db_handler::createObjectWorldLink(std::string &extFunction, ext_arguments &extArgument) {
+	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+	std::string worlduuid = this->worlduuid;
+	unsigned long long int rowcount;
+
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID)) {
+		worlduuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID);
+	}
+
+	std::string query = str(boost::format { "SELECT HEX(`object_uuid`) "
+			"FROM `world_has_objects` "
+			"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY) "
+			"AND `world_has_objects`.`world_uuid` =  CAST(0x%s AS BINARY) "
+			"AND `world_has_objects`.`killinfo_uuid` IS NULL" } % playeruuid % worlduuid);
+
+	this->rawquery(query, &result);
+
+	rowcount = mysql_num_rows(result);
+	mysql_free_result (result);
+
+	if (rowcount < 1) {
+
+		std::string query = str(boost::format { "INSERT INTO `world_has_objects` (`world_uuid`, `object_uuid`) "
+				"VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY))" } % worlduuid % objectuuid);
+
+		this->rawquery(query);
+	}
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + objectuuid + "\",\"" + worlduuid + "\"]]";
+}
+
+std::string mysql_db_handler::updateObjectWorldLink(std::string &extFunction, ext_arguments &extArgument) {
+	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+	std::string worlduuid = this->worlduuid;
+
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID)) {
+		worlduuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID);
+	}
+
+	std::string query = str(boost::format { "UPDATE `world_has_objects` SET `world_uuid` = CAST(0x%s AS BINARY) "
+			"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);" } % worlduuid % objectuuid);
+	this->rawquery(query);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + objectuuid + "\",\"" + worlduuid + "\"]]";
+}
+
+std::string mysql_db_handler::deleteObjectWorldLink(std::string &extFunction, ext_arguments &extArgument) {
+	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
+	std::string worlduuid = "*";
+
+	std::string query = str(boost::format { "DELETE FROM `world_has_objects` SET "
+						"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);" } % objectuuid);
+
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID)) {
+		worlduuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID);
+		query = str(boost::format { "DELETE FROM `world_has_objects` SET "
+					"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY)"
+					"AND `world_uuid` = CAST(0x%s AS BINARY);" } % objectuuid % worlduuid );
+	}
+
+
+	this->rawquery(query);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + objectuuid + "\",\"" + worlduuid + "\"]]";
 }
 
 void mysql_db_handler::test_stmt_error(MYSQL_STMT *stmt, int status) {

@@ -146,6 +146,10 @@ private:
 		std::string killObject(std::string objectuuid, std::string attackeruuid, std::string type, std::string weapon, float distance);
 		std::vector<object_mysql *> dumpObjects(ext_arguments &extArgument);
 
+		std::string createObjectWorldLink(std::string &extFunction, ext_arguments &extArgument);
+		std::string updateObjectWorldLink(std::string &extFunction, ext_arguments &extArgument);
+		std::string deleteObjectWorldLink(std::string &extFunction, ext_arguments &extArgument);
+
 };
 
 #endif /* SOURCE_MYSQL_HPP_ */
