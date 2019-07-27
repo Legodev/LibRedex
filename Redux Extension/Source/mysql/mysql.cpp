@@ -1673,6 +1673,7 @@ std::vector<object_mysql *> mysql_db_handler::dumpObjects(ext_arguments &extArgu
 std::string mysql_db_handler::createObjectWorldLink(std::string &extFunction, ext_arguments &extArgument) {
 	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 	std::string worlduuid = this->worlduuid;
+	MYSQL_RES *result;
 	unsigned long long int rowcount;
 
 	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID)) {
@@ -1683,7 +1684,7 @@ std::string mysql_db_handler::createObjectWorldLink(std::string &extFunction, ex
 			"FROM `world_has_objects` "
 			"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY) "
 			"AND `world_has_objects`.`world_uuid` =  CAST(0x%s AS BINARY) "
-			"AND `world_has_objects`.`killinfo_uuid` IS NULL" } % playeruuid % worlduuid);
+			"AND `world_has_objects`.`killinfo_uuid` IS NULL" } % objectuuid % worlduuid);
 
 	this->rawquery(query, &result);
 
