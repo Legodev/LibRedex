@@ -136,6 +136,7 @@ private:
 		void checkWorldUUID();
 		std::string loadPlayer(std::string nickname, std::string steamid);
 		std::string loadPlayerGroups(std::string playeruuid);
+		std::string updatePlayerMainClan(std::string &extFunction, ext_arguments &extArgument);
 		std::string loadAvChars(std::string playeruuid);
 		std::string linkChars(std::string playeruuid, std::string variabuuid);
 		std::string loadChar(std::string playeruuid);
@@ -152,6 +153,20 @@ private:
 		std::string createObjectWorldLink(std::string &extFunction, ext_arguments &extArgument);
 		std::string updateObjectWorldLink(std::string &extFunction, ext_arguments &extArgument);
 		std::string deleteObjectWorldLink(std::string &extFunction, ext_arguments &extArgument);
+
+		void failIfClanNotExists(std::string clanuuid);
+		void failIfClanNameNotUnique(std::string clanname);
+		bool playerMemberOfClan(std::string clanuuid, std::string playeruuid);
+
+		std::string getClan(std::string &extFunction, ext_arguments &extArgument);
+		std::string createClan(std::string &extFunction, ext_arguments &extArgument);
+		std::string updateClan(std::string &extFunction, ext_arguments &extArgument);
+		std::string addClanPlayer(std::string &extFunction, ext_arguments &extArgument);
+		std::string updateClanPlayer(std::string &extFunction, ext_arguments &extArgument);
+		std::string deleteClanPlayer(std::string &extFunction, ext_arguments &extArgument);
+
+
+
 
 };
 
