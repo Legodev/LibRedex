@@ -20,6 +20,9 @@
 
 #include "extbase.hpp"
 #include <mysql.h>
+#if LIBMYSQL_VERSION_ID > 80000
+	#define my_bool bool
+#endif
 
 #define characterCacheMaxElements 17
 

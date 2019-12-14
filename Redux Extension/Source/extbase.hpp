@@ -25,10 +25,6 @@
 #include <boost/function.hpp>
 #include <map>
 
-#ifndef my_bool
-	#define my_bool bool
-#endif
-
 class ext_arguments {
 public:
 	void add(std::string key, std::string value) {
