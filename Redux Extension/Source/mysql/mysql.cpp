@@ -248,9 +248,21 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 												ASYNC_MAGIC)));
 
 		extFunctions.insert(
+								std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_CLAN_PLAYER),
+										std::make_tuple(
+												boost::bind(&mysql_db_handler::updateClanPlayer, this, _1, _2),
+												ASYNC_MAGIC)));
+
+		extFunctions.insert(
 								std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DELETE_CLAN_PLAYER),
 										std::make_tuple(
 												boost::bind(&mysql_db_handler::deleteClanPlayer, this, _1, _2),
+												ASYNC_MAGIC)));
+
+		extFunctions.insert(
+								std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_PLAYER_MAIN_CLAN),
+										std::make_tuple(
+												boost::bind(&mysql_db_handler::updatePlayerMainClan, this, _1, _2),
 												ASYNC_MAGIC)));
 }
 
