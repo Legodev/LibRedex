@@ -837,10 +837,10 @@ std::string mysql_db_handler::loadPlayerGroups(std::string playeruuid) {
 		  "DISTINCT CONCAT('[\"', HEX(`player`.`uuid`), '\",\"' , `player`.`steamid`, '\",\"' , `player`.`lastnick`, '\",', "
 		  	  "`clan_member`.`rank`, ',\"', `clan_member`.`comment`, '\"]') "
 		  "SEPARATOR ','"
-		") AS 'clan_member_list'"
+		") AS 'clan_member_list' "
 		"FROM `clan` LEFT JOIN `player` AS `founder` ON `clan`.`founder_uuid` = `founder`.`uuid` "
 		"LEFT JOIN `clan_member` ON `clan`.`uuid` = `clan_member`.`clan_uuid` "
-		"LEFT JOIN `player` ON `clan_member`.`player_uuid` = `player`.`uuid`"
+		"LEFT JOIN `player` ON `clan_member`.`player_uuid` = `player`.`uuid` "
 		"WHERE `clan`.`uuid` IN ("
 								"SELECT `clan_member`.`clan_uuid` "
 								"FROM `clan_member` "
@@ -1808,7 +1808,7 @@ void mysql_db_handler::failIfClanNameNotUnique(std::string clanname) {
 	std::string queryclaninfo =
 	str(boost::format{	"SELECT HEX(`clan`.`uuid`) "
 						"FROM `clan` "
-						"WHERE WHERE LOWER(`clan`.`name`) = LOWER(\"%s\")"} % clanname);
+						"WHERE LOWER(`clan`.`name`) = LOWER(\"%s\")"} % clanname);
 
 	this->rawquery(queryclaninfo, &result);
 
@@ -1910,6 +1910,9 @@ std::string mysql_db_handler::createClan(std::string &extFunction, ext_arguments
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 	std::string clanname = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CLANNAME);
 	std::string clanuuid = orderedUUID();
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_CLAN_UUID)) {
+		clanuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLAN_UUID);
+	}
 
 	/* comment is not supported until the code was changed completely rely on prepared statements
 		if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_VARIABLES)) {
@@ -1940,8 +1943,8 @@ std::string mysql_db_handler::createClan(std::string &extFunction, ext_arguments
 
 
 	// add clan
-	std::string query = str(boost::format { "INSERT INTO `clan` (`uuid`, `player_uuid`, `clan`) "
-											"VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY), %d)" } % clanuuid % playeruuid % clanname);
+	std::string query = str(boost::format { "INSERT INTO `clan` (`uuid`, `founder_uuid`, `name`) "
+											"VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY), \"%s\")" } % clanuuid % playeruuid % clanname);
 	this->rawquery(query);
 
 	// add owner as member
@@ -1976,7 +1979,7 @@ std::string mysql_db_handler::updateClan(std::string &extFunction, ext_arguments
 		this->rawquery(queryclaninfo);
 	}
 
-	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID)) {
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_CLANNAME)) {
 			std::string clanname = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CLANNAME);
 			// prevent name duplication case insensitive
 			this->failIfClanNameNotUnique(clanname);
@@ -1997,6 +2000,7 @@ std::string mysql_db_handler::addClanPlayer(std::string &extFunction, ext_argume
 	std::string clanuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CLAN_UUID);
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 	int rank = 0;
+	std::string comment = "";
 
 	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_RANK)) {
 		rank = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_RANK);
@@ -2034,8 +2038,8 @@ std::string mysql_db_handler::addClanPlayer(std::string &extFunction, ext_argume
 
 
 		// add player only if he actually exists
-		std::string query = str(boost::format { "INSERT INTO `clan_member` (`clan_uuid`, `player_uuid`, `rank`) "
-												"VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY), %d)" } % clanuuid % playeruuid % rank);
+		std::string query = str(boost::format { "INSERT INTO `clan_member` (`clan_uuid`, `player_uuid`, `rank`, `comment`) "
+												"VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY), %d, \"%s\")" } % clanuuid % playeruuid % rank % comment);
 
 		this->rawquery(query);
 
