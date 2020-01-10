@@ -936,7 +936,7 @@ std::string mysql_db_handler::whitelistPlayer(std::string &extFunction, ext_argu
 
 	std::string queryplayerinfo = str(boost::format { "SELECT HEX(`player`.`uuid`), "
 			"FROM `player` "
-			"WHERE `player`.`uuid` = CAST(0x%s AS BINARY) " } % worlduuid % extplayeruuid);
+			"WHERE `player`.`uuid` = CAST(0x%s AS BINARY) " } % extplayeruuid);
 
 	this->rawquery(queryplayerinfo, &result);
 
@@ -975,7 +975,7 @@ std::string mysql_db_handler::unwhitelistPlayer(std::string &extFunction, ext_ar
 
 	std::string queryplayerinfo = str(boost::format { "SELECT HEX(`player`.`uuid`), "
 			"FROM `player` "
-			"WHERE `player`.`uuid` = CAST(0x%s AS BINARY) " } % worlduuid % extplayeruuid);
+			"WHERE `player`.`uuid` = CAST(0x%s AS BINARY) " } % extplayeruuid);
 
 	this->rawquery(queryplayerinfo, &result);
 
