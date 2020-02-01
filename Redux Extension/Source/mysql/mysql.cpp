@@ -101,6 +101,12 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 								SYNC_MAGIC)));
 		extFunctions.insert(
 				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_GET_LINKED_WORLDS),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::getLinkedWorlds, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
 						std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_PLAYER),
 						std::make_tuple(
 								boost::bind(&mysql_db_handler::interloadPlayer, this, _1, _2),
@@ -371,7 +377,7 @@ std::string mysql_db_handler::spawnHandler(std::string &extFunction, ext_argumen
 			connectionpool.bounded_push((intptr_t) connection);
 
 			if (i == 0) {
-				checkWorldUUID();
+				checkWorldUUID(extArgument);
 			}
 		}
 
@@ -534,7 +540,7 @@ void mysql_db_handler::preparedStatementQuery(std::string query, MYSQL_BIND inpu
 	return;
 }
 
-void mysql_db_handler::checkWorldUUID() {
+void mysql_db_handler::checkWorldUUID(ext_arguments &extArgument) {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	bool addUUID = true;
@@ -556,10 +562,21 @@ void mysql_db_handler::checkWorldUUID() {
 	mysql_free_result(result);
 
 	if (addUUID) {
+		std::string name = "you need to";
+		std::string map = "edit this";
+
+		if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_NAME)) {
+			name = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_NAME);
+		}
+
+		if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_MAP)) {
+			name = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_MAP);
+		}
+
 		queryworlduuid =
 			str(boost::format{"INSERT INTO `world` (`uuid`, `name`, `map`) "
-								"VALUES (CAST(0x%s AS BINARY), \"you need to\", \"eddit this\")"}
-								% worlduuid);
+								"VALUES (CAST(0x%s AS BINARY), \"%s\", \"%s\")"}
+								% worlduuid % name % map);
 		this->rawquery(queryworlduuid);
 	}
 };
@@ -721,6 +738,104 @@ std::string mysql_db_handler::querydbversion() {
 	mysql_free_result(result);
 
 	return version;
+}
+
+std::string mysql_db_handler::getLinkedWorlds(std::string &extFunction, ext_arguments &extArgument) {
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	unsigned int fieldcount;
+	unsigned long long int rowcount;
+	bool printcommaone = false;
+	bool printcommatwo = false;
+
+	// char info
+	std::string charinfo = "";
+
+	std::string querycharinfo =
+			str(
+					boost::format {
+							"SELECT HEX(`world`.`uuid`), `world`.`name`, `world`.`map` , `world`.`latitude`, "
+									"`world`.`longitude`, `world`.`state` , `world`.`ip`, "
+									"`world`.`port`, `world`.`password` , `world`.`mods` "
+									"FROM `world_is_linked_to_world` "
+									"INNER JOIN `world` "
+									" ON `world`.`uuid` = `world_is_linked_to_world`.`world_uuid2` "
+									"WHERE `world_is_linked_to_world`.`world_uuid1` = CAST(0x%s AS BINARY) " }
+							% worlduuid);
+
+	char typearray[] = {
+			1, // HEX(`world`.`uuid`)
+			1, // `world`.`name`
+			1, // `world`.`map`
+			1, // `world`.`latitude`
+			1, // `world`.`longitude`
+			1, // `world`.`state`
+			1, // `world`.`ip`
+			1, // `world`.`port`
+			1, // `world`.`password`
+			1  // `world`.`mods`
+			};
+
+	this->rawquery(querycharinfo, &result);
+
+	fieldcount = mysql_num_fields(result);
+	rowcount = mysql_num_rows(result);
+
+	charinfo = "[";
+
+	for (int rowpos = 0; rowpos < rowcount; rowpos++) {
+		row = mysql_fetch_row(result);
+
+		if (printcommaone) {
+			charinfo += ",";
+			printcommaone = false;
+			printcommatwo = false;
+		}
+
+		charinfo += "[";
+
+		for (int fieldpos = 0; fieldpos < fieldcount; fieldpos++) {
+			if (printcommatwo) {
+				charinfo += ",";
+				printcommatwo = false;
+			}
+			switch (typearray[fieldpos]) {
+			case 1:
+				charinfo += "\"";
+				break;
+			case 2:
+				charinfo += "[";
+				if (row[fieldpos] != NULL)
+					charinfo += "\"";
+				break;
+			default:
+				charinfo += "";
+			}
+
+			if (row[fieldpos] != NULL) {
+				charinfo += row[fieldpos];
+			} else {
+				charinfo += "";
+			}
+
+			switch (typearray[fieldpos]) {
+			case 1:
+				charinfo += "\"";
+				break;
+			case 2:
+				if (row[fieldpos] != NULL)
+					charinfo += "\"";
+				charinfo += "]";
+				break;
+			}
+			printcommatwo = true;
+		}
+		charinfo += "]";
+		printcommaone = true;
+	}
+	charinfo += "]";
+
+	return charinfo;
 }
 
 std::string mysql_db_handler::loadPlayer(std::string nickname, std::string steamid) {

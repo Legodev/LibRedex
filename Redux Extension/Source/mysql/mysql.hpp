@@ -97,6 +97,7 @@ private:
 
 		std::string interdbVersion(std::string &extFunction, ext_arguments &extArgument);
 
+		std::string getLinkedWorlds(std::string &extFunction, ext_arguments &extArgument);
 		std::string interloadPlayer(std::string &extFunction, ext_arguments &extArgument);
 		std::string interloadPlayerGroups(std::string &extFunction, ext_arguments &extArgument);
 		std::string whitelistPlayer(std::string &extFunction, ext_arguments &extArgument);
@@ -133,7 +134,8 @@ private:
 
 		std::string querydbversion();
 
-		void checkWorldUUID();
+		void checkWorldUUID(ext_arguments &extArgument);
+
 		std::string loadPlayer(std::string nickname, std::string steamid);
 		std::string loadPlayerGroups(std::string playeruuid);
 		std::string updatePlayerMainClan(std::string &extFunction, ext_arguments &extArgument);
