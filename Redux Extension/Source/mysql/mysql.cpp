@@ -854,7 +854,7 @@ std::string mysql_db_handler::getLinkedWorlds(std::string &extFunction, ext_argu
 	}
 	charinfo += "]";
 
-	return charinfo;
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + charinfo + "]";
 }
 
 std::string mysql_db_handler::loadPlayer(std::string nickname, std::string steamid) {
