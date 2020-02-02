@@ -97,6 +97,7 @@ private:
 
 		std::string interdbVersion(std::string &extFunction, ext_arguments &extArgument);
 
+		std::string setWorldState(std::string &extFunction, ext_arguments &extArgument);
 		std::string getLinkedWorlds(std::string &extFunction, ext_arguments &extArgument);
 		std::string interloadPlayer(std::string &extFunction, ext_arguments &extArgument);
 		std::string interloadPlayerGroups(std::string &extFunction, ext_arguments &extArgument);

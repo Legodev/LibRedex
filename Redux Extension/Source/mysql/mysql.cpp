@@ -101,6 +101,12 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 								SYNC_MAGIC)));
 		extFunctions.insert(
 				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_SET_WORLD_STATE),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::setWorldState, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
 						std::string(PROTOCOL_DBCALL_FUNCTION_GET_LINKED_WORLDS),
 						std::make_tuple(
 								boost::bind(&mysql_db_handler::getLinkedWorlds, this, _1, _2),
@@ -570,7 +576,7 @@ void mysql_db_handler::checkWorldUUID(ext_arguments &extArgument) {
 		}
 
 		if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_MAP)) {
-			name = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_MAP);
+			map = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_MAP);
 		}
 
 		queryworlduuid =
@@ -738,6 +744,19 @@ std::string mysql_db_handler::querydbversion() {
 	mysql_free_result(result);
 
 	return version;
+}
+
+std::string mysql_db_handler::setWorldState(std::string &extFunction, ext_arguments &extArgument) {
+
+	int state = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_STATE_VALUE);
+
+	std::string query = str(boost::format{
+		"UPDATE `world` SET `state` = %d "
+		"WHERE `uuid` = CAST(0x%s AS BINARY)"} % state % worlduuid);
+
+	this->rawquery(query);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
 }
 
 std::string mysql_db_handler::getLinkedWorlds(std::string &extFunction, ext_arguments &extArgument) {
