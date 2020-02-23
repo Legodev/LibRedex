@@ -123,7 +123,7 @@ std::string fileio::GetInitOrder(std::string &extFunction, ext_arguments &extArg
 
 	// try to get special config
 	try {
-		std::string worlduuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID);
+		std::string worlduuid = extArguments.getUUID(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID);
 		configPath = GetConfigPath("PluginList_" + worlduuid + ".cfg", true);
 	}
 	// fallback to default config
