@@ -637,7 +637,7 @@ std::string mysql_db_handler::interlinkChars(std::string &extFunction, ext_argum
 	std::string variabuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_VARIABUUID);
 	std::string result = linkChars(playeruuid, variabuuid);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + result + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + result + "\"]";
 }
 
 std::string mysql_db_handler::interloadChar(std::string &extFunction, ext_arguments &extArgument) {
@@ -1239,7 +1239,7 @@ std::string mysql_db_handler::linkChars(std::string playeruuid, std::string vari
 	std::string query = str(
 			boost::format { "INSERT INTO `player_on_world_has_persistent_variables` "
 					"(`player_uuid`, `world_uuid`, `persistent_variables_uuid`) "
-					"VALUES (0x%s AS BINARY), CAST(0x%s AS BINARY), CAST(0x%s AS BINARY))"
+					"VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY), CAST(0x%s AS BINARY))"
 					} % playeruuid % worlduuid % variabuuid);
 
 

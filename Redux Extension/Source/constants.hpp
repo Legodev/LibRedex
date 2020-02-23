@@ -18,7 +18,7 @@
 #ifndef SOURCE_CONSTANTS_HPP_
 #define SOURCE_CONSTANTS_HPP_
 
-#define DLLVERSIONSTRING "[1,0,4,1]"
+#define DLLVERSIONSTRING "[1,0,4,2]"
 #define CONFIG_FILE_NAME "libredex.cfg"
 
 /*

@@ -119,7 +119,17 @@ boost::filesystem::path fileio::GetConfigPath(std::string filename, bool useAsSt
 }
 
 std::string fileio::GetInitOrder(std::string &extFunction, ext_arguments &extArguments) {
-	boost::filesystem::path configPath = GetConfigPath("PluginList.cfg", true);
+	boost::filesystem::path configPath;
+
+	// try to get special config
+	try {
+		std::string worlduuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID);
+		configPath = GetConfigPath("PluginList_" + worlduuid + ".cfg", true);
+	}
+	// fallback to default config
+	catch (const std::runtime_error&) {
+		configPath = GetConfigPath("PluginList.cfg", true);
+	}
 
 	if (boost::filesystem::exists(configPath)) {
 		int charpos, linenum;
