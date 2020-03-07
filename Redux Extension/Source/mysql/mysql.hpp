@@ -91,44 +91,12 @@ private:
 		MYSQL * getconnection();
 		void returnconnection(MYSQL * connection);
 
+		std::string mysqlResultToArrayString(MYSQL_RES *result, char *typearray);
 
 		std::string intergetUUID(std::string &extFunction, ext_arguments &extArgument);
 		std::string interecho(std::string &extFunction, ext_arguments &extArgument);
 
 		std::string interdbVersion(std::string &extFunction, ext_arguments &extArgument);
-
-		std::string setWorldState(std::string &extFunction, ext_arguments &extArgument);
-		std::string getLinkedWorlds(std::string &extFunction, ext_arguments &extArgument);
-		std::string interloadPlayer(std::string &extFunction, ext_arguments &extArgument);
-		std::string interloadPlayerGroups(std::string &extFunction, ext_arguments &extArgument);
-		std::string whitelistPlayer(std::string &extFunction, ext_arguments &extArgument);
-		std::string unwhitelistPlayer(std::string &extFunction, ext_arguments &extArgument);
-		std::string interloadAvChars(std::string &extFunction, ext_arguments &extArgument);
-		std::string interlinkChars(std::string &extFunction, ext_arguments &extArgument);
-		std::string interloadChar(std::string &extFunction, ext_arguments &extArgument);
-		std::string intercreateChar(std::string &extFunction, ext_arguments &extArgument);
-		std::string interupdateChar(std::string &extFunction, ext_arguments &extArgument);
-		std::string interkillChar(std::string &extFunction, ext_arguments &extArgument);
-
-		std::string interloadObject(std::string &extFunction, ext_arguments &extArgument);
-		std::string intercreateObject(std::string &extFunction, ext_arguments &extArgument);
-		std::string interqcreateObject(std::string &extFunction, ext_arguments &extArgument);
-		std::string interupdateObject(std::string &extFunction, ext_arguments &extArgument);
-		std::string interkillObject(std::string &extFunction, ext_arguments &extArgument);
-		std::string interdumpObjects(std::string &extFunction, ext_arguments &extArgument);
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 		void rawquery(std::string query);
 		void rawquery(std::string query, MYSQL_RES **result);
@@ -137,20 +105,27 @@ private:
 
 		void checkWorldUUID(ext_arguments &extArgument);
 
-		std::string loadPlayer(std::string nickname, std::string steamid);
-		std::string loadPlayerGroups(std::string playeruuid);
-		std::string updatePlayerMainClan(std::string &extFunction, ext_arguments &extArgument);
-		std::string loadAvChars(std::string playeruuid);
-		std::string linkChars(std::string playeruuid, std::string variabuuid);
-		std::string loadChar(std::string playeruuid);
-		std::string createChar(ext_arguments &extArgument);
-		std::string updateChar(ext_arguments &extArgument);
-		std::string killChar(std::string charuuid, std::string attackeruuid, std::string type, std::string weapon, float distance);
+		std::string setWorldState(std::string &extFunction, ext_arguments &extArgument);
+		std::string getLinkedWorlds(std::string &extFunction, ext_arguments &extArgument);
+		std::string whitelistPlayer(std::string &extFunction, ext_arguments &extArgument);
+		std::string unwhitelistPlayer(std::string &extFunction, ext_arguments &extArgument);
 
-		std::string loadObject(ext_arguments &extArgument);
-		std::string createObject(ext_arguments &extArgument);
-		std::string updateObject(ext_arguments &extArgument);
-		std::string killObject(std::string objectuuid, std::string attackeruuid, std::string type, std::string weapon, float distance);
+		std::string loadPlayer(std::string &extFunction, ext_arguments &extArgument);
+		std::string loadPlayerGroups(std::string &extFunction, ext_arguments &extArgument);
+		std::string updatePlayerMainClan(std::string &extFunction, ext_arguments &extArgument);
+		std::string loadAvChars(std::string &extFunction, ext_arguments &extArgument);
+		std::string linkChars(std::string &extFunction, ext_arguments &extArgument);
+		std::string loadChar(std::string &extFunction, ext_arguments &extArgument);
+		std::string createChar(std::string &extFunction, ext_arguments &extArgument);
+		std::string updateChar(std::string &extFunction, ext_arguments &extArgument);
+		std::string killChar(std::string &extFunction, ext_arguments &extArgument);
+
+		std::string loadObject(std::string &extFunction, ext_arguments &extArgument);
+		std::string createObject(std::string &extFunction, ext_arguments &extArgument);
+		std::string updateObject(std::string &extFunction, ext_arguments &extArgument);
+		std::string killObject(std::string &extFunction, ext_arguments &extArgument);
+
+	    std::string interdumpObjects(std::string &extFunction, ext_arguments &extArgument);
 		std::vector<object_mysql *> dumpObjects(ext_arguments &extArgument);
 
 		std::string createObjectWorldLink(std::string &extFunction, ext_arguments &extArgument);
