@@ -115,7 +115,7 @@ boost::filesystem::path fileio::GetConfigPath(std::string filename, bool useAsSt
 		}
 	}
 
-	throw std::runtime_error("could not find the configs path, i started searching on path: " + this->configPath.string());
+	throw std::runtime_error("could not find the path to config '" + filename + "', i started searching on path: " + this->configPath.string());
 }
 
 std::string fileio::GetInitOrder(std::string &extFunction, ext_arguments &extArguments) {

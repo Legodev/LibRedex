@@ -18,8 +18,9 @@
 #ifndef SOURCE_CONSTANTS_HPP_
 #define SOURCE_CONSTANTS_HPP_
 
-#define DLLVERSIONSTRING "[1,0,4,2]"
+#define DLLVERSIONSTRING "[1,0,4,3]"
 #define CONFIG_FILE_NAME "libredex.cfg"
+#define DB_DEBUG true
 
 /*
  * Magic Numbers
