@@ -1564,7 +1564,7 @@ std::string mysql_db_handler::updateObject(std::string &extFunction, ext_argumen
 		std::string query;
 		if (parentuuid != "") {
 			query = str(boost::format { "UPDATE `world_has_objects` SET `parentobject_uuid` = CAST(0x%s AS BINARY) "
-										"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);" } % worlduuid % objectuuid);
+										"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);" } % parentuuid % objectuuid);
 			this->rawquery(query);
 		} else {
 			query = str(boost::format { "UPDATE `world_has_objects` SET `parentobject_uuid` = NULL "
