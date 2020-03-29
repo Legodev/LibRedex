@@ -1364,7 +1364,7 @@ std::string mysql_db_handler::updateChar(std::string &extFunction, ext_arguments
 
 	this->preparedStatementQuery(query, character->mysql_bind+14);
 
-	return charuuid;
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + charuuid + "\"]";
 }
 
 std::string mysql_db_handler::killChar(std::string &extFunction, ext_arguments &extArgument) {
@@ -1514,7 +1514,7 @@ std::string mysql_db_handler::createObject(std::string &extFunction, ext_argumen
 
 	this->rawquery(query);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + objectuuid + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + objectuuid + "\"]";
 }
 
 std::string mysql_db_handler::updateObject(std::string &extFunction, ext_arguments &extArgument) {
@@ -1558,8 +1558,22 @@ std::string mysql_db_handler::updateObject(std::string &extFunction, ext_argumen
 						"    `reservedtwo` = ? "
 						"WHERE `object`.`uuid` = UNHEX(?);";
 	this->preparedStatementQuery(query, object->mysql_bind);
+	
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_PARENTUUID)) {
+		std::string parentuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PARENTUUID);
+		std::string query;
+		if (parentuuid != "") {
+			query = str(boost::format { "UPDATE `world_has_objects` SET `parentobject_uuid` = CAST(0x%s AS BINARY) "
+										"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);" } % worlduuid % objectuuid);
+			this->rawquery(query);
+		} else {
+			query = str(boost::format { "UPDATE `world_has_objects` SET `parentobject_uuid` = NULL "
+										"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);" } % objectuuid);
+		}
+		this->rawquery(query);
+	}
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + objectuuid + "]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + objectuuid + "\"]";
 }
 
 std::string mysql_db_handler::killObject(std::string &extFunction, ext_arguments &extArgument) {
