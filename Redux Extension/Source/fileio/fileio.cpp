@@ -195,55 +195,65 @@ std::string fileio::GetCfgFile(std::string &extFunction, ext_arguments &extArgum
 		boost::regex dirupexpression("\\.\\.");
 		filename = boost::regex_replace(filename, dirupexpression, "", boost::match_default | boost::format_all);
 
-		boost::filesystem::path filepath = GetConfigPath(filename + ".cfg");
-
 		if (filenum != 0) {
 			returnString += ",";
 		}
-		returnString += "[";
-
-		if (boost::filesystem::exists(filepath)) {
-			boost::property_tree::ptree configtree;
-			boost::property_tree::ini_parser::read_ini(filepath.string(), configtree);
-
-			itemnum = 0;
-			BOOST_FOREACH(boost::property_tree::ptree::value_type &val, configtree) {
-				// val.first is the name of the child.
-				// val.second is the child tree.
-				std::string key = val.first;
-				std::string value = val.second.get_value<std::string>();
-				int i = 0;
-
-				while ((i = key.find("\"", i)) != std::string::npos) {
-					key.insert(i, "\"");
-					i += 2;
+		
+		try {
+			boost::filesystem::path filepath = GetConfigPath(filename + ".cfg");
+			
+			std::string dataString = "[";
+	
+			if (boost::filesystem::exists(filepath)) {
+				boost::property_tree::ptree configtree;
+				boost::property_tree::ini_parser::read_ini(filepath.string(), configtree);
+	
+				itemnum = 0;
+				BOOST_FOREACH(boost::property_tree::ptree::value_type &val, configtree) {
+					// val.first is the name of the child.
+					// val.second is the child tree.
+					std::string key = val.first;
+					std::string value = val.second.get_value<std::string>();
+					int i = 0;
+	
+					while ((i = key.find("\"", i)) != std::string::npos) {
+						key.insert(i, "\"");
+						i += 2;
+					}
+	
+					i = 0;
+					while ((i = value.find("\"", i)) != std::string::npos) {
+						value.insert(i, "\"");
+						i += 2;
+					}
+	
+					// remove comments
+					boost::regex commentexpression("\\s*#.*");
+					value = boost::regex_replace(value, commentexpression, "");
+	
+					if (itemnum != 0) {
+						dataString += ",";
+					}
+	
+					dataString += "[\"";
+					dataString += key;
+					dataString += "\",\"";
+					dataString += value;
+					dataString += "\"]";
+	
+					itemnum++;
 				}
-
-				i = 0;
-				while ((i = value.find("\"", i)) != std::string::npos) {
-					value.insert(i, "\"");
-					i += 2;
-				}
-
-				// remove comments
-				boost::regex commentexpression("\\s*#.*");
-				value = boost::regex_replace(value, commentexpression, "");
-
-				if (itemnum != 0) {
-					returnString += ",";
-				}
-
-				returnString += "[\"";
-				returnString += key;
-				returnString += "\",\"";
-				returnString += value;
-				returnString += "\"]";
-
-				itemnum++;
 			}
+			
+			dataString += "]";
+			
+			returnString += dataString;
+		} catch (const std::runtime_error& e) {
+			// valid data is always of type array, this will make errors of type string
+			returnString += "\"";
+			returnString += e.what();
+			returnString += "\"";
 		}
-
-		returnString += "]";
 		filenum++;
 	}
 	returnString += "]";
