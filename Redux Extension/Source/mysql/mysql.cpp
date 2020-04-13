@@ -120,6 +120,30 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 								ASYNC_MAGIC)));
 		extFunctions.insert(
 				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_LOGOUT_PLAYER),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::logoutPlayer, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_LOGOUT_PLAYER_QUIET),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::logoutPlayer, this, _1, _2),
+								QUIET_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_INCREMENT_PLAYER_STATS),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::incrementPlayerStats, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_INCREMENT_PLAYER_STATS_QUIET),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::incrementPlayerStats, this, _1, _2),
+								QUIET_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
 						std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_PLAYER_GROUPS),
 						std::make_tuple(
 								boost::bind(&mysql_db_handler::loadPlayerGroups, this, _1, _2),
@@ -980,6 +1004,46 @@ std::string mysql_db_handler::loadPlayer(std::string &extFunction, ext_arguments
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + playerinfo + "]";
 }
 
+std::string mysql_db_handler::logoutPlayer(std::string &extFunction, ext_arguments &extArgument) {
+	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+
+	std::string queryplayerinfo =
+		str(boost::format{"UPDATE `player` SET `lastlogout` = NOW(), "
+				"`playtime` = `playtime` + TIME_TO_SEC(TIMEDIFF(NOW(), `lastlogin`)) "
+				"WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % playeruuid);
+
+	this->rawquery(queryplayerinfo);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
+}
+
+std::string mysql_db_handler::incrementPlayerStats(std::string &extFunction, ext_arguments &extArgument) {
+	bool commit = false;
+
+	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+
+	std::string queryplayerinfo = "UPDATE `player` SET ";
+
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_PLAYER_AIKILLS)) {
+		commit = true;
+		queryplayerinfo += str(boost::format{" `aikills` = `aikills` + %d,"} % extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_AIKILLS));
+	}
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_PLAYER_NONAIKILLS)) {
+		commit = true;
+		queryplayerinfo += str(boost::format{" `nonaikills` = `nonaikills` + %d,"} % extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_NONAIKILLS));
+	}
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_PLAYER_DEATHS)) {
+		commit = true;
+		queryplayerinfo += str(boost::format{" `deaths` = `deaths` + %d,"} % extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_DEATHS));
+	}
+
+	if (commit) {
+		queryplayerinfo += str(boost::format{" `battleyeid` = `battleyeid` WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % playeruuid);
+		this->rawquery(queryplayerinfo);
+	}
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
+}
 std::string mysql_db_handler::loadPlayerGroups(std::string &extFunction, ext_arguments &extArgument) {
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 

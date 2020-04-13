@@ -113,6 +113,8 @@ private:
 		std::string unwhitelistPlayer(std::string &extFunction, ext_arguments &extArgument);
 
 		std::string loadPlayer(std::string &extFunction, ext_arguments &extArgument);
+		std::string logoutPlayer(std::string &extFunction, ext_arguments &extArgument);
+		std::string incrementPlayerStats(std::string &extFunction, ext_arguments &extArgument);
 		std::string loadPlayerGroups(std::string &extFunction, ext_arguments &extArgument);
 		std::string updatePlayerMainClan(std::string &extFunction, ext_arguments &extArgument);
 		std::string loadAvChars(std::string &extFunction, ext_arguments &extArgument);
