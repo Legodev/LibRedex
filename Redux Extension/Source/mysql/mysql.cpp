@@ -1009,9 +1009,19 @@ std::string mysql_db_handler::logoutPlayer(std::string &extFunction, ext_argumen
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 
 	std::string queryplayerinfo =
-		str(boost::format{"UPDATE `player` SET `lastlogout` = NOW(), "
-				"`playtime` = `playtime` + TIME_TO_SEC(TIMEDIFF(NOW(), `lastlogin`)) "
-				"WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % playeruuid);
+				str(boost::format{"UPDATE `player` SET `lastlogout` = NOW(), "
+						"`playtime` = `playtime` + TIME_TO_SEC(TIMEDIFF(NOW(), `lastlogin`)), "
+						"`targetworld_uuid` = NULL "
+						"WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % playeruuid);
+
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_PLAYER_TARGETWORLD_UUID)) {
+			std::string targetworld_uuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_TARGETWORLD_UUID);
+			queryplayerinfo =
+				str(boost::format{"UPDATE `player` SET `lastlogout` = NOW(), "
+						"`playtime` = `playtime` + TIME_TO_SEC(TIMEDIFF(NOW(), `lastlogin`)), "
+						"`targetworld_uuid` = CAST(0x%s AS BINARY) "
+						"WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % targetworld_uuid % playeruuid);
+	}
 
 	this->rawquery(queryplayerinfo);
 
