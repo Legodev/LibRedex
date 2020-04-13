@@ -29,6 +29,7 @@
 #include "utils/uuid.hpp"
 #include "mysql/datacache/charactermysql.hpp"
 #include "mysql/datacache/objectmysql.hpp"
+#include "mysql/migration/includeAllSchemas.hpp"
 
 #ifdef DEBUG
 	#include <fstream>
@@ -383,6 +384,7 @@ std::string mysql_db_handler::spawnHandler(std::string &extFunction, ext_argumen
 			connectionpool.bounded_push((intptr_t) connection);
 
 			if (i == 0) {
+				checkMigration(extArgument, database);
 				checkWorldUUID(extArgument);
 			}
 		}
@@ -461,6 +463,33 @@ void mysql_db_handler::returnconnection(MYSQL * connection) {
 			testfile.flush();
 #endif
 
+	return;
+}
+
+void mysql_db_handler::rawmultiquerys(std::string query) {
+	MYSQL *connection = getconnection();
+
+	mysql_set_server_option(connection, MYSQL_OPTION_MULTI_STATEMENTS_ON);
+
+#ifdef DEBUG
+			testfile << "MULTI QUERY: " << query << std::endl;
+			testfile.flush();
+#endif
+
+	if (mysql_real_query(connection, query.c_str(), query.size())) {
+		throw std::runtime_error(
+				"error while executing query: "
+						+ query
+						+ std::string(" ---- ERROR MESSAGE: ")
+						+ std::string(mysql_error(connection)));
+	}
+
+	int status = 1;
+	while (mysql_next_result(connection) == 0);
+
+	mysql_set_server_option(connection, MYSQL_OPTION_MULTI_STATEMENTS_OFF);
+
+	returnconnection(connection);
 	return;
 }
 
@@ -619,6 +648,71 @@ std::string mysql_db_handler::mysqlResultToArrayString(MYSQL_RES *result, char* 
 	return arraystring;
 }
 
+
+void mysql_db_handler::checkMigration(ext_arguments &extArgument, std::string database) {
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	unsigned long long int rowcount;
+
+	/* check initial creation */
+	std::string tablenames =
+	str(boost::format{"SELECT `TABLE_NAME` "
+			"FROM INFORMATION_SCHEMA.TABLES "
+			"WHERE TABLE_SCHEMA = '%s'"} % database);
+
+	this->rawquery(tablenames, &result);
+
+	rowcount = mysql_num_rows(result);
+	mysql_free_result(result);
+
+	if (rowcount < 15) {
+		this->rawmultiquerys(schema_FullTable);
+#ifdef DEBUG
+			testfile << "CREATED INITIAL TABLES" << std::endl;
+			testfile.flush();
+#endif
+	}
+
+	/* first change */
+	/* first change has no schema_version, checking for existance of schema_version */
+	bool firstChangeRequired = true;
+	std::string fchangeCheck = "DESCRIBE world";
+
+	this->rawquery(fchangeCheck, &result);
+
+
+	rowcount = mysql_num_rows(result);
+
+	for (int rowpos = 0; rowpos < rowcount; rowpos++) {
+		row = mysql_fetch_row(result);
+		printf("Column: %s\n", row[0]);
+		if (std::string(row[0]) == "schema_version") {
+			firstChangeRequired = false;
+		}
+	}
+	if (firstChangeRequired) {
+		this->rawmultiquerys(schema_migration_0001);
+
+#ifdef DEBUG
+			testfile << "DONE APPLYING MIGRATION 0001" << std::endl;
+			testfile.flush();
+#endif
+	}
+#ifdef DEBUG
+	else {
+		testfile << "MIGRATION 0001 ALREADY APPLIED" << std::endl;
+		testfile.flush();
+	}
+#endif
+
+	mysql_free_result(result);
+
+
+	/* update schema version in world */
+	std::string updateSchemaLibredex = str(boost::format{"UPDATE `world` SET `schema_version` = %d"} % schema_Version);
+	this->rawquery(updateSchemaLibredex);
+}
+
 void mysql_db_handler::checkWorldUUID(ext_arguments &extArgument) {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -653,10 +747,17 @@ void mysql_db_handler::checkWorldUUID(ext_arguments &extArgument) {
 		}
 
 		queryworlduuid =
-			str(boost::format{"INSERT INTO `world` (`uuid`, `name`, `map`) "
-								"VALUES (CAST(0x%s AS BINARY), \"%s\", \"%s\")"}
-								% worlduuid % name % map);
+			str(boost::format{"INSERT INTO `world` (`uuid`, `name`, `map`, `schema_version`, `libredex_version`) "
+								"VALUES (CAST(0x%s AS BINARY), \"%s\", \"%s\", \"%d\", \"%s\")"}
+								% worlduuid % name % map % schema_Version % DLLVERSIONSTRING);
 		this->rawquery(queryworlduuid);
+	} else {
+		std::string updateSchemaLibredex =
+				str(boost::format{"UPDATE `world` "
+					"SET `schema_version` = %d, "
+					"`libredex_version` = '%s' "
+					"WHERE `world`.`uuid` = CAST(0x%s AS BINARY)"} % schema_Version % DLLVERSIONSTRING % worlduuid);
+		this->rawquery(updateSchemaLibredex);
 	}
 };
 

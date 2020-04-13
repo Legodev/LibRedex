@@ -98,11 +98,13 @@ private:
 
 		std::string interdbVersion(std::string &extFunction, ext_arguments &extArgument);
 
+		void rawmultiquerys(std::string query);
 		void rawquery(std::string query);
 		void rawquery(std::string query, MYSQL_RES **result);
 
 		std::string querydbversion();
 
+		void checkMigration(ext_arguments &extArgument, std::string database);
 		void checkWorldUUID(ext_arguments &extArgument);
 
 		std::string setWorldState(std::string &extFunction, ext_arguments &extArgument);
