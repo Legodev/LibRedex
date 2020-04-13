@@ -779,7 +779,7 @@ void mysql_db_handler::checkWorldUUID(ext_arguments &extArgument) {
 				str(boost::format{"UPDATE `world` "
 					"SET `schema_version` = %d, "
 					"`libredex_version` = '%s' "
-					"`startuptime` = NOW()"
+					"`startuptime` = NOW() "
 					"WHERE `world`.`uuid` = CAST(0x%s AS BINARY)"} % schema_Version % DLLVERSIONSTRING % worlduuid);
 		this->rawquery(updateSchemaLibredex);
 	}
