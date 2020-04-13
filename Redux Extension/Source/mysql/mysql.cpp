@@ -770,8 +770,8 @@ void mysql_db_handler::checkWorldUUID(ext_arguments &extArgument) {
 		}
 
 		queryworlduuid =
-			str(boost::format{"INSERT INTO `world` (`uuid`, `name`, `map`, `schema_version`, `libredex_version`) "
-								"VALUES (CAST(0x%s AS BINARY), \"%s\", \"%s\", \"%d\", \"%s\")"}
+			str(boost::format{"INSERT INTO `world` (`uuid`, `name`, `map`, `schema_version`, `libredex_version`, `startuptime`) "
+								"VALUES (CAST(0x%s AS BINARY), \"%s\", \"%s\", \"%d\", \"%s\", NOW())"}
 								% worlduuid % name % map % schema_Version % DLLVERSIONSTRING);
 		this->rawquery(queryworlduuid);
 	} else {
@@ -779,6 +779,7 @@ void mysql_db_handler::checkWorldUUID(ext_arguments &extArgument) {
 				str(boost::format{"UPDATE `world` "
 					"SET `schema_version` = %d, "
 					"`libredex_version` = '%s' "
+					"`startuptime` = NOW()"
 					"WHERE `world`.`uuid` = CAST(0x%s AS BINARY)"} % schema_Version % DLLVERSIONSTRING % worlduuid);
 		this->rawquery(updateSchemaLibredex);
 	}
