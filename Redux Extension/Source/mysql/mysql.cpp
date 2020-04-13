@@ -29,6 +29,7 @@
 #include "utils/uuid.hpp"
 #include "mysql/datacache/charactermysql.hpp"
 #include "mysql/datacache/objectmysql.hpp"
+#include "mysql/migration/includeAllSchemas.hpp"
 
 #ifdef DEBUG
 	#include <fstream>
@@ -117,6 +118,30 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 						std::make_tuple(
 								boost::bind(&mysql_db_handler::loadPlayer, this, _1, _2),
 								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_LOGOUT_PLAYER),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::logoutPlayer, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_LOGOUT_PLAYER_QUIET),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::logoutPlayer, this, _1, _2),
+								QUIET_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_INCREMENT_PLAYER_STATS),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::incrementPlayerStats, this, _1, _2),
+								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(
+						std::string(PROTOCOL_DBCALL_FUNCTION_INCREMENT_PLAYER_STATS_QUIET),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::incrementPlayerStats, this, _1, _2),
+								QUIET_MAGIC)));
 		extFunctions.insert(
 				std::make_pair(
 						std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_PLAYER_GROUPS),
@@ -383,6 +408,7 @@ std::string mysql_db_handler::spawnHandler(std::string &extFunction, ext_argumen
 			connectionpool.bounded_push((intptr_t) connection);
 
 			if (i == 0) {
+				checkMigration(extArgument, database);
 				checkWorldUUID(extArgument);
 			}
 		}
@@ -461,6 +487,33 @@ void mysql_db_handler::returnconnection(MYSQL * connection) {
 			testfile.flush();
 #endif
 
+	return;
+}
+
+void mysql_db_handler::rawmultiquerys(std::string query) {
+	MYSQL *connection = getconnection();
+
+	mysql_set_server_option(connection, MYSQL_OPTION_MULTI_STATEMENTS_ON);
+
+#ifdef DEBUG
+			testfile << "MULTI QUERY: " << query << std::endl;
+			testfile.flush();
+#endif
+
+	if (mysql_real_query(connection, query.c_str(), query.size())) {
+		throw std::runtime_error(
+				"error while executing query: "
+						+ query
+						+ std::string(" ---- ERROR MESSAGE: ")
+						+ std::string(mysql_error(connection)));
+	}
+
+	int status = 1;
+	while (mysql_next_result(connection) == 0);
+
+	mysql_set_server_option(connection, MYSQL_OPTION_MULTI_STATEMENTS_OFF);
+
+	returnconnection(connection);
 	return;
 }
 
@@ -619,6 +672,70 @@ std::string mysql_db_handler::mysqlResultToArrayString(MYSQL_RES *result, char* 
 	return arraystring;
 }
 
+
+void mysql_db_handler::checkMigration(ext_arguments &extArgument, std::string database) {
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	unsigned long long int rowcount;
+
+	/* check initial creation */
+	std::string tablenames =
+	str(boost::format{"SELECT `TABLE_NAME` "
+			"FROM INFORMATION_SCHEMA.TABLES "
+			"WHERE TABLE_SCHEMA = '%s'"} % database);
+
+	this->rawquery(tablenames, &result);
+
+	rowcount = mysql_num_rows(result);
+	mysql_free_result(result);
+
+	if (rowcount < 15) {
+		this->rawmultiquerys(schema_FullTable);
+#ifdef DEBUG
+			testfile << "CREATED INITIAL TABLES" << std::endl;
+			testfile.flush();
+#endif
+	}
+
+	/* first change */
+	/* first change has no schema_version, checking for existance of schema_version */
+	bool firstChangeRequired = true;
+	std::string fchangeCheck = "DESCRIBE world";
+
+	this->rawquery(fchangeCheck, &result);
+
+
+	rowcount = mysql_num_rows(result);
+
+	for (int rowpos = 0; rowpos < rowcount; rowpos++) {
+		row = mysql_fetch_row(result);
+		if (std::string(row[0]) == "schema_version") {
+			firstChangeRequired = false;
+		}
+	}
+	if (firstChangeRequired) {
+		this->rawmultiquerys(schema_migration_0001);
+
+#ifdef DEBUG
+			testfile << "DONE APPLYING MIGRATION 0001" << std::endl;
+			testfile.flush();
+#endif
+	}
+#ifdef DEBUG
+	else {
+		testfile << "MIGRATION 0001 ALREADY APPLIED" << std::endl;
+		testfile.flush();
+	}
+#endif
+
+	mysql_free_result(result);
+
+
+	/* update schema version in world */
+	std::string updateSchemaLibredex = str(boost::format{"UPDATE `world` SET `schema_version` = %d"} % schema_Version);
+	this->rawquery(updateSchemaLibredex);
+}
+
 void mysql_db_handler::checkWorldUUID(ext_arguments &extArgument) {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -653,10 +770,18 @@ void mysql_db_handler::checkWorldUUID(ext_arguments &extArgument) {
 		}
 
 		queryworlduuid =
-			str(boost::format{"INSERT INTO `world` (`uuid`, `name`, `map`) "
-								"VALUES (CAST(0x%s AS BINARY), \"%s\", \"%s\")"}
-								% worlduuid % name % map);
+			str(boost::format{"INSERT INTO `world` (`uuid`, `name`, `map`, `schema_version`, `libredex_version`, `startuptime`) "
+								"VALUES (CAST(0x%s AS BINARY), \"%s\", \"%s\", \"%d\", \"%s\", NOW())"}
+								% worlduuid % name % map % schema_Version % DLLVERSIONSTRING);
 		this->rawquery(queryworlduuid);
+	} else {
+		std::string updateSchemaLibredex =
+				str(boost::format{"UPDATE `world` "
+					"SET `schema_version` = %d, "
+					"`libredex_version` = '%s' "
+					"`startuptime` = NOW()"
+					"WHERE `world`.`uuid` = CAST(0x%s AS BINARY)"} % schema_Version % DLLVERSIONSTRING % worlduuid);
+		this->rawquery(updateSchemaLibredex);
 	}
 };
 
@@ -791,13 +916,15 @@ std::string mysql_db_handler::loadPlayer(std::string &extFunction, ext_arguments
 	std::string mainclanuuid = "";
 	std::string banned = "false";
 	std::string banreason = "unknown";
+	std::string targetworld_uuid = "";
 
 	std::string queryplayerinfo =
 	str(boost::format{"SELECT HEX(`player`.`uuid`), "
 			"HEX(`player_on_world_has_persistent_variables`.`persistent_variables_uuid`), "
 			"HEX(`player`.`mainclan_uuid`), "
 		    "(CASE WHEN (NOW() < `player`.`banenddate`) THEN \"true\" ELSE \"false\" END) AS BANNED, "
-		    "`player`.`banreason`"
+		    "`player`.`banreason`, "
+		    "HEX(`player`.`targetworld_uuid`) "
 			"FROM `player` "
 			"LEFT JOIN `player_on_world_has_persistent_variables` "
 			" ON `player`.`uuid` = `player_on_world_has_persistent_variables`.`player_uuid` "
@@ -829,6 +956,9 @@ std::string mysql_db_handler::loadPlayer(std::string &extFunction, ext_arguments
 		}
 		if (row[4] != NULL) {
 			banreason = row[4];
+		}
+		if (row[5] != NULL) {
+			targetworld_uuid = row[5];
 		}
 	}
 
@@ -871,10 +1001,60 @@ std::string mysql_db_handler::loadPlayer(std::string &extFunction, ext_arguments
 		}
 	}
 
-	std::string playerinfo = "[\"" + playeruuid + "\",\"" + persistent_variables_uuid + "\",\"" + mainclanuuid + "\",[" + banned + ",\"" + banreason + "\"]]";
+	std::string playerinfo = "[\"" + playeruuid + "\",\"" + persistent_variables_uuid + "\",\"" + mainclanuuid + "\",[" + banned + ",\"" + banreason + "\"], \"" + targetworld_uuid + "\"]";
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + playerinfo + "]";
 }
 
+std::string mysql_db_handler::logoutPlayer(std::string &extFunction, ext_arguments &extArgument) {
+	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+
+	std::string queryplayerinfo =
+				str(boost::format{"UPDATE `player` SET `lastlogout` = NOW(), "
+						"`playtime` = `playtime` + TIME_TO_SEC(TIMEDIFF(NOW(), `lastlogin`)), "
+						"`targetworld_uuid` = NULL "
+						"WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % playeruuid);
+
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_PLAYER_TARGETWORLD_UUID)) {
+			std::string targetworld_uuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_TARGETWORLD_UUID);
+			queryplayerinfo =
+				str(boost::format{"UPDATE `player` SET `lastlogout` = NOW(), "
+						"`playtime` = `playtime` + TIME_TO_SEC(TIMEDIFF(NOW(), `lastlogin`)), "
+						"`targetworld_uuid` = CAST(0x%s AS BINARY) "
+						"WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % targetworld_uuid % playeruuid);
+	}
+
+	this->rawquery(queryplayerinfo);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
+}
+
+std::string mysql_db_handler::incrementPlayerStats(std::string &extFunction, ext_arguments &extArgument) {
+	bool commit = false;
+
+	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+
+	std::string queryplayerinfo = "UPDATE `player` SET ";
+
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_PLAYER_AIKILLS)) {
+		commit = true;
+		queryplayerinfo += str(boost::format{" `aikills` = `aikills` + %d,"} % extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_AIKILLS));
+	}
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_PLAYER_NONAIKILLS)) {
+		commit = true;
+		queryplayerinfo += str(boost::format{" `nonaikills` = `nonaikills` + %d,"} % extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_NONAIKILLS));
+	}
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_PLAYER_DEATHS)) {
+		commit = true;
+		queryplayerinfo += str(boost::format{" `deaths` = `deaths` + %d,"} % extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_PLAYER_DEATHS));
+	}
+
+	if (commit) {
+		queryplayerinfo += str(boost::format{" `battleyeid` = `battleyeid` WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % playeruuid);
+		this->rawquery(queryplayerinfo);
+	}
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
+}
 std::string mysql_db_handler::loadPlayerGroups(std::string &extFunction, ext_arguments &extArgument) {
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 

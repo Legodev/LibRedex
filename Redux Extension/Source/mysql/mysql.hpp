@@ -98,11 +98,13 @@ private:
 
 		std::string interdbVersion(std::string &extFunction, ext_arguments &extArgument);
 
+		void rawmultiquerys(std::string query);
 		void rawquery(std::string query);
 		void rawquery(std::string query, MYSQL_RES **result);
 
 		std::string querydbversion();
 
+		void checkMigration(ext_arguments &extArgument, std::string database);
 		void checkWorldUUID(ext_arguments &extArgument);
 
 		std::string setWorldState(std::string &extFunction, ext_arguments &extArgument);
@@ -111,6 +113,8 @@ private:
 		std::string unwhitelistPlayer(std::string &extFunction, ext_arguments &extArgument);
 
 		std::string loadPlayer(std::string &extFunction, ext_arguments &extArgument);
+		std::string logoutPlayer(std::string &extFunction, ext_arguments &extArgument);
+		std::string incrementPlayerStats(std::string &extFunction, ext_arguments &extArgument);
 		std::string loadPlayerGroups(std::string &extFunction, ext_arguments &extArgument);
 		std::string updatePlayerMainClan(std::string &extFunction, ext_arguments &extArgument);
 		std::string loadAvChars(std::string &extFunction, ext_arguments &extArgument);
