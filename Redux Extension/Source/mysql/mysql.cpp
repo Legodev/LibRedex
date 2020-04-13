@@ -685,7 +685,6 @@ void mysql_db_handler::checkMigration(ext_arguments &extArgument, std::string da
 
 	for (int rowpos = 0; rowpos < rowcount; rowpos++) {
 		row = mysql_fetch_row(result);
-		printf("Column: %s\n", row[0]);
 		if (std::string(row[0]) == "schema_version") {
 			firstChangeRequired = false;
 		}
@@ -892,13 +891,15 @@ std::string mysql_db_handler::loadPlayer(std::string &extFunction, ext_arguments
 	std::string mainclanuuid = "";
 	std::string banned = "false";
 	std::string banreason = "unknown";
+	std::string targetworld_uuid = "";
 
 	std::string queryplayerinfo =
 	str(boost::format{"SELECT HEX(`player`.`uuid`), "
 			"HEX(`player_on_world_has_persistent_variables`.`persistent_variables_uuid`), "
 			"HEX(`player`.`mainclan_uuid`), "
 		    "(CASE WHEN (NOW() < `player`.`banenddate`) THEN \"true\" ELSE \"false\" END) AS BANNED, "
-		    "`player`.`banreason`"
+		    "`player`.`banreason`, "
+		    "HEX(`player`.`targetworld_uuid`) "
 			"FROM `player` "
 			"LEFT JOIN `player_on_world_has_persistent_variables` "
 			" ON `player`.`uuid` = `player_on_world_has_persistent_variables`.`player_uuid` "
@@ -930,6 +931,9 @@ std::string mysql_db_handler::loadPlayer(std::string &extFunction, ext_arguments
 		}
 		if (row[4] != NULL) {
 			banreason = row[4];
+		}
+		if (row[5] != NULL) {
+			targetworld_uuid = row[5];
 		}
 	}
 
@@ -972,7 +976,7 @@ std::string mysql_db_handler::loadPlayer(std::string &extFunction, ext_arguments
 		}
 	}
 
-	std::string playerinfo = "[\"" + playeruuid + "\",\"" + persistent_variables_uuid + "\",\"" + mainclanuuid + "\",[" + banned + ",\"" + banreason + "\"]]";
+	std::string playerinfo = "[\"" + playeruuid + "\",\"" + persistent_variables_uuid + "\",\"" + mainclanuuid + "\",[" + banned + ",\"" + banreason + "\"], \"" + targetworld_uuid + "\"]";
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + playerinfo + "]";
 }
 
