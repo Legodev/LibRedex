@@ -50,7 +50,7 @@ character_mysql::character_mysql() {
 		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABLES, 14));
 		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABUUID, 15));
 
-		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID, 16));
+		charactervariablemap->insert(std::make_pair(PROTOCOL_DBCALL_ARGUMENT_PARENTUUID, 16));
 	}
 
 

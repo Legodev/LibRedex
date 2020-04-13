@@ -1544,6 +1544,21 @@ std::string mysql_db_handler::updateChar(std::string &extFunction, ext_arguments
 
 	this->preparedStatementQuery(query, character->mysql_bind+14);
 
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_PARENTUUID)) {
+		std::string parentuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PARENTUUID);
+		char * charactershareablesuuid = (char *) character->mysql_bind[13].buffer;
+
+		std::string query;
+		if (parentuuid != "") {
+			query = str(boost::format { "UPDATE `charactershareables` SET `object_uuid` = CAST(0x%s AS BINARY) "
+										"WHERE `charactershareables`.`uuid` = CAST(0x%s AS BINARY);" } % parentuuid % charactershareablesuuid);
+		} else {
+			query = str(boost::format { "UPDATE `charactershareables` SET `object_uuid` = NULL "
+										"WHERE `charactershareables`.`uuid` = CAST(0x%s AS BINARY);" } % charactershareablesuuid);
+		}
+		this->rawquery(query);
+	}
+
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + charuuid + "\"]";
 }
 
@@ -1745,7 +1760,6 @@ std::string mysql_db_handler::updateObject(std::string &extFunction, ext_argumen
 		if (parentuuid != "") {
 			query = str(boost::format { "UPDATE `world_has_objects` SET `parentobject_uuid` = CAST(0x%s AS BINARY) "
 										"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);" } % parentuuid % objectuuid);
-			this->rawquery(query);
 		} else {
 			query = str(boost::format { "UPDATE `world_has_objects` SET `parentobject_uuid` = NULL "
 										"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);" } % objectuuid);
