@@ -15,7 +15,8 @@
  * GNU Affero General Public License for more details.
  */
 
-#define schema_Version 1
+#define schema_Version 2
 
 #include "mysql/migration/fulltables.hpp"
 #include "mysql/migration/migration_0001.hpp"
+#include "mysql/migration/migration_0002.hpp"

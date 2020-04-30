@@ -730,6 +730,27 @@ void mysql_db_handler::checkMigration(ext_arguments &extArgument, std::string da
 
 	mysql_free_result(result);
 
+	/* follwing changes */
+	int current_schema_Version;
+
+	this->rawquery("SELECT MIN(schema_version) FROM `world`", &result);
+	row = mysql_fetch_row(result);
+	current_schema_Version = std::stoi(row[0]);
+	mysql_free_result(result);
+
+	switch (current_schema_Version) {
+	    case 1:
+	      this->rawmultiquerys(schema_migration_0002);
+#ifdef DEBUG
+			testfile << "APPLIED MIGRATION 0002" << std::endl;
+			testfile.flush();
+#endif
+	      [[fallthrough]];
+
+	    default: // do nothing
+	    	break;
+	  }
+
 
 	/* update schema version in world */
 	std::string updateSchemaLibredex = str(boost::format{"UPDATE `world` SET `schema_version` = %d"} % schema_Version);
