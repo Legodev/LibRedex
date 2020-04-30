@@ -103,3 +103,17 @@ extern "C"
 		}
 	}
 }
+
+extern "C"
+{
+	void RVExtensionRegisterCallback(int(*callbackProc)(char const *name, char const *function, char const *data))
+	{
+		callbackPtr = callbackProc;
+		#ifdef DEBUG
+				std::time_t result;
+				result = std::time(nullptr);
+				testfile << std::localtime(&result) << "\t\t ARMAIO SET callbackPtr: " << callbackPtr << std::endl;
+				testfile.flush();
+		#endif
+	}
+}

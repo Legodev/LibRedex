@@ -33,6 +33,7 @@
 #include "redex.hpp"
 #include "utils/uuid.hpp"
 
+extern int(*callbackPtr)(char const *name, char const *function, char const *data);
 #ifdef DEBUG
 	extern std::ofstream testfile;
 #endif
@@ -71,6 +72,18 @@ redex::redex() {
 					std::make_tuple(
 							boost::bind(&redex::version, this, _1, _2),
 							SYNC_MAGIC)));
+
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_LIBARY_FUNCTION_CHECK_VERSION_ASYNC),
+					std::make_tuple(
+							boost::bind(&redex::version, this, _1, _2),
+							ASYNC_MAGIC)));
+	
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_LIBARY_FUNCTION_CHECK_VERSION_CALLBACK),
+					std::make_tuple(
+							boost::bind(&redex::version, this, _1, _2),
+							CALLBACK_MAGIC)));
 
 	if (access(CONFIG_FILE_NAME, F_OK) == -1) {
 		std::ofstream logfile;
@@ -162,6 +175,10 @@ std::string redex::processCallExtension(const char *function, const char **args,
 		case ASYNC_MAGIC:
 			returnString = asyncCall(funcinfo, extArguments);
 			break;
+			
+		case CALLBACK_MAGIC:
+			returnString = callbackCall(funcinfo, extArguments);
+			break;
 
 		case QUIET_MAGIC:
 			returnString = quietCall(funcinfo, extArguments);
@@ -208,6 +225,15 @@ std::string redex::asyncCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgum
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ASYNC) + "\",\"" + messageIdentifier + "\"]" ;
 }
 
+std::string redex::callbackCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgument) {
+	ext_arguments copyextArgument = extArgument;
+	PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier = PROTOCOL_IDENTIFIER_GENERATOR;
+
+	REDEXioService.post(boost::bind(&redex::callbackCallProcessor, this, funcinfo, extArgument, messageIdentifier));
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_CALLBACK) + "\",\"" + messageIdentifier + "\"]" ;
+}
+
 std::string redex::quietCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgument) {
 	ext_arguments copyextArgument = extArgument;
 	PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier = "";
@@ -247,6 +273,35 @@ void redex::asyncCallProcessor(EXT_FUNCTION_INFO funcinfo, ext_arguments extArgu
 		msgmutex.unlock();
 	}
 
+	return;
+}
+
+void redex::callbackCallProcessor(EXT_FUNCTION_INFO funcinfo, ext_arguments extArgument, PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier) {
+	std::string returnString;
+	
+	
+	try {
+		returnString = this->syncCall(funcinfo, extArgument);
+	} catch (std::exception const& e) {
+		std::string error = e.what();
+#ifdef DEBUG
+			testfile << "INTERNAL ERROR " << error << std::endl;
+			testfile.flush();
+#endif
+		int i = 0;
+		while ((i = error.find("\"", i)) != std::string::npos) {
+			error.insert(i, "\"");
+			i += 2;
+		}
+		returnString = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\",\"";
+		returnString += error;
+		returnString += "\"]";
+	}
+	
+	if (callbackPtr != nullptr) {
+		callbackPtr(PROTOCOL_CALLBACK_NAME_CALLBACK, messageIdentifier.c_str(), returnString.c_str());
+	}
+		
 	return;
 }
 

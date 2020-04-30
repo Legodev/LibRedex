@@ -23,16 +23,19 @@
 			#define RVExtensionVersion __stdcall RVExtensionVersion
 			#define RVExtension __stdcall RVExtension
 			#define RVExtensionArgs __stdcall RVExtensionArgs
+			#define RVExtensionRegisterCallback __stdcall RVExtensionRegisterCallback
 	#else
-			#define RVExtensionVersion __stdcall RVExtensionVersion
+			#define RVExtensionVersion __stdcall _RVExtensionVersion
 			#define RVExtension __stdcall _RVExtension
 			#define RVExtensionArgs __stdcall _RVExtensionArgs
+			#define RVExtensionRegisterCallback __stdcall _RVExtensionRegisterCallback
 	#endif
 #endif
 #ifdef _MSC_VER
 		#define RVExtensionVersion __stdcall RVExtensionVersion
 		#define RVExtension __stdcall RVExtension
 		#define RVExtensionArgs __stdcall RVExtensionArgs
+		#define RVExtensionRegisterCallback __stdcall RVExtensionRegisterCallback
 #endif
 
 #ifdef DEBUG
@@ -51,7 +54,9 @@
 #include "constants.hpp"
 
 #include "redex.hpp"
+
 redex * extension = 0;
+int(*callbackPtr)(char const *name, char const *function, char const *data) = nullptr;
 
 #ifdef DEBUG
 std::mutex ThreadMutex;
@@ -151,6 +156,7 @@ static void destroy(void)
 	__declspec (dllexport) void RVExtensionVersion(char *output, int outputSize);
 	__declspec (dllexport) void RVExtension(char *output, int outputSize, const char *function);
 	__declspec (dllexport) void RVExtensionArgs(char *output, int outputSize, const char *function, const char **args, int argsCnt);
+	__declspec (dllexport) void RVExtensionRegisterCallback(int(*callbackProc)(char const *name, char const *function, char const *data));
 
 	#ifdef __cplusplus
 		}

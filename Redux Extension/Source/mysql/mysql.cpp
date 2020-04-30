@@ -243,6 +243,11 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 						std::make_tuple(
 								boost::bind(&mysql_db_handler::interdumpObjects, this, _1, _2),
 								ASYNC_MAGIC)));
+		extFunctions.insert(
+				std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DUMP_OBJECTS_CALLBACK),
+						std::make_tuple(
+								boost::bind(&mysql_db_handler::interdumpObjects, this, _1, _2),
+								CALLBACK_MAGIC)));
 
 		extFunctions.insert(
 				std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_OBJECT_WORLD_LINK),

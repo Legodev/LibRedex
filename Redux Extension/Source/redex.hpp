@@ -70,8 +70,10 @@ private:
 
 	std::string syncCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
 	std::string asyncCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
+	std::string callbackCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
 	std::string quietCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
 	void asyncCallProcessor(EXT_FUNCTION_INFO funcinfo, ext_arguments extArgument, PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier);
+	void callbackCallProcessor(EXT_FUNCTION_INFO funcinfo, ext_arguments extArgument, PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier);
 };
 
 #endif /* SOURCE_REDEX_HPP_ */
