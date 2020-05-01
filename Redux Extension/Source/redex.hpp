@@ -36,6 +36,7 @@
 #include "fileio/fileio.hpp"
 #include "datetime/datetime.hpp"
 #include "randomlist/randomlist.hpp"
+#include "rest/restserver.hpp"
 
 class redex {
 public:
