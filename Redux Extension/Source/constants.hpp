@@ -37,7 +37,7 @@
  * Magic Names to identify callback origin 
  */
 #define PROTOCOL_CALLBACK_NAME_CALLBACK "libredex_callback"
-#define PROTOCOL_CALLBACK_NAME_CALL "libredex_call"
+#define PROTOCOL_CALLBACK_NAME_CALLIN "libredex_callin"
 
 /*
  * Magic Strings for the Arma 3 Call Extension API
@@ -71,6 +71,11 @@
 #define PROTOCOL_RANDOM_FUNCTION_ADD_DISCRETE_LIST "addDiscreteItemList"
 #define PROTOCOL_RANDOM_FUNCTION_GET_DISCRETE_LIST "getDiscreteItemList"
 #define PROTOCOL_RANDOM_FUNCTION_GET_RANDOMNUMBER_LIST "getRandomNumberList"
+
+// Rest Call Functions
+#define PROTOCOL_REST_FUNCTION_STARTSERVER "startrestserver"
+#define PROTOCOL_REST_ARGUMENT_ADDRESS "restaddress"
+#define PROTOCOL_REST_ARGUMENT_PORT "restport"
 
 // Database Call Functions
 #define PROTOCOL_DBCALL_FUNCTION_EXECUTE_INIT_DB "initdb"

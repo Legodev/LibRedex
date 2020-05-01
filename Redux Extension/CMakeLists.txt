@@ -11,7 +11,7 @@ ELSE()
     SET(BITVALUE 32)
 ENDIF()
 
-FILE(GLOB LIBSOURCES "Source/*.cpp" "Source/utils/*.cpp" "Source/mysql/*.cpp" "Source/mysql/datacache/*.cpp" "Source/fileio/*.cpp" "Source/datetime/*.cpp" "Source/randomlist/*.cpp")
+FILE(GLOB LIBSOURCES "Source/*.cpp" "Source/utils/*.cpp" "Source/mysql/*.cpp" "Source/mysql/datacache/*.cpp" "Source/fileio/*.cpp" "Source/datetime/*.cpp" "Source/randomlist/*.cpp" "Source/rest/*.cpp")
 FILE(GLOB TESTSSOURCES "Source/TestApps/*.cpp")
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/Binaries)
 
@@ -24,18 +24,11 @@ set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 
 IF (WIN32)
-SET(BOOST_INCLUDEDIR C:/MinGW/${BITVALUE}bit/include/boost)
-SET(BOOST_LIBRARYDIR C:/MinGW/${BITVALUE}bit/lib)
-
 SET(MYSQL_INCLUDE_DIR C:/MinGW/${BITVALUE}bit/include/mysql)
 SET(MYSQL_LIBRARY_DIR C:/MinGW/${BITVALUE}bit/lib)
 SET(MYSQL_LIBRARY ${MYSQL_LIBRARY_DIR}/libmysql.lib)
 SET(MYSQL_LIBRARY ssl crypto crypt32 z mysqlclient ws2_32 gdi32 secur32)
-
 ELSE(WIN32)
-SET(BOOST_INCLUDEDIR /usr/include/boost)
-SET(BOOST_LIBRARYDIR /usr/lib${BITVALUE})
-
 SET(MYSQL_INCLUDE_DIR /usr/include/mysql)
 SET(MYSQL_LIBRARY /usr/lib${BITVALUE})
 SET(MYSQL_LIBRARY ssl dl z crypto mysqlclient)
@@ -46,20 +39,23 @@ ENDIF(WIN32)
 INCLUDE_DIRECTORIES("Source")
 INCLUDE_DIRECTORIES("${MYSQL_INCLUDE_DIR}")
 
-SET(Boost_USE_STATIC_LIBS ON) 
-SET(Boost_USE_MULTITHREADED ON)  
-SET(Boost_USE_STATIC_RUNTIME ON) 
+SET(Boost_USE_STATIC_LIBS ON)
+SET(Boost_USE_MULTITHREADED ON)
+SET(Boost_USE_STATIC_RUNTIME ON)
 
-FIND_PACKAGE(Boost
-             1.54.0
-             COMPONENTS thread
-                        system
-                        random
-                        regex
-                        filesystem
-             REQUIRED)
+#FIND_PACKAGE(Boost
+#             1.54.0
+#             COMPONENTS thread
+#                        system
+#                        random
+#                        regex
+#                        filesystem
+#             REQUIRED)
+#
+#INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS}) 
+#set(FETCHCONTENT_SOURCE_DIR_BOOST /home/lego/DesolationREDUX/Arma_3_Extensions/libredex/boost-src)
+add_subdirectory(boost-cmake)
 
 message(STATUS "${MYSQL_LIBRARY}")
 message(STATUS "${Boost_LIBRARIES}")
@@ -84,15 +80,15 @@ ELSE(WIN32)
     ADD_LIBRARY(redex${LIBSUFFIX} SHARED ${LIBSOURCES})
 ENDIF(WIN32)
 
-TARGET_LINK_LIBRARIES(redex${LIBSUFFIX} ${SYSTEMLIBS} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES} ${MYSQL_LIBRARY})
+TARGET_LINK_LIBRARIES(redex${LIBSUFFIX} ${SYSTEMLIBS} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES} ${MYSQL_LIBRARY} Boost::filesystem Boost::thread Boost::system Boost::random Boost::regex)
 
 IF (WIN32)
     SET_TARGET_PROPERTIES(redex${LIBSUFFIX} PROPERTIES LINK_SEARCH_END_STATIC 1)
 ENDIF()
 
-FOREACH( TESTSSOURCEFILE ${TESTSSOURCES} )
-    GET_FILENAME_COMPONENT(TESTNAME ${TESTSSOURCEFILE} NAME)
-    STRING( REPLACE ".cpp" "" TESTNAME ${TESTNAME} )
-    ADD_EXECUTABLE( ${TESTNAME} ${TESTSSOURCEFILE} )
-    TARGET_LINK_LIBRARIES( ${TESTNAME} redex${LIBSUFFIX} ${SYSTEMLIBS} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES} ${MYSQL_LIBRARY})
-ENDFOREACH( TESTSSOURCEFILE ${TESTSSOURCES} )
+#FOREACH( TESTSSOURCEFILE ${TESTSSOURCES} )
+#    GET_FILENAME_COMPONENT(TESTNAME ${TESTSSOURCEFILE} NAME)
+#    STRING( REPLACE ".cpp" "" TESTNAME ${TESTNAME} )
+#    ADD_EXECUTABLE( ${TESTNAME} ${TESTSSOURCEFILE} Source/rest/handle_callback.hpp Source/rest/handle_callback.cpp)
+#    TARGET_LINK_LIBRARIES( ${TESTNAME} redex${LIBSUFFIX} ${SYSTEMLIBS} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES} ${MYSQL_LIBRARY} Boost::filesystem Boost::thread Boost::system Boost::random Boost::regex)
+#ENDFOREACH( TESTSSOURCEFILE ${TESTSSOURCES} )

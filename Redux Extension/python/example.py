@@ -10,7 +10,7 @@ instance = Extension(dlpath='../Binaries/libredex_x64.so')
 print("---- asking for version using sync")
 out = instance.ExecuteAndPrint("version", [])
 print("")
-
+"""
 print("---- asking for version using async")
 out = instance.ExecuteAndPrint("aversion", [])
 print("")
@@ -36,3 +36,9 @@ out = instance.ExecuteAndPrint("cdumpObjects", [])
 cdump_time = time() - cdump_start
 
 print("normal dumpObjects", ndump_time, "callback dumpObjects", cdump_time)
+"""
+
+out = instance.ExecuteAndPrint("startrestserver", ["restaddress", "127.0.0.1", "restport", "8000"])
+print("")
+
+sleep(30)

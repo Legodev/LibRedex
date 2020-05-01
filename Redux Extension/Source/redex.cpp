@@ -118,6 +118,7 @@ redex::redex() {
 		extModules.emplace_back(new fileio(extFunctions));
 		extModules.emplace_back(new datetime(extFunctions));
 		extModules.emplace_back(new randomlist(extFunctions));
+		extModules.emplace_back(new restserver(extFunctions));
 	}
 	return;
 }
@@ -136,7 +137,7 @@ void redex::terminate() {
 
 	// wait until all jobs are finished
 	while (!REDEXioService.stopped()) {
-		boost::thread::yield();
+		//boost::thread::yield();
 	}
 
 	// should not be needed
