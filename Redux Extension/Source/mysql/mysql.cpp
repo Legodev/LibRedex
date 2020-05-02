@@ -712,7 +712,6 @@ void mysql_db_handler::checkMigration(ext_arguments &extArgument, std::string da
 
 	for (int rowpos = 0; rowpos < rowcount; rowpos++) {
 		row = mysql_fetch_row(result);
-		std::cout << row[0] << std::endl;
 		if (std::string(row[0]) == "schema_version") {
 			firstChangeRequired = false;
 		}
