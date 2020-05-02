@@ -703,16 +703,18 @@ void mysql_db_handler::checkMigration(ext_arguments &extArgument, std::string da
 	std::string fchangeCheck = "DESCRIBE world";
 
 	this->rawquery(fchangeCheck, &result);
-
-
 	rowcount = mysql_num_rows(result);
 
 	for (int rowpos = 0; rowpos < rowcount; rowpos++) {
 		row = mysql_fetch_row(result);
+		std::cout << row[0] << std::endl;
 		if (std::string(row[0]) == "schema_version") {
 			firstChangeRequired = false;
 		}
 	}
+
+	mysql_free_result(result);
+
 	if (firstChangeRequired) {
 		this->rawmultiquerys(schema_migration_0001);
 
@@ -728,15 +730,24 @@ void mysql_db_handler::checkMigration(ext_arguments &extArgument, std::string da
 	}
 #endif
 
-	mysql_free_result(result);
-
 	/* follwing changes */
-	int current_schema_Version;
+	int current_schema_Version = 1;
 
-	this->rawquery("SELECT MIN(schema_version) FROM `world`", &result);
-	row = mysql_fetch_row(result);
-	current_schema_Version = std::stoi(row[0]);
-	mysql_free_result(result);
+	/* catch the case of an freh database */
+	try
+	{
+		this->rawquery("SELECT MIN(schema_version) FROM `world`", &result);
+		row = mysql_fetch_row(result);
+		current_schema_Version = std::stoi(row[0]);
+		mysql_free_result(result);
+	}
+	catch(const std::logic_error& e)
+	{
+#ifdef DEBUG
+			testfile << "IGNORED STRING ERROR FOR EMPTY DATABASE, error was: " << e.what() << std::endl;
+			testfile.flush();
+#endif
+	}
 
 	switch (current_schema_Version) {
 	    case 1:
