@@ -2063,7 +2063,7 @@ std::string mysql_db_handler::getClan(std::string &extFunction, ext_arguments &e
 
 	if (!clanuuid.empty()) {
 		std::string queryclaninfo =
-		str(boost::format{	"SELECT HEX(`clan`.`name`) AS 'clan_name', HEX(`founder`.`uuid`) AS 'founder_uuid', `founder`.`steamid` AS 'founder_steamid', "
+		str(boost::format{	"SELECT `clan`.`name` AS 'clan_name', HEX(`founder`.`uuid`) AS 'founder_uuid', `founder`.`steamid` AS 'founder_steamid', "
 			"`founder`.`lastnick` AS 'founder_nick', GROUP_CONCAT("
 			  "DISTINCT CONCAT('[\"', HEX(`player`.`uuid`), '\",\"' , `player`.`steamid`, '\",\"' , `player`.`lastnick`, '\",', "
 				  "`clan_member`.`rank`, ',\"', `clan_member`.`comment`, '\"]') "
