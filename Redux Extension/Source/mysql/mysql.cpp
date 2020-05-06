@@ -1984,7 +1984,7 @@ void mysql_db_handler::failIfClanNotExists(std::string clanuuid) {
 	MYSQL_RES *result;
 	unsigned long long int rowcount = 0;
 
-	if (clanuuid.empty()) {
+	if (!clanuuid.empty()) {
 		std::string queryclaninfo =
 		str(boost::format{	"SELECT HEX(`clan`.`uuid`) "
 							"FROM `clan` "
@@ -2028,7 +2028,7 @@ bool mysql_db_handler::playerMemberOfClan(std::string clanuuid, std::string play
 	MYSQL_RES *result;
 	unsigned long long int rowcount = 0;
 
-	if (clanuuid.empty()) {
+	if (!clanuuid.empty()) {
 		std::string query = str(boost::format{"SELECT HEX(`clan_uuid`) "
 											  "FROM `clan_member` "
 											  "WHERE `clan_member`.`clan_uuid` = CAST(0x%s AS BINARY) "
@@ -2059,24 +2059,25 @@ std::string mysql_db_handler::getClan(std::string &extFunction, ext_arguments &e
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
-	unsigned long long int rowcount;
+	unsigned long long int rowcount = 0;
 
-	std::string queryclaninfo =
-	str(boost::format{	"SELECT HEX(`clan`.`name`) AS 'clan_name', HEX(`founder`.`uuid`) AS 'founder_uuid', `founder`.`steamid` AS 'founder_steamid', "
-		"`founder`.`lastnick` AS 'founder_nick', GROUP_CONCAT("
-		  "DISTINCT CONCAT('[\"', HEX(`player`.`uuid`), '\",\"' , `player`.`steamid`, '\",\"' , `player`.`lastnick`, '\",', "
-		  	  "`clan_member`.`rank`, ',\"', `clan_member`.`comment`, '\"]') "
-		  "SEPARATOR ','"
-		") AS 'clan_member_list'"
-		"FROM `clan` LEFT JOIN `player` AS `founder` ON `clan`.`founder_uuid` = `founder`.`uuid` "
-		"LEFT JOIN `clan_member` ON `clan`.`uuid` = `clan_member`.`clan_uuid` "
-		"LEFT JOIN `player` ON `clan_member`.`player_uuid` = `player`.`uuid`"
-						"WHERE `clan`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid);
+	if (!clanuuid.empty()) {
+		std::string queryclaninfo =
+		str(boost::format{	"SELECT HEX(`clan`.`name`) AS 'clan_name', HEX(`founder`.`uuid`) AS 'founder_uuid', `founder`.`steamid` AS 'founder_steamid', "
+			"`founder`.`lastnick` AS 'founder_nick', GROUP_CONCAT("
+			  "DISTINCT CONCAT('[\"', HEX(`player`.`uuid`), '\",\"' , `player`.`steamid`, '\",\"' , `player`.`lastnick`, '\",', "
+				  "`clan_member`.`rank`, ',\"', `clan_member`.`comment`, '\"]') "
+			  "SEPARATOR ','"
+			") AS 'clan_member_list'"
+			"FROM `clan` LEFT JOIN `player` AS `founder` ON `clan`.`founder_uuid` = `founder`.`uuid` "
+			"LEFT JOIN `clan_member` ON `clan`.`uuid` = `clan_member`.`clan_uuid` "
+			"LEFT JOIN `player` ON `clan_member`.`player_uuid` = `player`.`uuid`"
+							"WHERE `clan`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid);
 
-	this->rawquery(queryclaninfo, &result);
+		this->rawquery(queryclaninfo, &result);
 
-	rowcount = mysql_num_rows(result);
-
+		rowcount = mysql_num_rows(result);
+	}
 
 	if (rowcount < 1) {
 		throw std::runtime_error("could not find clan with uuid: " + clanuuid);
@@ -2335,7 +2336,7 @@ std::string mysql_db_handler::updatePlayerMainClan(std::string &extFunction, ext
 	std::string clanuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CLAN_UUID);
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 
-	if (clanuuid.empty())
+	if (!clanuuid.empty())
 	{
 		this->failIfClanNotExists(clanuuid);
 
