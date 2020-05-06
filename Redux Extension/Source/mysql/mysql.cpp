@@ -1982,17 +1982,19 @@ std::string mysql_db_handler::deleteObjectWorldLink(std::string &extFunction, ex
 
 void mysql_db_handler::failIfClanNotExists(std::string clanuuid) {
 	MYSQL_RES *result;
-	unsigned long long int rowcount;
+	unsigned long long int rowcount = 0;
 
-	std::string queryclaninfo =
-	str(boost::format{	"SELECT HEX(`clan`.`uuid`) "
-						"FROM `clan` "
-						"WHERE `clan`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid);
+	if (clanuuid.empty()) {
+		std::string queryclaninfo =
+		str(boost::format{	"SELECT HEX(`clan`.`uuid`) "
+							"FROM `clan` "
+							"WHERE `clan`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid);
 
-	this->rawquery(queryclaninfo, &result);
+		this->rawquery(queryclaninfo, &result);
 
-	rowcount = mysql_num_rows(result);
-	mysql_free_result(result);
+		rowcount = mysql_num_rows(result);
+		mysql_free_result(result);
+	}
 
 	if (rowcount < 1) {
 		throw std::runtime_error("could not find clan with uuid: " + clanuuid);
@@ -2024,18 +2026,19 @@ void mysql_db_handler::failIfClanNameNotUnique(std::string clanname) {
 
 bool mysql_db_handler::playerMemberOfClan(std::string clanuuid, std::string playeruuid) {
 	MYSQL_RES *result;
-	unsigned long long int rowcount;
+	unsigned long long int rowcount = 0;
 
-	std::string query = str(boost::format { "SELECT HEX(`clan_uuid`) "
-			"FROM `clan_member` "
-			"WHERE `clan_member`.`clan_uuid` = CAST(0x%s AS BINARY) "
-			"AND `clan_member`.`player_uuid` =  CAST(0x%s AS BINARY) " } % clanuuid % playeruuid);
+	if (clanuuid.empty()) {
+		std::string query = str(boost::format{"SELECT HEX(`clan_uuid`) "
+											  "FROM `clan_member` "
+											  "WHERE `clan_member`.`clan_uuid` = CAST(0x%s AS BINARY) "
+											  "AND `clan_member`.`player_uuid` =  CAST(0x%s AS BINARY) "} % clanuuid % playeruuid);
 
-	this->rawquery(query, &result);
+		this->rawquery(query, &result);
 
-	rowcount = mysql_num_rows(result);
-	mysql_free_result (result);
-
+		rowcount = mysql_num_rows(result);
+		mysql_free_result(result);
+	}
 	if (rowcount < 1) {
 		return false;
 	}
@@ -2332,7 +2335,7 @@ std::string mysql_db_handler::updatePlayerMainClan(std::string &extFunction, ext
 	std::string clanuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CLAN_UUID);
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 
-	if (clanuuid != "")
+	if (clanuuid.empty())
 	{
 		this->failIfClanNotExists(clanuuid);
 
