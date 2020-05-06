@@ -2332,18 +2332,28 @@ std::string mysql_db_handler::updatePlayerMainClan(std::string &extFunction, ext
 	std::string clanuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CLAN_UUID);
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 
-	this->failIfClanNotExists(clanuuid);
+	if (clanuuid != "")
+	{
+		this->failIfClanNotExists(clanuuid);
 
-	// only add player to clan, if it was not added before
-	if(!this->playerMemberOfClan(clanuuid, playeruuid)) {
-		throw std::runtime_error("player " + playeruuid + " needs to be member of clan " + clanuuid + " to use it as main clan");
-	};
+		// only add player to clan, if it was not added before
+		if(!this->playerMemberOfClan(clanuuid, playeruuid))
+		{
+			throw std::runtime_error("player " + playeruuid + " needs to be member of clan " + clanuuid + " to use it as main clan");
+		};
 
-	std::string	queryplayerinfo =
-						str(boost::format{"UPDATE `player` SET `mainclan_uuid` = CAST(0x%s AS BINARY) \
+		std::string queryplayerinfo =
+				str(boost::format{"UPDATE `player` SET `mainclan_uuid` = CAST(0x%s AS BINARY) \
 											WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid % playeruuid);
 
-	this->rawquery(queryplayerinfo);
+		this->rawquery(queryplayerinfo);
+	} else {
+		std::string queryplayerinfo =
+				str(boost::format{"UPDATE `player` SET `mainclan_uuid` = NULL \
+											WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid % playeruuid);
+
+		this->rawquery(queryplayerinfo);
+	}
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + clanuuid + "\",\"" + playeruuid + "\"]]";
 }
