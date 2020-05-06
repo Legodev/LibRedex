@@ -2106,7 +2106,7 @@ std::string mysql_db_handler::getClan(std::string &extFunction, ext_arguments &e
 
 	mysql_free_result(result);
 
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + clanuuid + "\",\"" + clanname + "\",\"" + founderuuid + "\",\"" + foundersteamid + "\",\"" + foundernickname + "\"," + clanmemberlist + "," + clanvariables + "]]";
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + clanuuid + "\",\"" + clanname + "\",\"" + founderuuid + "\",\"" + foundersteamid + "\",\"" + foundernickname + "\",[" + clanmemberlist + "]," + clanvariables + "]]";
 }
 
 std::string mysql_db_handler::createClan(std::string &extFunction, ext_arguments &extArgument) {
