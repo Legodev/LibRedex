@@ -38,6 +38,8 @@
 	extern std::ofstream testfile;
 #endif
 
+extern int(*callbackPtr)(char const *name, char const *function, char const *data);
+
 extern std::map<std::string, unsigned int> * objectvariablemap;
 std::map<std::string, unsigned int> * objectvariablemap = 0;
 extern std::map<std::string, unsigned int> * charactervariablemap;
@@ -178,6 +180,12 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 						std::make_tuple(
 								boost::bind(&mysql_db_handler::loadChar, this, _1, _2),
 								ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_CHAR_CALLBACK),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::loadChar, this, _1, _2),
+							CALLBACK_MAGIC)));
 		extFunctions.insert(
 				std::make_pair(
 						std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_CHAR),
@@ -246,7 +254,7 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 		extFunctions.insert(
 				std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DUMP_OBJECTS_CALLBACK),
 						std::make_tuple(
-								boost::bind(&mysql_db_handler::interdumpObjects, this, _1, _2),
+								boost::bind(&mysql_db_handler::interdumpObjectsCallback, this, _1, _2),
 								CALLBACK_MAGIC)));
 
 		extFunctions.insert(
@@ -861,6 +869,20 @@ std::string mysql_db_handler::interdumpObjects(std::string &extFunction, ext_arg
 	matrix += "]";
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + matrix + "]";
+}
+
+std::string mysql_db_handler::interdumpObjectsCallback(std::string &extFunction, ext_arguments &extArgument) {
+	std::string callbackfunction = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CALLBACK_FUNCTION);
+
+	std::vector<object_mysql *> objectList = dumpObjects(extArgument);
+
+	for (object_mysql * object : objectList) {
+		if (callbackPtr != nullptr) {
+			callbackPtr(PROTOCOL_CALLBACK_NAME_CALLIN, callbackfunction.c_str(), object->getAsArmaString().c_str());
+		}
+	}
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[0,\"DONE DUMPING OBJECTS\", " + std::to_string(objectList.size()) + "]]";
 }
 
 /* SQL Querys */
@@ -1789,7 +1811,7 @@ std::string mysql_db_handler::updateObject(std::string &extFunction, ext_argumen
 						"    `reservedtwo` = ? "
 						"WHERE `object`.`uuid` = UNHEX(?);";
 	this->preparedStatementQuery(query, object->mysql_bind);
-	
+
 	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_PARENTUUID)) {
 		std::string parentuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PARENTUUID);
 		std::string query;

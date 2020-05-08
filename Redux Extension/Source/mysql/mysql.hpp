@@ -130,6 +130,7 @@ private:
 		std::string killObject(std::string &extFunction, ext_arguments &extArgument);
 
 	    std::string interdumpObjects(std::string &extFunction, ext_arguments &extArgument);
+		std::string interdumpObjectsCallback(std::string &extFunction, ext_arguments &extArgument);
 		std::vector<object_mysql *> dumpObjects(ext_arguments &extArgument);
 
 		std::string createObjectWorldLink(std::string &extFunction, ext_arguments &extArgument);
