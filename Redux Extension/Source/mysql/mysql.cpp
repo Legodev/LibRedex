@@ -104,6 +104,18 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS& extFunctions) {
 							SYNC_MAGIC)));
 	extFunctions.insert(
 			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_SET_WORLD_VARIABLES),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::setWorldVariables, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_GET_WORLD_VARIABLES),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::getWorldVariables, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
 					std::string(PROTOCOL_DBCALL_FUNCTION_SET_WORLD_STATE),
 					std::make_tuple(
 							boost::bind(&mysql_db_handler::setWorldState, this, _1, _2),
@@ -421,6 +433,7 @@ std::string mysql_db_handler::spawnHandler(std::string& extFunction, ext_argumen
 			if (i == 0) {
 				checkMigration(extArgument, database);
 				checkWorldUUID(extArgument);
+				checkWorldVARIABLES(extArgument);
 			}
 		}
 
@@ -787,6 +800,7 @@ void mysql_db_handler::checkWorldUUID(ext_arguments& extArgument) {
 
 	mysql_free_result(result);
 
+
 	std::string name = "empty";
 	std::string map = "empty";
 
@@ -828,6 +842,57 @@ void mysql_db_handler::checkWorldUUID(ext_arguments& extArgument) {
 		this->preparedStatementQuery(query, mysql_bind.mysql_bind + 2);
 	}
 };
+
+void mysql_db_handler::checkWorldVARIABLES(ext_arguments& extArgument) {
+	MYSQL_RES* result;
+	MYSQL_ROW row;
+	bool addVariables = true;
+	unsigned long long int rowcount;
+
+	std::string query = str(boost::format{"SELECT HEX(`world_has_persistent_variables`.`persistent_variables_uuid`) "
+										  "FROM `world_has_persistent_variables` "
+										  "WHERE `world_has_persistent_variables`.`world_uuid` = CAST(0x%s AS BINARY)"} % worlduuid);
+
+	this->rawquery(query, &result);
+
+	rowcount = mysql_num_rows(result);
+
+	if (rowcount > 0) {
+		addVariables = false;
+	}
+
+	mysql_free_result(result);
+
+	std::string variables = "[]";
+	std::string persistent_variables_uuid = orderedUUID();
+
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_VARIABLES)) {
+		variables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
+	}
+
+	mysql_binds mysql_bind = mysql_binds(4);
+
+	mysql_bind.addData(worlduuid);
+	mysql_bind.addData(persistent_variables_uuid);
+	mysql_bind.addData(variables);
+	mysql_bind.addData(worlduuid);
+
+	if (addVariables) {
+		query = "INSERT INTO `persistent_variables` (`uuid`, `persistentvariables`) VALUES (UNHEX(?), ?)";
+		this->preparedStatementQuery(query, mysql_bind.mysql_bind + 1);
+
+		query = "INSERT INTO `world_has_persistent_variables` (`world_uuid`, `persistent_variables_uuid`) VALUES (UNHEX(?), UNHEX(?));";
+		this->preparedStatementQuery(query, mysql_bind.mysql_bind);
+
+	} else if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_VARIABLES)) {
+		// update variables
+		std::string query = "UPDATE `persistent_variables` SET `persistentvariables` = ? WHERE uuid = ("
+							"SELECT `persistent_variables_uuid` FROM `world_has_persistent_variables` WHERE `world_has_persistent_variables`.`world_uuid` = UNHEX(?)"
+							");";
+
+		this->preparedStatementQuery(query, mysql_bind.mysql_bind + 2);
+	}
+}
 
 std::string mysql_db_handler::terminateHandler(std::string& extFunction, ext_arguments& extArgument) {
 	this->terminateHandler();
@@ -906,6 +971,48 @@ std::string mysql_db_handler::querydbversion() {
 	mysql_free_result(result);
 
 	return version;
+}
+
+std::string mysql_db_handler::setWorldVariables(std::string& extFunction, ext_arguments& extArgument) {
+	this->checkWorldVARIABLES(extArgument);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
+}
+
+std::string mysql_db_handler::getWorldVariables(std::string& extFunction, ext_arguments& extArgument) {
+	MYSQL_RES* result;
+	MYSQL_ROW row;
+	unsigned long long int rowcount;
+	std::string variables = "[]";
+
+	std::string worlduuid = this->worlduuid;
+
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID)) {
+		worlduuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID);
+	}
+
+	mysql_binds mysql_bind = mysql_binds(1);
+
+	mysql_bind.addData(worlduuid);
+
+	std::string query = str(boost::format{"SELECT `persistentvariables` FROM `persistent_variables` WHERE uuid = ("
+						"SELECT `persistent_variables_uuid` FROM `world_has_persistent_variables` WHERE `world_has_persistent_variables`.`world_uuid` = CAST(0x%s AS BINARY)"
+						");"} % worlduuid);
+
+	this->rawquery(query, &result);
+
+	rowcount = mysql_num_rows(result);
+
+	if (rowcount > 0) {
+		row = mysql_fetch_row(result);
+		if (row[0] != NULL) {
+			variables = row[0];
+		}
+	}
+
+	mysql_free_result(result);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + variables + "]";
 }
 
 std::string mysql_db_handler::setWorldState(std::string& extFunction, ext_arguments& extArgument) {

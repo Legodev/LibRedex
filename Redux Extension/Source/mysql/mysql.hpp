@@ -106,7 +106,11 @@ private:
 
 		void checkMigration(ext_arguments &extArgument, std::string database);
 		void checkWorldUUID(ext_arguments &extArgument);
+		void checkWorldVARIABLES(ext_arguments &extArgument);
 
+
+		std::string setWorldVariables(std::string &extFunction, ext_arguments &extArgument);
+		std::string getWorldVariables(std::string &extFunction, ext_arguments &extArgument);
 		std::string setWorldState(std::string &extFunction, ext_arguments &extArgument);
 		std::string getLinkedWorlds(std::string &extFunction, ext_arguments &extArgument);
 		std::string whitelistPlayer(std::string &extFunction, ext_arguments &extArgument);
