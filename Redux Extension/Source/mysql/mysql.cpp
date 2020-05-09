@@ -2434,14 +2434,14 @@ std::string mysql_db_handler::updatePlayerMainClan(std::string& extFunction, ext
 		};
 
 		std::string queryplayerinfo =
-				str(boost::format{"UPDATE `player` SET `mainclan_uuid` = CAST(0x%s AS BINARY) \
-											WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid % playeruuid);
+				str(boost::format{"UPDATE `player` SET `mainclan_uuid` = CAST(0x%s AS BINARY) "
+					  "WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid % playeruuid);
 
 		this->rawquery(queryplayerinfo);
 	} else {
 		std::string queryplayerinfo =
-				str(boost::format{"UPDATE `player` SET `mainclan_uuid` = NULL \
-											WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid % playeruuid);
+				str(boost::format{"UPDATE `player` SET `mainclan_uuid` = NULL "
+					  "WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % playeruuid);
 
 		this->rawquery(queryplayerinfo);
 	}
