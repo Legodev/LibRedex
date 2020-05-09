@@ -1,6 +1,6 @@
 /* discrete_list.hpp
  *
- * Copyright 2016-2018 Desolatdiscrete_listn Redux
+ * Copyright 2016-2020 Desolatdiscrete_listn Redux
  *
  * Author: Legodev <legodevgit@mailbox.org>
  *

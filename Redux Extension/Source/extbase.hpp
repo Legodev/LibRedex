@@ -1,6 +1,6 @@
 /* ext_base.hpp
  *
- * Copyright 2016-2018 Desolation Redux
+ * Copyright 2016-2020 Desolation Redux
  *
  * Author: Legodev <legodevgit@mailbox.org>
  *
