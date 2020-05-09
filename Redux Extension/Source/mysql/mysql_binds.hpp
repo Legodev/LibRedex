@@ -38,7 +38,7 @@ public:
 	void addData(float value);
 	void addData(std::string value);
 
-	//void setIncrement(unsigned int increment);
+	void setIncrement(unsigned int increment);
 
 	MYSQL_BIND* mysql_bind;
 

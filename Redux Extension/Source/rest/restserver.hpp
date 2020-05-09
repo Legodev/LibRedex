@@ -34,11 +34,12 @@ public:
 	~restserver();
 
 	std::string spawnHandler(std::string &extFunction, ext_arguments &extArgument);
+	void terminateHandler();
 
 private:
 	bool serverinitialized = false;
 	
-	std::thread * serverThread;
+	std::thread * serverThread = 0;
 	//std::string address;
 	boost::asio::ip::address address;
 	unsigned short port;

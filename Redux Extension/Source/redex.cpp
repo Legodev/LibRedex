@@ -126,13 +126,24 @@ redex::redex() {
 redex::~redex() {
 	REDEXioServiceWork.reset(); // stop all idle work!
 	REDEXioService.stop(); // terminate all work
-	// commented because of a bug with boost thread pool if join_all gets executed in process detach
-	//asyncthreadpool.join_all(); // get rid of all threads
+	// commented because of a bug with boost thread pool if join_all gets executed in process detach on windows
+#ifdef __linux__
+	asyncthreadpool.join_all(); // get rid of all threads
+#endif
+
+	for (auto &module : extModules) {
+		module->terminateHandler();
+	}
 
 	return;
 }
 
 void redex::terminate() {
+#ifdef DEBUG
+	testfile << "TERMINATE REDEX" << std::endl;
+	testfile.flush();
+#endif
+
 	REDEXioServiceWork.reset(); // stop all idle work!
 
 	// wait until all jobs are finished

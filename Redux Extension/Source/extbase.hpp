@@ -189,11 +189,11 @@ public:
 		return 0;
 	}
 
-	void terminateHandler() {
+	virtual void terminateHandler() {
 		return;
 	}
 
-	void terminateHandler(std::string extFunction, ext_arguments &extArgument) {
+	virtual void terminateHandler(std::string extFunction, ext_arguments &extArgument) {
 		return this->terminateHandler();
 	}
 

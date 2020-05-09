@@ -20,6 +20,12 @@
 #include "rest/restserver.hpp"
 
 #include "constants.hpp"
+#ifdef DEBUG
+#include <fstream>
+#include <iostream>
+#include <sstream>
+extern std::ofstream testfile;
+#endif
 
 restserver::restserver(EXT_FUNCTIONS &extFunctions) {
 	extFunctions.insert(
@@ -32,9 +38,20 @@ restserver::restserver(EXT_FUNCTIONS &extFunctions) {
 }
 
 restserver::~restserver() {
-	if (this->serverinitialized)
-	{
-		this->serverReference.stop();
+	this->terminateHandler();
+}
+
+void restserver::terminateHandler() {
+	std::cout << "TERMINATE RESTSERVER" << std::endl;
+#ifdef DEBUG
+	testfile << "TERMINATE RESTSERVER" << std::endl;
+	testfile.flush();
+#endif
+	if (this->serverThread != 0) {
+		if (this->serverinitialized) {
+			this->serverReference.stop();
+		}
+
 		this->serverThread->join();
 		delete this->serverThread;
 	}

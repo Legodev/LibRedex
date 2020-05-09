@@ -55,17 +55,17 @@ mysql_binds::~mysql_binds() {
 	}
 	//std::cout << "start freeing bind" << std::endl;
 	if (this->mysql_bind != 0) {
-		free(this->mysql_bind);
+		delete this->mysql_bind;
 		this->mysql_bind = 0;
 	}
 	//std::cout << "start freeing is_null" << std::endl;
 	if (this->is_null != 0) {
-		free(this->is_null);
+		delete this->is_null;
 		this->is_null = 0;
 	}
 	//std::cout << "start freeing length" << std::endl;
 	if (this->length != 0) {
-		free(this->length);
+		delete this->length;
 		this->length = 0;
 	}
 
@@ -76,6 +76,10 @@ void mysql_binds::checkIncrement() {
 	if (this->arraypos >= this->maxpos) {
 		throw std::runtime_error("catched buffer overflow");
 	}
+}
+
+void mysql_binds::setIncrement(unsigned int increment) {
+	this->arraypos = increment;
 }
 
 void mysql_binds::increment() {
@@ -105,7 +109,7 @@ void mysql_binds::addData(signed char value) {
 	signed char* pointer = (signed char*) this->mysql_bind[this->arraypos].buffer;
 
 	if (pointer != 0) {
-		free(pointer);
+		delete pointer;
 	}
 	pointer = new signed char;
 	*pointer = value;
@@ -126,7 +130,7 @@ void mysql_binds::addData(int value) {
 
 	int* pointer = (int*) this->mysql_bind[this->arraypos].buffer;
 	if (pointer != 0) {
-		free(pointer);
+		delete pointer;
 	}
 
 	this->mysql_bind[this->arraypos].buffer = new int;
@@ -149,7 +153,7 @@ void mysql_binds::addData(unsigned int value) {
 
 	unsigned int* pointer = (unsigned int*) this->mysql_bind[this->arraypos].buffer;
 	if (pointer != 0) {
-		free(pointer);
+		delete pointer;
 	}
 
 	this->mysql_bind[this->arraypos].buffer = new unsigned int;
@@ -172,7 +176,7 @@ void mysql_binds::addData(float value) {
 
 	float* pointer = (float*) this->mysql_bind[this->arraypos].buffer;
 	if (pointer != 0) {
-		free(pointer);
+		delete pointer;
 	}
 
 	this->mysql_bind[this->arraypos].buffer = new float;
@@ -203,7 +207,7 @@ void mysql_binds::addData(std::string value) {
 		if (pointer != 0) {
 			this->mysql_bind[this->arraypos].buffer = 0;
 			this->mysql_bind[this->arraypos].buffer_length = 0;
-			free(pointer);
+			delete pointer;
 			pointer = 0;
 		}
 
@@ -215,7 +219,7 @@ void mysql_binds::addData(std::string value) {
 		if (pointer != 0 && this->mysql_bind[this->arraypos].buffer_length < size) {
 			this->mysql_bind[this->arraypos].buffer = 0;
 			this->mysql_bind[this->arraypos].buffer_length = 0;
-			free(pointer);
+			delete pointer;
 			pointer = 0;
 		}
 		if (pointer == 0) {
