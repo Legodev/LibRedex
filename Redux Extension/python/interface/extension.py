@@ -53,7 +53,7 @@ class Extension:
 
         argsCnt = self.ffi.cast("int", arglist.__len__())
 
-        print('SENDING: %s - %s' % (functions, arguments))
+        print('SENDING: [%s, %s]' % (functions, arguments))
         self.lib.RVExtensionArgs(cbuffer, cbuffersize, function, args, argsCnt)
         mybytes = self.ffi.string(cbuffer).decode('utf-8')
         print('OUTPUT: %s' % mybytes)
@@ -104,12 +104,13 @@ class Extension:
         elif (mybyteseval[0] == "ASYNC"):
             output = ""
             while True:
+                sleep(0.2)
+
                 output = self.ExecuteAndPrint("chkasmsg", ["msguuid", mybyteseval[1]])
 
                 if (output == "MESSAGE DOES EXIST"):
                     break
 
-                sleep(0.05)
 
             return self.ExecuteAndPrint("rcvasmsg", ["msguuid", mybyteseval[1]])
 

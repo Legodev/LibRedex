@@ -20,6 +20,10 @@
 #include "rest/restserver.hpp"
 
 #include "constants.hpp"
+#ifdef DEBUG
+#include "logger.hpp"
+extern Logger logfile;
+#endif
 
 restserver::restserver(EXT_FUNCTIONS &extFunctions) {
 	extFunctions.insert(
@@ -32,10 +36,22 @@ restserver::restserver(EXT_FUNCTIONS &extFunctions) {
 }
 
 restserver::~restserver() {
-	if (this->serverinitialized)
-	{
-		this->serverReference.stop();
-		this->serverThread->join();
+	this->terminateHandler();
+}
+
+void restserver::terminateHandler() {
+	std::cout << "TERMINATE RESTSERVER" << std::endl;
+#ifdef DEBUG
+	logfile << "TERMINATE RESTSERVER" << std::endl;
+	logfile.flush();
+#endif
+	if (this->serverThread != 0) {
+		if (this->serverinitialized) {
+			this->serverReference.stop();
+		}
+		if (this->serverThread->joinable()) {
+			this->serverThread->join();
+		}
 		delete this->serverThread;
 	}
 }

@@ -1,6 +1,6 @@
 /* main.cpp
  *
- * Copyright 2016-2018 Desolation Redux
+ * Copyright 2016-2020 Desolation Redux
  *
  * Author: Legodev <legodevgit@mailbox.org>
  *
@@ -36,9 +36,8 @@ extern "C"
 	{
 		if (outputSize > 0) {
 #ifdef DEBUG
-			std::time_t result = std::time(nullptr);
-			testfile << std::localtime(&result) << "\t\t ARMAIO-REQUEST " << function << std::endl;
-			testfile.flush();
+			logfile << "### --> ARMAIO-REQ --> ### " << function << std::endl;
+			logfile.flush();
 #endif
 			std::string errstr = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\", \"";
 			errstr += "Sorry RVExtension is not supported anymore";
@@ -46,9 +45,8 @@ extern "C"
 			strncpy(output, errstr.c_str(), outputSize);
 			output[outputSize - 1] = '\0';
 #ifdef DEBUG
-			result = std::time(nullptr);
-			testfile << std::localtime(&result) << "\t\t ARMAIO-ERROR " << errstr << std::endl;
-			testfile.flush();
+			logfile << "### >_< ARMAIO-ERR >_< ### " << errstr << std::endl;
+			logfile.flush();
 #endif
 		}
 	}
@@ -64,20 +62,17 @@ extern "C"
 #endif
 			try {
 #ifdef DEBUG
-				result = std::time(nullptr);
-				testfile << std::localtime(&result) << "\t\t ARMAIO-REQUEST " << function << std::endl;
-				testfile.flush();
+				logfile << "### --> ARMAIO-REQ --> ### " << function << std::endl;
+				logfile.flush();
 				for (int i = 0; i < argsCnt; i++) {
-					result = std::time(nullptr);
-					testfile << std::localtime(&result) << "\t\t ARMAIO-Argument " << i << ": " << args[i] << std::endl;
-					testfile.flush();
+					logfile << "### --- ARMAIO-ARG --- ### " << i << ": " << args[i] << std::endl;
+					logfile.flush();
 				}
 #endif
 				std::string returnString = extension->processCallExtension(function, args, argsCnt, outputSize);
 #ifdef DEBUG
-				result = std::time(nullptr);
-				testfile << std::localtime(&result) << "\t\t ARMAIO-RETURN " << returnString << std::endl;
-				testfile.flush();
+				logfile << "### <-- ARMAIO-RET <-- ### " << returnString << std::endl;
+				logfile.flush();
 #endif
 				strncpy(output, returnString.c_str(), outputSize);
 				return;
@@ -95,9 +90,8 @@ extern "C"
 				strncpy(output, errstr.c_str(), outputSize);
 				output[outputSize - 1] = '\0';
 #ifdef DEBUG
-				result = std::time(nullptr);
-				testfile << std::localtime(&result) << "\t\t ARMAIO-ERROR " << errstr << std::endl;
-				testfile.flush();
+				logfile << "### >_< ARMAIO-ERR >_< ### " << errstr << std::endl;
+				logfile.flush();
 #endif
 			}
 		}
@@ -111,9 +105,8 @@ extern "C"
 		callbackPtr = callbackProc;
 		#ifdef DEBUG
 				std::time_t result;
-				result = std::time(nullptr);
-				testfile << std::localtime(&result) << "\t\t ARMAIO SET callbackPtr: " << callbackPtr << std::endl;
-				testfile.flush();
+				logfile << "### === ARMAIO-SET === ### " << "callbackPtr = " << callbackPtr << std::endl;
+				logfile.flush();
 		#endif
 	}
 }

@@ -1,6 +1,6 @@
 /* redex.cpp
  *
- * Copyright 2016-2018 Desolation Redux
+ * Copyright 2016-2020 Desolation Redux
  *
  * Author: Legodev <legodevgit@mailbox.org>
  *
@@ -16,13 +16,9 @@
  */
 
 #include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
-#include <fstream>
 #include <iostream>
-#include <sstream>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -35,7 +31,8 @@
 
 extern int(*callbackPtr)(char const *name, char const *function, char const *data);
 #ifdef DEBUG
-	extern std::ofstream testfile;
+	#include "logger.hpp"
+	extern Logger logfile;
 #endif
 
 redex::redex() {
@@ -87,7 +84,7 @@ redex::redex() {
 
 	if (access(CONFIG_FILE_NAME, F_OK) == -1) {
 		std::ofstream logfile;
-		logfile.open("LibRedExErrorLogFile.txt", std::ios::out | std::ios::trunc);
+		logfile.open("libredex.log", std::ios::out | std::ios::trunc);
 		logfile << "cannot find config file: " << CONFIG_FILE_NAME << std::endl;
 		logfile.flush();
 		logfile.close();
@@ -126,13 +123,24 @@ redex::redex() {
 redex::~redex() {
 	REDEXioServiceWork.reset(); // stop all idle work!
 	REDEXioService.stop(); // terminate all work
-	// commented because of a bug with boost thread pool if join_all gets executed in process detach
-	//asyncthreadpool.join_all(); // get rid of all threads
+	// commented because of a bug with boost thread pool if join_all gets executed in process detach on windows
+#ifdef __linux__
+	asyncthreadpool.join_all(); // get rid of all threads
+#endif
+
+	for (auto &module : extModules) {
+		module->terminateHandler();
+	}
 
 	return;
 }
 
 void redex::terminate() {
+#ifdef DEBUG
+	logfile << "TERMINATE REDEX" << std::endl;
+	logfile.flush();
+#endif
+
 	REDEXioServiceWork.reset(); // stop all idle work!
 
 	// wait until all jobs are finished
@@ -253,8 +261,8 @@ void redex::asyncCallProcessor(EXT_FUNCTION_INFO funcinfo, ext_arguments extArgu
 	} catch (std::exception const& e) {
 		std::string error = e.what();
 #ifdef DEBUG
-			testfile << "INTERNAL ERROR " << error << std::endl;
-			testfile.flush();
+			logfile << "INTERNAL ERROR " << error << std::endl;
+			logfile.flush();
 #endif
 		int i = 0;
 		while ((i = error.find("\"", i)) != std::string::npos) {
@@ -286,8 +294,8 @@ void redex::callbackCallProcessor(EXT_FUNCTION_INFO funcinfo, ext_arguments extA
 	} catch (std::exception const& e) {
 		std::string error = e.what();
 #ifdef DEBUG
-			testfile << "INTERNAL ERROR " << error << std::endl;
-			testfile.flush();
+			logfile << "INTERNAL ERROR " << error << std::endl;
+			logfile.flush();
 #endif
 		int i = 0;
 		while ((i = error.find("\"", i)) != std::string::npos) {

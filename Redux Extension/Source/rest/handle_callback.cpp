@@ -27,10 +27,8 @@
 extern int (* callbackPtr)(char const* name, char const* function, char const* data);
 
 #ifdef DEBUG
-	#include <fstream>
-	#include <iostream>
-	#include <sstream>
-	extern std::ofstream testfile;
+	#include "logger.hpp"
+	extern Logger logfile;
 #endif
 void handle_callback(std::string url, std::string data)
 {
@@ -38,14 +36,14 @@ void handle_callback(std::string url, std::string data)
 	boost::split(urlsplit, url, boost::is_any_of("/"));
 
 #ifdef DEBUG
-	testfile << "REST REQUEST URL" << std::endl;
+	logfile << "REST REQUEST URL" << std::endl;
 	for(int i = 0; i < urlsplit.size(); i++)
 	{
-		testfile << "\t\t" << i << " " << urlsplit[i] << std::endl;
+		logfile << "\t\t" << i << " " << urlsplit[i] << std::endl;
 	}
-	testfile << "REST REQUEST DATA" << std::endl;
-	testfile << data << std::endl;
-	testfile.flush();
+	logfile << "REST REQUEST DATA" << std::endl;
+	logfile << data << std::endl;
+	logfile.flush();
 #endif
 
 	if((urlsplit.size() == 3 || urlsplit.size() == 4) && urlsplit[1] == "execute")
