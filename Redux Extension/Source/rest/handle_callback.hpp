@@ -1,4 +1,4 @@
-/* mysql.hpp
+/* handle_callback.hpp
  *
  * Copyright 2016-2020 Desolation Redux
  *
@@ -15,15 +15,9 @@
  * GNU Affero General Public License for more details.
  */
 
-std::string schema_migration_0002 = R"(
-ALTER TABLE `world`
-MODIFY name VARCHAR(256),
-MODIFY map VARCHAR(128);
-ALTER TABLE `clan`
-MODIFY name VARCHAR(128);
-ALTER TABLE `clan_member`
-MODIFY comment VARCHAR(256);
-ALTER TABLE `killinfo`
-MODIFY weapon VARCHAR(128),
-MODIFY type VARCHAR(128);
-)";
+#ifndef REDEX_REDEX_HANDLE_CALLBACK_HPP
+#define REDEX_REDEX_HANDLE_CALLBACK_HPP
+
+void handle_callback(std::string url, std::string data);
+
+#endif //REDEX_REDEX_HANDLE_CALLBACK_HPP

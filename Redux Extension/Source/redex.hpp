@@ -1,6 +1,6 @@
 /* redex.hpp
  *
- * Copyright 2016-2018 Desolation Redux
+ * Copyright 2016-2020 Desolation Redux
  *
  * Author: Legodev <legodevgit@mailbox.org>
  *
@@ -36,6 +36,7 @@
 #include "fileio/fileio.hpp"
 #include "datetime/datetime.hpp"
 #include "randomlist/randomlist.hpp"
+#include "rest/restserver.hpp"
 
 class redex {
 public:
@@ -70,8 +71,10 @@ private:
 
 	std::string syncCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
 	std::string asyncCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
+	std::string callbackCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
 	std::string quietCall(EXT_FUNCTION_INFO funcinfo, ext_arguments &extArgument);
 	void asyncCallProcessor(EXT_FUNCTION_INFO funcinfo, ext_arguments extArgument, PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier);
+	void callbackCallProcessor(EXT_FUNCTION_INFO funcinfo, ext_arguments extArgument, PROTOCOL_IDENTIFIER_DATATYPE messageIdentifier);
 };
 
 #endif /* SOURCE_REDEX_HPP_ */

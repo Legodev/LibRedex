@@ -1,0 +1,3 @@
+[submodule "Redux Extension/boost-cmake"]
+	path = Redux Extension/boost-cmake
+	url = https://github.com/Orphis/boost-cmake.git

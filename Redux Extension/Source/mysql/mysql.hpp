@@ -1,6 +1,6 @@
 /* mysql.hpp
  *
- * Copyright 2016-2018 Desolation Redux
+ * Copyright 2016-2020 Desolation Redux
  *
  * Author: Legodev <legodevgit@mailbox.org>
  *
@@ -106,7 +106,11 @@ private:
 
 		void checkMigration(ext_arguments &extArgument, std::string database);
 		void checkWorldUUID(ext_arguments &extArgument);
+		void checkWorldVARIABLES(ext_arguments &extArgument);
 
+
+		std::string setWorldVariables(std::string &extFunction, ext_arguments &extArgument);
+		std::string getWorldVariables(std::string &extFunction, ext_arguments &extArgument);
 		std::string setWorldState(std::string &extFunction, ext_arguments &extArgument);
 		std::string getLinkedWorlds(std::string &extFunction, ext_arguments &extArgument);
 		std::string whitelistPlayer(std::string &extFunction, ext_arguments &extArgument);
@@ -130,6 +134,7 @@ private:
 		std::string killObject(std::string &extFunction, ext_arguments &extArgument);
 
 	    std::string interdumpObjects(std::string &extFunction, ext_arguments &extArgument);
+		std::string interdumpObjectsCallback(std::string &extFunction, ext_arguments &extArgument);
 		std::vector<object_mysql *> dumpObjects(ext_arguments &extArgument);
 
 		std::string createObjectWorldLink(std::string &extFunction, ext_arguments &extArgument);

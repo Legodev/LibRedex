@@ -1,6 +1,6 @@
 /* ext_base.hpp
  *
- * Copyright 2016-2018 Desolation Redux
+ * Copyright 2016-2020 Desolation Redux
  *
  * Author: Legodev <legodevgit@mailbox.org>
  *
@@ -189,11 +189,11 @@ public:
 		return 0;
 	}
 
-	void terminateHandler() {
+	virtual void terminateHandler() {
 		return;
 	}
 
-	void terminateHandler(std::string extFunction, ext_arguments &extArgument) {
+	virtual void terminateHandler(std::string extFunction, ext_arguments &extArgument) {
 		return this->terminateHandler();
 	}
 

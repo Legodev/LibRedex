@@ -1,6 +1,6 @@
 /* mysql.cpp
  *
- * Copyright 2016-2018 Desolation Redux
+ * Copyright 2016-2020 Desolation Redux
  *
  * Author: Legodev <legodevgit@mailbox.org>
  *
@@ -27,23 +27,24 @@
 
 #include "mysql/mysql.hpp"
 #include "utils/uuid.hpp"
+#include "mysql/mysql_binds.hpp"
 #include "mysql/datacache/charactermysql.hpp"
 #include "mysql/datacache/objectmysql.hpp"
 #include "mysql/migration/includeAllSchemas.hpp"
 
 #ifdef DEBUG
-	#include <fstream>
-	#include <iostream>
-	#include <sstream>
-	extern std::ofstream testfile;
+#include "logger.hpp"
+extern Logger logfile;
 #endif
 
-extern std::map<std::string, unsigned int> * objectvariablemap;
-std::map<std::string, unsigned int> * objectvariablemap = 0;
-extern std::map<std::string, unsigned int> * charactervariablemap;
-std::map<std::string, unsigned int> * charactervariablemap = 0;
+extern int (* callbackPtr)(char const* name, char const* function, char const* data);
 
-mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
+extern std::map<std::string, unsigned int>* objectvariablemap;
+std::map<std::string, unsigned int>* objectvariablemap = 0;
+extern std::map<std::string, unsigned int>* charactervariablemap;
+std::map<std::string, unsigned int>* charactervariablemap = 0;
+
+mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS& extFunctions) {
 	this->hostname = "";
 	this->user = "";
 	this->password = "";
@@ -61,7 +62,6 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 
 	this->worlduuid = "";
 
-
 	if (charactervariablemap == 0) {
 		charactervariablemap = new std::map<std::string, unsigned int>;
 	}
@@ -71,269 +71,290 @@ mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS &extFunctions) {
 	}
 
 	extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_EXECUTE_INIT_DB),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::spawnHandler, this, _1, _2),
-								SYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_EXECUTE_TERMINATE_DB),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::terminateHandler, this, _1, _2),
-								SYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_UUID),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::intergetUUID, this, _1, _2),
-								SYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ECHO_STRING),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::interecho, this, _1, _2),
-								SYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_DB_VERSION),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::interdbVersion, this, _1, _2),
-								SYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_SET_WORLD_STATE),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::setWorldState, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_GET_LINKED_WORLDS),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::getLinkedWorlds, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_PLAYER),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::loadPlayer, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_LOGOUT_PLAYER),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::logoutPlayer, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_LOGOUT_PLAYER_QUIET),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::logoutPlayer, this, _1, _2),
-								QUIET_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_INCREMENT_PLAYER_STATS),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::incrementPlayerStats, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_INCREMENT_PLAYER_STATS_QUIET),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::incrementPlayerStats, this, _1, _2),
-								QUIET_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_PLAYER_GROUPS),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::loadPlayerGroups, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_WHITELIST_PLAYER),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::whitelistPlayer, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_UNWHITELIST_PLAYER),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::unwhitelistPlayer, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_AV_CHARS),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::loadAvChars, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_LINK_CHARS),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::linkChars, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_CHAR),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::loadChar, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_CHAR),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::createChar, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_CHAR),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::updateChar, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_QUIET_UPDATE_CHAR),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::updateChar, this, _1, _2),
-								QUIET_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_DECLARE_CHAR_DEATH),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::killChar, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_OBJECT),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::loadObject, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_OBJECT),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::createObject, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_QUIET_CREATE_OBJECT),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::createObject, this, _1, _2),
-								QUIET_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_OBJECT),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::updateObject, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_QUIET_UPDATE_OBJECT),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::updateObject, this, _1, _2),
-								QUIET_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(
-						std::string(PROTOCOL_DBCALL_FUNCTION_DECLARE_OBJECT_DEATH),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::killObject, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DUMP_OBJECTS),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::interdumpObjects, this, _1, _2),
-								ASYNC_MAGIC)));
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_EXECUTE_INIT_DB),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::spawnHandler, this, _1, _2),
+							SYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_EXECUTE_TERMINATE_DB),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::terminateHandler, this, _1, _2),
+							SYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_UUID),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::intergetUUID, this, _1, _2),
+							SYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_ECHO_STRING),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::interecho, this, _1, _2),
+							SYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_RETURN_DB_VERSION),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::interdbVersion, this, _1, _2),
+							SYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_SET_WORLD_VARIABLES),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::setWorldVariables, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_GET_WORLD_VARIABLES),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::getWorldVariables, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_SET_WORLD_STATE),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::setWorldState, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_GET_LINKED_WORLDS),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::getLinkedWorlds, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_PLAYER),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::loadPlayer, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_LOGOUT_PLAYER),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::logoutPlayer, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_LOGOUT_PLAYER_QUIET),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::logoutPlayer, this, _1, _2),
+							QUIET_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_INCREMENT_PLAYER_STATS),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::incrementPlayerStats, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_INCREMENT_PLAYER_STATS_QUIET),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::incrementPlayerStats, this, _1, _2),
+							QUIET_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_PLAYER_GROUPS),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::loadPlayerGroups, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_WHITELIST_PLAYER),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::whitelistPlayer, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_UNWHITELIST_PLAYER),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::unwhitelistPlayer, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_AV_CHARS),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::loadAvChars, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_LINK_CHARS),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::linkChars, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_CHAR),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::loadChar, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_CHAR_CALLBACK),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::loadChar, this, _1, _2),
+							CALLBACK_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_CHAR),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::createChar, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_CHAR),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::updateChar, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_QUIET_UPDATE_CHAR),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::updateChar, this, _1, _2),
+							QUIET_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_DECLARE_CHAR_DEATH),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::killChar, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_LOAD_OBJECT),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::loadObject, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_OBJECT),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::createObject, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_QUIET_CREATE_OBJECT),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::createObject, this, _1, _2),
+							QUIET_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_OBJECT),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::updateObject, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_QUIET_UPDATE_OBJECT),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::updateObject, this, _1, _2),
+							QUIET_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(
+					std::string(PROTOCOL_DBCALL_FUNCTION_DECLARE_OBJECT_DEATH),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::killObject, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DUMP_OBJECTS),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::interdumpObjects, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DUMP_OBJECTS_CALLBACK),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::interdumpObjectsCallback, this, _1, _2),
+							CALLBACK_MAGIC)));
 
-		extFunctions.insert(
-				std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_OBJECT_WORLD_LINK),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::createObjectWorldLink, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_OBJECT_WORLD_LINK),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::updateObjectWorldLink, this, _1, _2),
-								ASYNC_MAGIC)));
-		extFunctions.insert(
-				std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DELETE_OBJECT_WORLD_LINK),
-						std::make_tuple(
-								boost::bind(&mysql_db_handler::deleteObjectWorldLink, this, _1, _2),
-								ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_OBJECT_WORLD_LINK),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::createObjectWorldLink, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_OBJECT_WORLD_LINK),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::updateObjectWorldLink, this, _1, _2),
+							ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DELETE_OBJECT_WORLD_LINK),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::deleteObjectWorldLink, this, _1, _2),
+							ASYNC_MAGIC)));
 
-		extFunctions.insert(
-								std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_GET_CLAN),
-										std::make_tuple(
-												boost::bind(&mysql_db_handler::getClan, this, _1, _2),
-												ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_GET_CLAN),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::getClan, this, _1, _2),
+							ASYNC_MAGIC)));
 
-		extFunctions.insert(
-								std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_CLAN),
-										std::make_tuple(
-												boost::bind(&mysql_db_handler::createClan, this, _1, _2),
-												ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_CREATE_CLAN),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::createClan, this, _1, _2),
+							ASYNC_MAGIC)));
 
-		extFunctions.insert(
-								std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_CLAN),
-										std::make_tuple(
-												boost::bind(&mysql_db_handler::updateClan, this, _1, _2),
-												ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_CLAN),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::updateClan, this, _1, _2),
+							ASYNC_MAGIC)));
 
-		extFunctions.insert(
-								std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_ADD_CLAN_PLAYER),
-										std::make_tuple(
-												boost::bind(&mysql_db_handler::addClanPlayer, this, _1, _2),
-												ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_ADD_CLAN_PLAYER),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::addClanPlayer, this, _1, _2),
+							ASYNC_MAGIC)));
 
-		extFunctions.insert(
-								std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_CLAN_PLAYER),
-										std::make_tuple(
-												boost::bind(&mysql_db_handler::updateClanPlayer, this, _1, _2),
-												ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_CLAN_PLAYER),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::updateClanPlayer, this, _1, _2),
+							ASYNC_MAGIC)));
 
-		extFunctions.insert(
-								std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DELETE_CLAN_PLAYER),
-										std::make_tuple(
-												boost::bind(&mysql_db_handler::deleteClanPlayer, this, _1, _2),
-												ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_DELETE_CLAN_PLAYER),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::deleteClanPlayer, this, _1, _2),
+							ASYNC_MAGIC)));
 
-		extFunctions.insert(
-								std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_PLAYER_MAIN_CLAN),
-										std::make_tuple(
-												boost::bind(&mysql_db_handler::updatePlayerMainClan, this, _1, _2),
-												ASYNC_MAGIC)));
+	extFunctions.insert(
+			std::make_pair(std::string(PROTOCOL_DBCALL_FUNCTION_UPDATE_PLAYER_MAIN_CLAN),
+					std::make_tuple(
+							boost::bind(&mysql_db_handler::updatePlayerMainClan, this, _1, _2),
+							ASYNC_MAGIC)));
 }
 
 mysql_db_handler::~mysql_db_handler() {
 	disconnect();
 
-	for (auto it = objectcache.cbegin(); it != objectcache.cend(); ++it)
-	{
-		object_mysql * object = it->second;
+	for (auto it = objectcache.cbegin(); it != objectcache.cend(); ++it) {
+		object_mysql* object = it->second;
 		delete object;
 		objectcache.erase(it);
 	}
 
-	for (auto it = charactercache.cbegin(); it != charactercache.cend(); ++it)
-	{
-		character_mysql * character = it->second;
+	for (auto it = charactercache.cbegin(); it != charactercache.cend(); ++it) {
+		character_mysql* character = it->second;
 		delete character;
 		charactercache.erase(it);
 	}
 
-    if (charactervariablemap != 0) {
-        delete charactervariablemap;
-        charactervariablemap = 0;
-    }
+	if (charactervariablemap != 0) {
+		delete charactervariablemap;
+		charactervariablemap = 0;
+	}
 
-    if (objectvariablemap != 0) {
-        delete objectvariablemap;
-        objectvariablemap = 0;
-    }
+	if (objectvariablemap != 0) {
+		delete objectvariablemap;
+		objectvariablemap = 0;
+	}
 
 	return;
 }
 
-std::string mysql_db_handler::spawnHandler(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::spawnHandler(std::string& extFunction, ext_arguments& extArgument) {
 	std::string worlduuid = extArgument.getUUID("worlduuid");
 	int i = 0;
 
@@ -379,8 +400,8 @@ std::string mysql_db_handler::spawnHandler(std::string &extFunction, ext_argumen
 		this->password = password;
 		this->database = database;
 		this->port = port;
-	//	this->socket = NULL;
-	//	this->flag = 0;
+		//	this->socket = NULL;
+		//	this->flag = 0;
 
 		this->whitelistonly = whitelistonly;
 		this->allowsteamapi = allowsteamapi;
@@ -399,10 +420,10 @@ std::string mysql_db_handler::spawnHandler(std::string &extFunction, ext_argumen
 		connectionpool.reserve(poolsize + 3);
 
 		for (i = 0; i <= poolsize; i++) {
-			MYSQL * connection = connect();
+			MYSQL* connection = connect();
 #ifdef DEBUG
-			testfile << "CREATED NEW DB POINTER " << static_cast<void*>(connection) << std::endl;
-			testfile.flush();
+			logfile << "CREATED NEW DB POINTER " << static_cast<void*>(connection) << std::endl;
+			logfile.flush();
 #endif
 
 			connectionpool.bounded_push((intptr_t) connection);
@@ -410,6 +431,7 @@ std::string mysql_db_handler::spawnHandler(std::string &extFunction, ext_argumen
 			if (i == 0) {
 				checkMigration(extArgument, database);
 				checkWorldUUID(extArgument);
+				checkWorldVARIABLES(extArgument);
 			}
 		}
 
@@ -421,8 +443,8 @@ std::string mysql_db_handler::spawnHandler(std::string &extFunction, ext_argumen
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\", " + std::to_string(i) + "]";
 }
 
-MYSQL * mysql_db_handler::connect() {
-	MYSQL * connection = mysql_init(NULL);
+MYSQL* mysql_db_handler::connect() {
+	MYSQL* connection = mysql_init(NULL);
 
 	if (connection == NULL) {
 		throw std::runtime_error("problem while initializing mysql_db_handler: " + std::string(mysql_error(connection)));
@@ -434,7 +456,7 @@ MYSQL * mysql_db_handler::connect() {
 			this->user.c_str(), this->password.c_str(), this->database.c_str(),
 			this->port, this->socket.c_str(), this->flag) == NULL) {
 		mysql_close(connection);
-		throw std::runtime_error("connection problem while initializing mysql_db_handler: "	+ std::string(mysql_error(connection)));
+		throw std::runtime_error("connection problem while initializing mysql_db_handler: " + std::string(mysql_error(connection)));
 	}
 
 	return connection;
@@ -442,14 +464,14 @@ MYSQL * mysql_db_handler::connect() {
 
 void mysql_db_handler::disconnect() {
 	intptr_t connectionpointer;
-	MYSQL *connection;
+	MYSQL* connection;
 
 	// prevent new requests
 	poolcleanup = true;
 
 	// while there is an handler call disconnect
 	while (connectionpool.pop(connectionpointer)) {
-		connection = (MYSQL *) connectionpointer;
+		connection = (MYSQL*) connectionpointer;
 		mysql_close(connection);
 	}
 
@@ -458,17 +480,17 @@ void mysql_db_handler::disconnect() {
 	return;
 }
 
-MYSQL * mysql_db_handler::getconnection() {
+MYSQL* mysql_db_handler::getconnection() {
 	intptr_t connectionpointer;
-	MYSQL *connection = 0;
+	MYSQL* connection = 0;
 
 	// try to get an db connection
 	while (!connectionpool.pop(connectionpointer));
-	connection = (MYSQL *) connectionpointer;
+	connection = (MYSQL*) connectionpointer;
 
 #ifdef DEBUG
-			testfile << "GOT DB POINTER " << static_cast<void*>(connection) << std::endl;
-			testfile.flush();
+	logfile << "GOT DB POINTER " << static_cast<void*>(connection) << std::endl;
+	logfile.flush();
 #endif
 
 	if (connection == 0) {
@@ -478,26 +500,26 @@ MYSQL * mysql_db_handler::getconnection() {
 	return connection;
 }
 
-void mysql_db_handler::returnconnection(MYSQL * connection) {
+void mysql_db_handler::returnconnection(MYSQL* connection) {
 	intptr_t connectionpointer = (intptr_t) connection;
 	connectionpool.bounded_push(connectionpointer);
 
 #ifdef DEBUG
-			testfile << "RETURNED DB POINTER " << static_cast<void*>(connection) << std::endl;
-			testfile.flush();
+	logfile << "RETURNED DB POINTER " << static_cast<void*>(connection) << std::endl;
+	logfile.flush();
 #endif
 
 	return;
 }
 
 void mysql_db_handler::rawmultiquerys(std::string query) {
-	MYSQL *connection = getconnection();
+	MYSQL* connection = getconnection();
 
 	mysql_set_server_option(connection, MYSQL_OPTION_MULTI_STATEMENTS_ON);
 
 #ifdef DEBUG
-			testfile << "MULTI QUERY: " << query << std::endl;
-			testfile.flush();
+	logfile << "MULTI QUERY: " << query << std::endl;
+	logfile.flush();
 #endif
 
 	if (mysql_real_query(connection, query.c_str(), query.size())) {
@@ -518,11 +540,11 @@ void mysql_db_handler::rawmultiquerys(std::string query) {
 }
 
 void mysql_db_handler::rawquery(std::string query) {
-	MYSQL *connection = getconnection();
+	MYSQL* connection = getconnection();
 
 #ifdef DEBUG
-			testfile << "QUERY: " << query << std::endl;
-			testfile.flush();
+	logfile << "QUERY: " << query << std::endl;
+	logfile.flush();
 #endif
 
 	if (mysql_real_query(connection, query.c_str(), query.size())) {
@@ -537,12 +559,12 @@ void mysql_db_handler::rawquery(std::string query) {
 	return;
 }
 
-void mysql_db_handler::rawquery(std::string query, MYSQL_RES **result) {
-	MYSQL *connection = getconnection();
+void mysql_db_handler::rawquery(std::string query, MYSQL_RES** result) {
+	MYSQL* connection = getconnection();
 
 #ifdef DEBUG
-			testfile << "QUERY " << query << std::endl;
-			testfile.flush();
+	logfile << "QUERY " << query << std::endl;
+	logfile.flush();
 #endif
 
 	if (mysql_real_query(connection, query.c_str(), query.size())) {
@@ -568,18 +590,17 @@ void mysql_db_handler::rawquery(std::string query, MYSQL_RES **result) {
 }
 
 void mysql_db_handler::preparedStatementQuery(std::string query, MYSQL_BIND input_params[]) {
-	MYSQL *connection = getconnection();
-	int        status;
+	MYSQL* connection = getconnection();
+	int status;
 
 #ifdef DEBUG
-			testfile << "QUERY " << query << std::endl;
-			testfile.flush();
+	logfile << "QUERY " << query << std::endl;
+	logfile.flush();
 #endif
 
-	MYSQL_STMT *stmt;
+	MYSQL_STMT* stmt;
 	stmt = mysql_stmt_init(connection);
-	if (!stmt)
-	{
+	if (!stmt) {
 		throw std::runtime_error("Could not initialize statement\n");
 	}
 
@@ -599,7 +620,7 @@ void mysql_db_handler::preparedStatementQuery(std::string query, MYSQL_BIND inpu
 	return;
 }
 
-std::string mysql_db_handler::mysqlResultToArrayString(MYSQL_RES *result, char* typearray) {
+std::string mysql_db_handler::mysqlResultToArrayString(MYSQL_RES* result, char* typearray) {
 	MYSQL_ROW row;
 
 	unsigned int fieldcount;
@@ -612,12 +633,10 @@ std::string mysql_db_handler::mysqlResultToArrayString(MYSQL_RES *result, char* 
 
 	std::string arraystring = "[";
 
-	for(int rowpos = 0; rowpos < rowcount; rowpos++)
-	{
+	for (int rowpos = 0; rowpos < rowcount; rowpos++) {
 		row = mysql_fetch_row(result);
 
-		if(printcommaone)
-		{
+		if (printcommaone) {
 			arraystring += ",";
 			printcommaone = false;
 			printcommatwo = false;
@@ -625,40 +644,35 @@ std::string mysql_db_handler::mysqlResultToArrayString(MYSQL_RES *result, char* 
 
 		arraystring += "[";
 
-		for(int fieldpos = 0; fieldpos < fieldcount; fieldpos++)
-		{
-			if(printcommatwo)
-			{
+		for (int fieldpos = 0; fieldpos < fieldcount; fieldpos++) {
+			if (printcommatwo) {
 				arraystring += ",";
 				printcommatwo = false;
 			}
-			switch(typearray[fieldpos])
-			{
+			switch (typearray[fieldpos]) {
 				case 1: arraystring += "\"";
 					break;
 				case 2: arraystring += "[";
-					if(row[fieldpos] != NULL)
+					if (row[fieldpos] != NULL) {
 						arraystring += "\"";
+					}
 					break;
 				default: arraystring += "";
 			}
 
-			if(row[fieldpos] != NULL)
-			{
+			if (row[fieldpos] != NULL) {
 				arraystring += row[fieldpos];
-			}
-			else
-			{
+			} else {
 				arraystring += "";
 			}
 
-			switch(typearray[fieldpos])
-			{
+			switch (typearray[fieldpos]) {
 				case 1: arraystring += "\"";
 					break;
 				case 2:
-					if(row[fieldpos] != NULL)
+					if (row[fieldpos] != NULL) {
 						arraystring += "\"";
+					}
 					arraystring += "]";
 					break;
 			}
@@ -672,17 +686,16 @@ std::string mysql_db_handler::mysqlResultToArrayString(MYSQL_RES *result, char* 
 	return arraystring;
 }
 
-
-void mysql_db_handler::checkMigration(ext_arguments &extArgument, std::string database) {
-	MYSQL_RES *result;
+void mysql_db_handler::checkMigration(ext_arguments& extArgument, std::string database) {
+	MYSQL_RES* result;
 	MYSQL_ROW row;
 	unsigned long long int rowcount;
 
 	/* check initial creation */
 	std::string tablenames =
-	str(boost::format{"SELECT `TABLE_NAME` "
-			"FROM INFORMATION_SCHEMA.TABLES "
-			"WHERE TABLE_SCHEMA = '%s'"} % database);
+			str(boost::format{"SELECT `TABLE_NAME` "
+							  "FROM INFORMATION_SCHEMA.TABLES "
+							  "WHERE TABLE_SCHEMA = '%s'"} % database);
 
 	this->rawquery(tablenames, &result);
 
@@ -692,8 +705,8 @@ void mysql_db_handler::checkMigration(ext_arguments &extArgument, std::string da
 	if (rowcount < 15) {
 		this->rawmultiquerys(schema_FullTable);
 #ifdef DEBUG
-			testfile << "CREATED INITIAL TABLES" << std::endl;
-			testfile.flush();
+		logfile << "CREATED INITIAL TABLES" << std::endl;
+		logfile.flush();
 #endif
 	}
 
@@ -718,14 +731,14 @@ void mysql_db_handler::checkMigration(ext_arguments &extArgument, std::string da
 		this->rawmultiquerys(schema_migration_0001);
 
 #ifdef DEBUG
-			testfile << "DONE APPLYING MIGRATION 0001" << std::endl;
-			testfile.flush();
+		logfile << "DONE APPLYING MIGRATION 0001" << std::endl;
+		logfile.flush();
 #endif
 	}
 #ifdef DEBUG
 	else {
-		testfile << "MIGRATION 0001 ALREADY APPLIED" << std::endl;
-		testfile.flush();
+		logfile << "MIGRATION 0001 ALREADY APPLIED" << std::endl;
+		logfile.flush();
 	}
 #endif
 
@@ -733,33 +746,30 @@ void mysql_db_handler::checkMigration(ext_arguments &extArgument, std::string da
 	int current_schema_Version = 1;
 
 	/* catch the case of an freh database */
-	try
-	{
+	try {
 		this->rawquery("SELECT MIN(schema_version) FROM `world`", &result);
 		row = mysql_fetch_row(result);
 		current_schema_Version = std::stoi(row[0]);
 		mysql_free_result(result);
 	}
-	catch(const std::logic_error& e)
-	{
+	catch (const std::logic_error& e) {
 #ifdef DEBUG
-			testfile << "IGNORED STRING ERROR FOR EMPTY DATABASE, error was: " << e.what() << std::endl;
-			testfile.flush();
+		logfile << "IGNORED STRING ERROR FOR EMPTY DATABASE, error was: " << e.what() << std::endl;
+		logfile.flush();
 #endif
 	}
 
 	switch (current_schema_Version) {
-	    case 1:
-	      this->rawmultiquerys(schema_migration_0002);
+		case 1: this->rawmultiquerys(schema_migration_0002);
 #ifdef DEBUG
-			testfile << "APPLIED MIGRATION 0002" << std::endl;
-			testfile.flush();
+			logfile << "APPLIED MIGRATION 0002" << std::endl;
+			logfile.flush();
 #endif
-	      [[fallthrough]];
+			[[fallthrough]];
 
-	    default: // do nothing
-	    	break;
-	  }
+		default: // do nothing
+			break;
+	}
 
 
 	/* update schema version in world */
@@ -767,18 +777,18 @@ void mysql_db_handler::checkMigration(ext_arguments &extArgument, std::string da
 	this->rawquery(updateSchemaLibredex);
 }
 
-void mysql_db_handler::checkWorldUUID(ext_arguments &extArgument) {
-	MYSQL_RES *result;
+void mysql_db_handler::checkWorldUUID(ext_arguments& extArgument) {
+	MYSQL_RES* result;
 	MYSQL_ROW row;
 	bool addUUID = true;
 	unsigned long long int rowcount;
 
-	std::string queryworlduuid =
-	str(boost::format{"SELECT HEX(`world`.`uuid`) "
-			"FROM `world` "
-			"WHERE `world`.`uuid` = CAST(0x%s AS BINARY)"} % worlduuid);
+	std::string query =
+			str(boost::format{"SELECT HEX(`world`.`uuid`) "
+							  "FROM `world` "
+							  "WHERE `world`.`uuid` = CAST(0x%s AS BINARY)"} % worlduuid);
 
-	this->rawquery(queryworlduuid, &result);
+	this->rawquery(query, &result);
 
 	rowcount = mysql_num_rows(result);
 
@@ -788,80 +798,165 @@ void mysql_db_handler::checkWorldUUID(ext_arguments &extArgument) {
 
 	mysql_free_result(result);
 
+
+	std::string name = "empty";
+	std::string map = "empty";
+
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_NAME) || extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_MAP)) {
+		name = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_NAME);
+		map = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_MAP);
+	}
+
+	mysql_binds mysql_bind = mysql_binds(5);
+
+	mysql_bind.addData(name);
+	mysql_bind.addData(map);
+	mysql_bind.addData(schema_Version);
+	mysql_bind.addData(DLLVERSIONSTRING);
+	mysql_bind.addData(worlduuid);
+
 	if (addUUID) {
-		std::string name = "you need to";
-		std::string map = "edit this";
-
-		if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_NAME)) {
-			name = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_NAME);
-		}
-
-		if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_MAP)) {
-			map = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_MAP);
-		}
-
-		queryworlduuid =
-			str(boost::format{"INSERT INTO `world` (`uuid`, `name`, `map`, `schema_version`, `libredex_version`, `startuptime`) "
-								"VALUES (CAST(0x%s AS BINARY), \"%s\", \"%s\", \"%d\", \"%s\", NOW())"}
-								% worlduuid % name % map % schema_Version % DLLVERSIONSTRING);
-		this->rawquery(queryworlduuid);
+		query = "INSERT INTO `world` (`name`, `map`, `schema_version`, `libredex_version`, `uuid`, `startuptime`) "
+				"VALUES (?, ?, ?, ?, UNHEX(?), NOW())";
+	} else if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_NAME) || extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_MAP)) {
+		query = "UPDATE `world` "
+				"SET `name` = ?, "
+				"`map` = ?, "
+				"`schema_version` = ?, "
+				"`libredex_version` = ?, "
+				"`startuptime` = NOW() "
+				"WHERE `world`.`uuid` = UNHEX(?)";
 	} else {
-		std::string updateSchemaLibredex =
-				str(boost::format{"UPDATE `world` "
-					"SET `schema_version` = %d, "
-					"`libredex_version` = '%s', "
-					"`startuptime` = NOW() "
-					"WHERE `world`.`uuid` = CAST(0x%s AS BINARY)"} % schema_Version % DLLVERSIONSTRING % worlduuid);
-		this->rawquery(updateSchemaLibredex);
+		query = "UPDATE `world` "
+				"SET `schema_version` = ?, "
+				"`libredex_version` = ?, "
+				"`startuptime` = NOW() "
+				"WHERE `world`.`uuid` = UNHEX(?)";
+	}
+
+	if (addUUID || extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_NAME) || extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_MAP)) {
+		this->preparedStatementQuery(query, mysql_bind.mysql_bind);
+	} else {
+		this->preparedStatementQuery(query, mysql_bind.mysql_bind + 2);
 	}
 };
 
-std::string mysql_db_handler::terminateHandler(std::string &extFunction, ext_arguments &extArgument) {
-	terminateHandler();
+void mysql_db_handler::checkWorldVARIABLES(ext_arguments& extArgument) {
+	MYSQL_RES* result;
+	MYSQL_ROW row;
+	bool addVariables = true;
+	unsigned long long int rowcount;
+
+	std::string query = str(boost::format{"SELECT HEX(`world_has_persistent_variables`.`persistent_variables_uuid`) "
+										  "FROM `world_has_persistent_variables` "
+										  "WHERE `world_has_persistent_variables`.`world_uuid` = CAST(0x%s AS BINARY)"} % worlduuid);
+
+	this->rawquery(query, &result);
+
+	rowcount = mysql_num_rows(result);
+
+	if (rowcount > 0) {
+		addVariables = false;
+	}
+
+	mysql_free_result(result);
+
+	std::string variables = "[]";
+	std::string persistent_variables_uuid = orderedUUID();
+
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_VARIABLES)) {
+		variables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
+	}
+
+	mysql_binds mysql_bind = mysql_binds(4);
+
+	mysql_bind.addData(worlduuid);
+	mysql_bind.addData(persistent_variables_uuid);
+	mysql_bind.addData(variables);
+	mysql_bind.addData(worlduuid);
+
+	if (addVariables) {
+		query = "INSERT INTO `persistent_variables` (`uuid`, `persistentvariables`) VALUES (UNHEX(?), ?)";
+		this->preparedStatementQuery(query, mysql_bind.mysql_bind + 1);
+
+		query = "INSERT INTO `world_has_persistent_variables` (`world_uuid`, `persistent_variables_uuid`) VALUES (UNHEX(?), UNHEX(?));";
+		this->preparedStatementQuery(query, mysql_bind.mysql_bind);
+
+	} else if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_VARIABLES)) {
+		// update variables
+		std::string query = "UPDATE `persistent_variables` SET `persistentvariables` = ? WHERE uuid = ("
+							"SELECT `persistent_variables_uuid` FROM `world_has_persistent_variables` WHERE `world_has_persistent_variables`.`world_uuid` = UNHEX(?)"
+							");";
+
+		this->preparedStatementQuery(query, mysql_bind.mysql_bind + 2);
+	}
+}
+
+std::string mysql_db_handler::terminateHandler(std::string& extFunction, ext_arguments& extArgument) {
+	this->terminateHandler();
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
 }
 
 void mysql_db_handler::terminateHandler() {
+	//std::cout << "TERMINATE MYSQL" << std::endl;
+#ifdef DEBUG
+	logfile << "TERMINATE MYSQL" << std::endl;
+	logfile.flush();
+#endif
 	disconnect();
 	return;
 }
 
-std::string mysql_db_handler::intergetUUID(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::intergetUUID(std::string& extFunction, ext_arguments& extArgument) {
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + orderedUUID() + "\"]";
 }
 
-std::string mysql_db_handler::interecho(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::interecho(std::string& extFunction, ext_arguments& extArgument) {
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + extArgument.get<std::string>("echostring") + "\"]";
 }
 
-std::string mysql_db_handler::interdbVersion(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::interdbVersion(std::string& extFunction, ext_arguments& extArgument) {
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + querydbversion() + "\"]";
 }
 
-std::string mysql_db_handler::interdumpObjects(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::interdumpObjects(std::string& extFunction, ext_arguments& extArgument) {
 	std::string matrix;
 	bool placecommaone = false;
 
-	std::vector<object_mysql *> objectList = dumpObjects(extArgument);
+	std::vector<object_mysql*> objectList = dumpObjects(extArgument);
 	matrix = "[";
-	for (object_mysql * object : objectList) {
-			if (placecommaone) {
-					matrix += ",";
-			}
+	for (object_mysql* object : objectList) {
+		if (placecommaone) {
+			matrix += ",";
+		}
 
-			matrix += object->getAsArmaString();
+		matrix += object->getAsArmaString();
 
-			placecommaone = true;
+		placecommaone = true;
 	}
 	matrix += "]";
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + matrix + "]";
 }
 
+std::string mysql_db_handler::interdumpObjectsCallback(std::string& extFunction, ext_arguments& extArgument) {
+	std::string callbackfunction = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CALLBACK_FUNCTION);
+
+	std::vector<object_mysql*> objectList = dumpObjects(extArgument);
+
+	for (object_mysql* object : objectList) {
+		if (callbackPtr != nullptr) {
+			callbackPtr(PROTOCOL_CALLBACK_NAME_CALLIN, callbackfunction.c_str(), object->getAsArmaString().c_str());
+		}
+	}
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[0,\"DONE DUMPING OBJECTS\", " + std::to_string(objectList.size()) + "]]";
+}
+
 /* SQL Querys */
 
 std::string mysql_db_handler::querydbversion() {
-	MYSQL_RES *result;
+	MYSQL_RES* result;
 	MYSQL_ROW row;
 	std::string version;
 
@@ -876,21 +971,63 @@ std::string mysql_db_handler::querydbversion() {
 	return version;
 }
 
-std::string mysql_db_handler::setWorldState(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::setWorldVariables(std::string& extFunction, ext_arguments& extArgument) {
+	this->checkWorldVARIABLES(extArgument);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
+}
+
+std::string mysql_db_handler::getWorldVariables(std::string& extFunction, ext_arguments& extArgument) {
+	MYSQL_RES* result;
+	MYSQL_ROW row;
+	unsigned long long int rowcount;
+	std::string variables = "[]";
+
+	std::string worlduuid = this->worlduuid;
+
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID)) {
+		worlduuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID);
+	}
+
+	mysql_binds mysql_bind = mysql_binds(1);
+
+	mysql_bind.addData(worlduuid);
+
+	std::string query = str(boost::format{"SELECT `persistentvariables` FROM `persistent_variables` WHERE uuid = ("
+						"SELECT `persistent_variables_uuid` FROM `world_has_persistent_variables` WHERE `world_has_persistent_variables`.`world_uuid` = CAST(0x%s AS BINARY)"
+						");"} % worlduuid);
+
+	this->rawquery(query, &result);
+
+	rowcount = mysql_num_rows(result);
+
+	if (rowcount > 0) {
+		row = mysql_fetch_row(result);
+		if (row[0] != NULL) {
+			variables = row[0];
+		}
+	}
+
+	mysql_free_result(result);
+
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + variables + "]";
+}
+
+std::string mysql_db_handler::setWorldState(std::string& extFunction, ext_arguments& extArgument) {
 
 	int state = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_STATE_VALUE);
 
 	std::string query = str(boost::format{
-		"UPDATE `world` SET `state` = %d "
-		"WHERE `uuid` = CAST(0x%s AS BINARY)"} % state % worlduuid);
+			"UPDATE `world` SET `state` = %d "
+			"WHERE `uuid` = CAST(0x%s AS BINARY)"} % state % worlduuid);
 
 	this->rawquery(query);
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
 }
 
-std::string mysql_db_handler::getLinkedWorlds(std::string &extFunction, ext_arguments &extArgument) {
-	MYSQL_RES *result;
+std::string mysql_db_handler::getLinkedWorlds(std::string& extFunction, ext_arguments& extArgument) {
+	MYSQL_RES* result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
@@ -902,14 +1039,14 @@ std::string mysql_db_handler::getLinkedWorlds(std::string &extFunction, ext_argu
 
 	std::string querycharinfo =
 			str(
-					boost::format {
+					boost::format{
 							"SELECT HEX(`world`.`uuid`), `world`.`name`, `world`.`map` , `world`.`latitude`, "
-									"`world`.`longitude`, `world`.`state` , `world`.`ip`, "
-									"`world`.`port`, `world`.`password` , `world`.`mods` "
-									"FROM `world_is_linked_to_world` "
-									"INNER JOIN `world` "
-									" ON `world`.`uuid` = `world_is_linked_to_world`.`world_uuid2` "
-									"WHERE `world_is_linked_to_world`.`world_uuid1` = CAST(0x%s AS BINARY) " }
+							"`world`.`longitude`, `world`.`state` , `world`.`ip`, "
+							"`world`.`port`, `world`.`password` , `world`.`mods` "
+							"FROM `world_is_linked_to_world` "
+							"INNER JOIN `world` "
+							" ON `world`.`uuid` = `world_is_linked_to_world`.`world_uuid2` "
+							"WHERE `world_is_linked_to_world`.`world_uuid1` = CAST(0x%s AS BINARY) "}
 							% worlduuid);
 
 	char typearray[] = {
@@ -932,11 +1069,11 @@ std::string mysql_db_handler::getLinkedWorlds(std::string &extFunction, ext_argu
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + charinfo + "]";
 }
 
-std::string mysql_db_handler::loadPlayer(std::string &extFunction, ext_arguments &extArgument) {
-	std::string nickname = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_NICKNAME);
-	std::string steamid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_STEAMID);
+std::string mysql_db_handler::loadPlayer(std::string& extFunction, ext_arguments& extArgument) {
+	std::string nickname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_NICKNAME);
+	std::string steamid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_STEAMID);
 
-	MYSQL_RES *result;
+	MYSQL_RES* result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
@@ -950,17 +1087,17 @@ std::string mysql_db_handler::loadPlayer(std::string &extFunction, ext_arguments
 	std::string targetworld_uuid = "";
 
 	std::string queryplayerinfo =
-	str(boost::format{"SELECT HEX(`player`.`uuid`), "
-			"HEX(`player_on_world_has_persistent_variables`.`persistent_variables_uuid`), "
-			"HEX(`player`.`mainclan_uuid`), "
-		    "(CASE WHEN (NOW() < `player`.`banenddate`) THEN \"true\" ELSE \"false\" END) AS BANNED, "
-		    "`player`.`banreason`, "
-		    "HEX(`player`.`targetworld_uuid`) "
-			"FROM `player` "
-			"LEFT JOIN `player_on_world_has_persistent_variables` "
-			" ON `player`.`uuid` = `player_on_world_has_persistent_variables`.`player_uuid` "
-			" AND `player_on_world_has_persistent_variables`.`world_uuid` =  CAST(0x%s AS BINARY) "
-			"WHERE `player`.`steamid` = \"%s\" "} % worlduuid % steamid);
+			str(boost::format{"SELECT HEX(`player`.`uuid`), "
+							  "HEX(`player_on_world_has_persistent_variables`.`persistent_variables_uuid`), "
+							  "HEX(`player`.`mainclan_uuid`), "
+							  "(CASE WHEN (NOW() < `player`.`banenddate`) THEN \"true\" ELSE \"false\" END) AS BANNED, "
+							  "`player`.`banreason`, "
+							  "HEX(`player`.`targetworld_uuid`) "
+							  "FROM `player` "
+							  "LEFT JOIN `player_on_world_has_persistent_variables` "
+							  " ON `player`.`uuid` = `player_on_world_has_persistent_variables`.`player_uuid` "
+							  " AND `player_on_world_has_persistent_variables`.`world_uuid` =  CAST(0x%s AS BINARY) "
+							  "WHERE `player`.`steamid` = \"%s\" "} % worlduuid % steamid);
 
 	this->rawquery(queryplayerinfo, &result);
 
@@ -996,39 +1133,47 @@ std::string mysql_db_handler::loadPlayer(std::string &extFunction, ext_arguments
 	mysql_free_result(result);
 
 	if (banned == "false") {
+		mysql_binds mysql_bind = mysql_binds(4);
+		mysql_bind.addData(steamid);
+		mysql_bind.addData(nickname);
+		mysql_bind.addData(nickname);
+
 		if (playeruuid == "") {
 			playeruuid = orderedUUID();
-			queryplayerinfo =
-				str(boost::format{"INSERT INTO `player` (`uuid`, `steamid`, `battleyeid`, "
-									"`firstlogin`, `firstnick`, `lastlogin`, `lastnick`, "
-									"`bancount`, `banreason`, `banbegindate`, `banenddate`) "
-									"VALUES (CAST(0x%s AS BINARY), \"%s\", \"unused\", NOW(), "
-									"\"%s\", NOW(), \"%s\", '0', NULL, NULL, NULL)"}
-									% playeruuid % steamid % nickname % nickname);
+			mysql_bind.addData(playeruuid);
+
+			queryplayerinfo = "INSERT INTO `player` (`steamid`, `battleyeid`, "
+							  "`firstlogin`, `firstnick`, `lastlogin`, `lastnick`, "
+							  "`bancount`, `banreason`, `banbegindate`, `banenddate`, `uuid`) "
+							  "VALUES (?, \"unused\", NOW(), "
+							  "?, NOW(), ?, '0', NULL, NULL, NULL, UNHEX(?))";
+
+			this->preparedStatementQuery(queryplayerinfo, mysql_bind.mysql_bind);
 		} else {
-			queryplayerinfo =
-						str(boost::format{"UPDATE `player` SET `lastlogin` = NOW(), `lastnick` = \"%s\" \
-											WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % nickname % playeruuid);
+			mysql_bind.addData(playeruuid);
+
+			queryplayerinfo ="UPDATE `player` SET `lastlogin` = NOW(), `lastnick` = ? WHERE `player`.`uuid` = UNHEX(?)";
+			this->preparedStatementQuery(queryplayerinfo, mysql_bind.mysql_bind+2);
 		}
 
-		this->rawquery(queryplayerinfo);
+
 
 		if (whitelistonly) {
 			std::string querywhitelist =
-				str(boost::format{"SELECT * FROM `whitelist` "
-						"WHERE `whitelist`.`world_uuid` = CAST(0x%s AS BINARY) "
-						" AND `whitelist`.`player_uuid` = CAST(0x%s AS BINARY) "} % worlduuid % playeruuid);
+					str(boost::format{"SELECT * FROM `whitelist` "
+									  "WHERE `whitelist`.`world_uuid` = CAST(0x%s AS BINARY) "
+									  " AND `whitelist`.`player_uuid` = CAST(0x%s AS BINARY) "} % worlduuid % playeruuid);
 
-				this->rawquery(querywhitelist, &result);
+			this->rawquery(querywhitelist, &result);
 
-				rowcount = mysql_num_rows(result);
+			rowcount = mysql_num_rows(result);
 
-				if (rowcount < 1) {
-					banned = "true";
-					banreason = "not whitelisted";
-				}
+			if (rowcount < 1) {
+				banned = "true";
+				banreason = "not whitelisted";
+			}
 
-				mysql_free_result(result);
+			mysql_free_result(result);
 		}
 	}
 
@@ -1036,22 +1181,22 @@ std::string mysql_db_handler::loadPlayer(std::string &extFunction, ext_arguments
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + playerinfo + "]";
 }
 
-std::string mysql_db_handler::logoutPlayer(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::logoutPlayer(std::string& extFunction, ext_arguments& extArgument) {
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 
 	std::string queryplayerinfo =
-				str(boost::format{"UPDATE `player` SET `lastlogout` = NOW(), "
-						"`playtime` = `playtime` + TIME_TO_SEC(TIMEDIFF(NOW(), `lastlogin`)), "
-						"`targetworld_uuid` = NULL "
-						"WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % playeruuid);
+			str(boost::format{"UPDATE `player` SET `lastlogout` = NOW(), "
+							  "`playtime` = `playtime` + TIME_TO_SEC(TIMEDIFF(NOW(), `lastlogin`)), "
+							  "`targetworld_uuid` = NULL "
+							  "WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % playeruuid);
 
 	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_PLAYER_TARGETWORLD_UUID)) {
-			std::string targetworld_uuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_TARGETWORLD_UUID);
-			queryplayerinfo =
+		std::string targetworld_uuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_TARGETWORLD_UUID);
+		queryplayerinfo =
 				str(boost::format{"UPDATE `player` SET `lastlogout` = NOW(), "
-						"`playtime` = `playtime` + TIME_TO_SEC(TIMEDIFF(NOW(), `lastlogin`)), "
-						"`targetworld_uuid` = CAST(0x%s AS BINARY) "
-						"WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % targetworld_uuid % playeruuid);
+								  "`playtime` = `playtime` + TIME_TO_SEC(TIMEDIFF(NOW(), `lastlogin`)), "
+								  "`targetworld_uuid` = CAST(0x%s AS BINARY) "
+								  "WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % targetworld_uuid % playeruuid);
 	}
 
 	this->rawquery(queryplayerinfo);
@@ -1059,7 +1204,7 @@ std::string mysql_db_handler::logoutPlayer(std::string &extFunction, ext_argumen
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
 }
 
-std::string mysql_db_handler::incrementPlayerStats(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::incrementPlayerStats(std::string& extFunction, ext_arguments& extArgument) {
 	bool commit = false;
 
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
@@ -1086,10 +1231,10 @@ std::string mysql_db_handler::incrementPlayerStats(std::string &extFunction, ext
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
 }
-std::string mysql_db_handler::loadPlayerGroups(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::loadPlayerGroups(std::string& extFunction, ext_arguments& extArgument) {
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 
-	MYSQL_RES *result;
+	MYSQL_RES* result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
@@ -1101,22 +1246,24 @@ std::string mysql_db_handler::loadPlayerGroups(std::string &extFunction, ext_arg
 
 	std::string querygroupinfo =
 			str(
-					boost::format {
-		"SELECT HEX(`clan`.`uuid`) AS 'clan_uuid', HEX(`founder`.`uuid`) AS 'founder_uuid', `founder`.`steamid` AS 'founder_steamid', "
-		"`founder`.`lastnick` AS 'founder_nick', GROUP_CONCAT("
-		  "DISTINCT CONCAT('[\"', HEX(`player`.`uuid`), '\",\"' , `player`.`steamid`, '\",\"' , `player`.`lastnick`, '\",', "
-		  	  "`clan_member`.`rank`, ',\"', `clan_member`.`comment`, '\"]') "
-		  "SEPARATOR ','"
-		") AS 'clan_member_list' "
-		"FROM `clan` LEFT JOIN `player` AS `founder` ON `clan`.`founder_uuid` = `founder`.`uuid` "
-		"LEFT JOIN `clan_member` ON `clan`.`uuid` = `clan_member`.`clan_uuid` "
-		"LEFT JOIN `player` ON `clan_member`.`player_uuid` = `player`.`uuid` "
-		"WHERE `clan`.`uuid` IN ("
-								"SELECT `clan_member`.`clan_uuid` "
-								"FROM `clan_member` "
-								"WHERE `clan_member`.`player_uuid` = CAST(0x%s AS BINARY)"
-								")"
-		"GROUP BY `clan`.`uuid`" }
+					boost::format{
+							"SELECT HEX(`clan`.`uuid`) AS 'clan_uuid', HEX(`founder`.`uuid`) AS 'founder_uuid', `founder`.`steamid` AS 'founder_steamid', "
+							"`founder`.`lastnick` AS 'founder_nick', GROUP_CONCAT("
+							"DISTINCT CONCAT('[\"', HEX(`player`.`uuid`), '\",\"' , `player`.`steamid`, '\",\"' , `player`.`lastnick`, '\",', "
+							"`clan_member`.`rank`, ',\"', `clan_member`.`comment`, '\"]') "
+							"SEPARATOR ','"
+							") AS 'clan_member_list', `persistent_variables`.`persistentvariables` AS 'clan_variables' "
+							"FROM `clan` LEFT JOIN `player` AS `founder` ON `clan`.`founder_uuid` = `founder`.`uuid` "
+							"LEFT JOIN `clan_member` ON `clan`.`uuid` = `clan_member`.`clan_uuid` "
+							"LEFT JOIN `player` ON `clan_member`.`player_uuid` = `player`.`uuid` "
+							"LEFT JOIN `clan_has_persistent_variables` ON `clan`.`uuid` = `clan_has_persistent_variables`.`clan_uuid`"
+							"LEFT JOIN `persistent_variables` ON `persistent_variables`.`uuid` = `clan_has_persistent_variables`.`persistent_variables_uuid`"
+							"WHERE `clan`.`uuid` IN ("
+							"SELECT `clan_member`.`clan_uuid` "
+							"FROM `clan_member` "
+							"WHERE `clan_member`.`player_uuid` = CAST(0x%s AS BINARY)"
+							")"
+							"GROUP BY `clan`.`uuid`"}
 							% playeruuid);
 
 	char typearray[] = {
@@ -1124,7 +1271,8 @@ std::string mysql_db_handler::loadPlayerGroups(std::string &extFunction, ext_arg
 			1, // HEX(`founder`.`uuid`)
 			1, // `founder`.`steamid`
 			1, // `founder`.`lastnick`
-			3, // 'clan_member'
+			3, // 'clan_member_list'
+			1, // 'clan_variables'
 	};
 
 	this->rawquery(querygroupinfo, &result);
@@ -1134,8 +1282,8 @@ std::string mysql_db_handler::loadPlayerGroups(std::string &extFunction, ext_arg
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + groupinfo + "]";
 }
 
-std::string mysql_db_handler::whitelistPlayer(std::string &extFunction, ext_arguments &extArgument) {
-	MYSQL_RES *result;
+std::string mysql_db_handler::whitelistPlayer(std::string& extFunction, ext_arguments& extArgument) {
+	MYSQL_RES* result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
@@ -1143,9 +1291,9 @@ std::string mysql_db_handler::whitelistPlayer(std::string &extFunction, ext_argu
 	std::string extplayeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 	std::string playeruuid = "";
 
-	std::string queryplayerinfo = str(boost::format { "SELECT HEX(`player`.`uuid`), "
-			"FROM `player` "
-			"WHERE `player`.`uuid` = CAST(0x%s AS BINARY) " } % extplayeruuid);
+	std::string queryplayerinfo = str(boost::format{"SELECT HEX(`player`.`uuid`), "
+													"FROM `player` "
+													"WHERE `player`.`uuid` = CAST(0x%s AS BINARY) "} % extplayeruuid);
 
 	this->rawquery(queryplayerinfo, &result);
 
@@ -1161,8 +1309,8 @@ std::string mysql_db_handler::whitelistPlayer(std::string &extFunction, ext_argu
 	mysql_free_result(result);
 
 	if (playeruuid != "") {
-		std::string querywhitelist = str(boost::format { "INSER INTO `whitelist` (`world_uuid`, `player_uuid`)"
-				"VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY))" } % worlduuid % playeruuid);
+		std::string querywhitelist = str(boost::format{"INSER INTO `whitelist` (`world_uuid`, `player_uuid`)"
+													   "VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY))"} % worlduuid % playeruuid);
 
 		this->rawquery(querywhitelist);
 
@@ -1173,8 +1321,8 @@ std::string mysql_db_handler::whitelistPlayer(std::string &extFunction, ext_argu
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
 }
 
-std::string mysql_db_handler::unwhitelistPlayer(std::string &extFunction, ext_arguments &extArgument) {
-	MYSQL_RES *result;
+std::string mysql_db_handler::unwhitelistPlayer(std::string& extFunction, ext_arguments& extArgument) {
+	MYSQL_RES* result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
@@ -1182,9 +1330,9 @@ std::string mysql_db_handler::unwhitelistPlayer(std::string &extFunction, ext_ar
 	std::string extplayeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 	std::string playeruuid = "";
 
-	std::string queryplayerinfo = str(boost::format { "SELECT HEX(`player`.`uuid`), "
-			"FROM `player` "
-			"WHERE `player`.`uuid` = CAST(0x%s AS BINARY) " } % extplayeruuid);
+	std::string queryplayerinfo = str(boost::format{"SELECT HEX(`player`.`uuid`), "
+													"FROM `player` "
+													"WHERE `player`.`uuid` = CAST(0x%s AS BINARY) "} % extplayeruuid);
 
 	this->rawquery(queryplayerinfo, &result);
 
@@ -1202,8 +1350,8 @@ std::string mysql_db_handler::unwhitelistPlayer(std::string &extFunction, ext_ar
 	if (playeruuid != "") {
 		std::string querywhitelist =
 				str(boost::format{"DELETE FROM `whitelist` "
-						"WHERE `whitelist`.`world_uuid` = CAST(0x%s AS BINARY) "
-						" AND `whitelist`.`player_uuid` = CAST(0x%s AS BINARY) "} % worlduuid % playeruuid);
+								  "WHERE `whitelist`.`world_uuid` = CAST(0x%s AS BINARY) "
+								  " AND `whitelist`.`player_uuid` = CAST(0x%s AS BINARY) "} % worlduuid % playeruuid);
 
 		this->rawquery(querywhitelist);
 
@@ -1214,8 +1362,8 @@ std::string mysql_db_handler::unwhitelistPlayer(std::string &extFunction, ext_ar
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"DONE\"]";
 }
 
-std::string mysql_db_handler::loadAvChars(std::string &extFunction, ext_arguments &extArgument) {
-	MYSQL_RES *result;
+std::string mysql_db_handler::loadAvChars(std::string& extFunction, ext_arguments& extArgument) {
+	MYSQL_RES* result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
@@ -1229,18 +1377,18 @@ std::string mysql_db_handler::loadAvChars(std::string &extFunction, ext_argument
 
 	std::string querycharinfo =
 			str(
-					boost::format {
+					boost::format{
 							"SELECT HEX(`persistent_variables`.`uuid`), "
-									"`persistent_variables`.`persistentvariables`, `world`.`name`, `world`.`map` "
-									"FROM `world_is_linked_to_world` "
-									"INNER JOIN `player_on_world_has_persistent_variables` "
-									" ON `world_is_linked_to_world`.`world_uuid2` = `player_on_world_has_persistent_variables`.`world_uuid` "
-									"INNER JOIN `persistent_variables` "
-									" ON `persistent_variables`.`uuid` = `player_on_world_has_persistent_variables`.`persistent_variables_uuid` "
-									"INNER JOIN `world` "
-									" ON `world`.`uuid` = `world_is_linked_to_world`.`world_uuid2` "
-									"WHERE `world_is_linked_to_world`.`world_uuid1` = CAST(0x%s AS BINARY) "
-									" AND `player_on_world_has_persistent_variables`.`player_uuid` = CAST(0x%s AS BINARY)" }
+							"`persistent_variables`.`persistentvariables`, `world`.`name`, `world`.`map` "
+							"FROM `world_is_linked_to_world` "
+							"INNER JOIN `player_on_world_has_persistent_variables` "
+							" ON `world_is_linked_to_world`.`world_uuid2` = `player_on_world_has_persistent_variables`.`world_uuid` "
+							"INNER JOIN `persistent_variables` "
+							" ON `persistent_variables`.`uuid` = `player_on_world_has_persistent_variables`.`persistent_variables_uuid` "
+							"INNER JOIN `world` "
+							" ON `world`.`uuid` = `world_is_linked_to_world`.`world_uuid2` "
+							"WHERE `world_is_linked_to_world`.`world_uuid1` = CAST(0x%s AS BINARY) "
+							" AND `player_on_world_has_persistent_variables`.`player_uuid` = CAST(0x%s AS BINARY)"}
 							% worlduuid % playeruuid);
 
 	char typearray[] = {
@@ -1257,24 +1405,23 @@ std::string mysql_db_handler::loadAvChars(std::string &extFunction, ext_argument
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + charinfo + "]";
 }
 
-std::string mysql_db_handler::linkChars(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::linkChars(std::string& extFunction, ext_arguments& extArgument) {
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 	std::string variabuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_VARIABUUID);
 
 	std::string query = str(
-			boost::format { "INSERT INTO `player_on_world_has_persistent_variables` "
-					"(`player_uuid`, `world_uuid`, `persistent_variables_uuid`) "
-					"VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY), CAST(0x%s AS BINARY))"
-					} % playeruuid % worlduuid % variabuuid);
-
+			boost::format{"INSERT INTO `player_on_world_has_persistent_variables` "
+						  "(`player_uuid`, `world_uuid`, `persistent_variables_uuid`) "
+						  "VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY), CAST(0x%s AS BINARY))"
+			} % playeruuid % worlduuid % variabuuid);
 
 	this->rawquery(query);
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + playeruuid + "\"]";
 }
 
-std::string mysql_db_handler::loadChar(std::string &extFunction, ext_arguments &extArgument) {
-	MYSQL_RES *result;
+std::string mysql_db_handler::loadChar(std::string& extFunction, ext_arguments& extArgument) {
+	MYSQL_RES* result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
@@ -1284,18 +1431,18 @@ std::string mysql_db_handler::loadChar(std::string &extFunction, ext_arguments &
 	character_mysql* character = 0;
 
 	std::string querycharinfo = str(boost::format{"SELECT `animationstate`, `direction`, `positiontype`, `positionx`, `positiony`, `positionz`, HEX(`character`.`uuid`) as `character_uuid`, "
-				"`classname`, `hitpoints`, `variables`, `textures`, `gear`, `currentweapon`, HEX(`character`.`charactershareables_uuid`), "
-				"`persistentvariables`, HEX(`charactershareables`.`persistent_variables_uuid`), HEX(`object_uuid`) "
-				"FROM `player_on_world_has_character` "
-				"INNER JOIN `character`  "
-				" ON `player_on_world_has_character`.`character_uuid` = `character`.`uuid` "
-				"INNER JOIN `charactershareables` "
-				" ON `character`.`charactershareables_uuid` = `charactershareables`.`uuid` "
-				"INNER JOIN `persistent_variables` "
-				" ON `charactershareables`.`persistent_variables_uuid` = `persistent_variables`.`uuid` "
-				"WHERE `player_on_world_has_character`.`player_uuid` = CAST(0x%s AS BINARY) "
-				" AND `player_on_world_has_character`.`world_uuid` =  CAST(0x%s AS BINARY) "
-				" AND `player_on_world_has_character`.`killinfo_uuid` IS NULL" } % playeruuid % worlduuid);
+												  "`classname`, `hitpoints`, `variables`, `textures`, `gear`, `currentweapon`, HEX(`character`.`charactershareables_uuid`), "
+												  "`persistentvariables`, HEX(`charactershareables`.`persistent_variables_uuid`), HEX(`object_uuid`) "
+												  "FROM `player_on_world_has_character` "
+												  "INNER JOIN `character`  "
+												  " ON `player_on_world_has_character`.`character_uuid` = `character`.`uuid` "
+												  "INNER JOIN `charactershareables` "
+												  " ON `character`.`charactershareables_uuid` = `charactershareables`.`uuid` "
+												  "INNER JOIN `persistent_variables` "
+												  " ON `charactershareables`.`persistent_variables_uuid` = `persistent_variables`.`uuid` "
+												  "WHERE `player_on_world_has_character`.`player_uuid` = CAST(0x%s AS BINARY) "
+												  " AND `player_on_world_has_character`.`world_uuid` =  CAST(0x%s AS BINARY) "
+												  " AND `player_on_world_has_character`.`killinfo_uuid` IS NULL"} % playeruuid % worlduuid);
 
 	this->rawquery(querycharinfo, &result);
 
@@ -1328,15 +1475,15 @@ std::string mysql_db_handler::loadChar(std::string &extFunction, ext_arguments &
 
 	mysql_free_result(result);
 
-	if(character != 0) {
+	if (character != 0) {
 		characterdata = character->getAsArmaString();
 	}
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + characterdata + "]";
 }
 
-std::string mysql_db_handler::createChar(std::string &extFunction, ext_arguments &extArgument) {
-	MYSQL_RES *result;
+std::string mysql_db_handler::createChar(std::string& extFunction, ext_arguments& extArgument) {
+	MYSQL_RES* result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
@@ -1349,11 +1496,11 @@ std::string mysql_db_handler::createChar(std::string &extFunction, ext_arguments
 	std::string shareable_variables_uuid = "";
 
 	/* for testing purpose, check if there is an existing character, if yes return its uuid */
-	std::string query = str(boost::format { "SELECT HEX(`character_uuid`) "
-			"FROM `player_on_world_has_character` "
-			"WHERE `player_on_world_has_character`.`player_uuid` = CAST(0x%s AS BINARY) "
-			"AND `player_on_world_has_character`.`world_uuid` =  CAST(0x%s AS BINARY) "
-			"AND `player_on_world_has_character`.`killinfo_uuid` IS NULL" } % playeruuid % worlduuid);
+	std::string query = str(boost::format{"SELECT HEX(`character_uuid`) "
+										  "FROM `player_on_world_has_character` "
+										  "WHERE `player_on_world_has_character`.`player_uuid` = CAST(0x%s AS BINARY) "
+										  "AND `player_on_world_has_character`.`world_uuid` =  CAST(0x%s AS BINARY) "
+										  "AND `player_on_world_has_character`.`killinfo_uuid` IS NULL"} % playeruuid % worlduuid);
 
 	this->rawquery(query, &result);
 
@@ -1377,10 +1524,10 @@ std::string mysql_db_handler::createChar(std::string &extFunction, ext_arguments
 		charactercache.insert(std::make_pair(charuuid, character));
 
 		/* get the uuid for the Death Persistent Variables */
-		query = str(boost::format { "SELECT HEX(`persistent_variables_uuid`) "
-				"FROM `player_on_world_has_persistent_variables` "
-				"WHERE `player_uuid` = CAST(0x%s AS BINARY) "
-				"AND `world_uuid` = CAST(0x%s AS BINARY)" } % playeruuid % worlduuid);
+		query = str(boost::format{"SELECT HEX(`persistent_variables_uuid`) "
+								  "FROM `player_on_world_has_persistent_variables` "
+								  "WHERE `player_uuid` = CAST(0x%s AS BINARY) "
+								  "AND `world_uuid` = CAST(0x%s AS BINARY)"} % playeruuid % worlduuid);
 
 		this->rawquery(query, &result);
 
@@ -1403,21 +1550,21 @@ std::string mysql_db_handler::createChar(std::string &extFunction, ext_arguments
 
 			query = "INSERT INTO `persistent_variables` (`persistentvariables`, `uuid`) VALUES (?, UNHEX(?))";
 
-			this->preparedStatementQuery(query, character->mysql_bind+14);
+			this->preparedStatementQuery(query, character->mysql_bind + 14);
 
-			query = str(boost::format { "INSERT INTO `player_on_world_has_persistent_variables` "
-					"(`player_uuid`, `world_uuid`, `persistent_variables_uuid`) "
-					"VALUES (CAST(0x%s AS BINARY), "
-					"CAST(0x%s AS BINARY), "
-					"CAST(0x%s AS BINARY));" } % playeruuid % worlduuid % persistent_variables_uuid);
+			query = str(boost::format{"INSERT INTO `player_on_world_has_persistent_variables` "
+									  "(`player_uuid`, `world_uuid`, `persistent_variables_uuid`) "
+									  "VALUES (CAST(0x%s AS BINARY), "
+									  "CAST(0x%s AS BINARY), "
+									  "CAST(0x%s AS BINARY));"} % playeruuid % worlduuid % persistent_variables_uuid);
 
 			this->rawquery(query);
 		} else {
 			character->setData(PROTOCOL_DBCALL_ARGUMENT_PERSISTENTVARIABUUID, persistent_variables_uuid);
-			query = str(boost::format { "SELECT `persistentvariables` "
-							"FROM `persistent_variables` "
-							"WHERE `persistent_variables`.`uuid` = CAST(0x%s AS BINARY)"
-							} % persistent_variables_uuid);
+			query = str(boost::format{"SELECT `persistentvariables` "
+									  "FROM `persistent_variables` "
+									  "WHERE `persistent_variables`.`uuid` = CAST(0x%s AS BINARY)"
+			} % persistent_variables_uuid);
 
 			this->rawquery(query, &result);
 
@@ -1434,19 +1581,19 @@ std::string mysql_db_handler::createChar(std::string &extFunction, ext_arguments
 		}
 
 		/* get alive linked character shareables */
-		query = str(boost::format { "SELECT HEX(`charactershareables`.`uuid`) "
-				"FROM `player_on_world_has_character` "
-				"INNER JOIN `character` "
-				"ON `player_on_world_has_character`.`character_uuid` = `character`.`uuid` "
-				"INNER JOIN `charactershareables` "
-				"ON `character`.`charactershareables_uuid` = `charactershareables`.`uuid` "
-				"WHERE `player_on_world_has_character`.`player_uuid` = CAST(0x%s AS BINARY) "
-				"AND `player_on_world_has_character`.`killinfo_uuid` IS NULL "
-				"AND `player_on_world_has_character`.`world_uuid` IN  ( "
-				"SELECT `world_uuid` "
-				"FROM `player_on_world_has_persistent_variables` "
-				"WHERE `persistent_variables_uuid` = CAST(0x%s AS BINARY) "
-				") LIMIT 1" } % playeruuid % persistent_variables_uuid);
+		query = str(boost::format{"SELECT HEX(`charactershareables`.`uuid`) "
+								  "FROM `player_on_world_has_character` "
+								  "INNER JOIN `character` "
+								  "ON `player_on_world_has_character`.`character_uuid` = `character`.`uuid` "
+								  "INNER JOIN `charactershareables` "
+								  "ON `character`.`charactershareables_uuid` = `charactershareables`.`uuid` "
+								  "WHERE `player_on_world_has_character`.`player_uuid` = CAST(0x%s AS BINARY) "
+								  "AND `player_on_world_has_character`.`killinfo_uuid` IS NULL "
+								  "AND `player_on_world_has_character`.`world_uuid` IN  ( "
+								  "SELECT `world_uuid` "
+								  "FROM `player_on_world_has_persistent_variables` "
+								  "WHERE `persistent_variables_uuid` = CAST(0x%s AS BINARY) "
+								  ") LIMIT 1"} % playeruuid % persistent_variables_uuid);
 
 		this->rawquery(query, &result);
 
@@ -1468,20 +1615,20 @@ std::string mysql_db_handler::createChar(std::string &extFunction, ext_arguments
 			character->setData(PROTOCOL_DBCALL_ARGUMENT_CHARSHAREUUID, shareable_variables_uuid);
 
 			query = str(
-					boost::format { "INSERT INTO `charactershareables` (`classname`, `hitpoints`, "
-							"`variables`, `textures`, `gear`, "
-							"`currentweapon`, `uuid`, `persistent_variables_uuid`) "
-							"VALUES (?, ?, ?, ?, ?, ?, UNHEX(?), CAST(0x%s AS BINARY))" } % persistent_variables_uuid);
+					boost::format{"INSERT INTO `charactershareables` (`classname`, `hitpoints`, "
+								  "`variables`, `textures`, `gear`, "
+								  "`currentweapon`, `uuid`, `persistent_variables_uuid`) "
+								  "VALUES (?, ?, ?, ?, ?, ?, UNHEX(?), CAST(0x%s AS BINARY))"} % persistent_variables_uuid);
 
-			this->preparedStatementQuery(query, character->mysql_bind+7);
+			this->preparedStatementQuery(query, character->mysql_bind + 7);
 		} else {
 			character->setData(PROTOCOL_DBCALL_ARGUMENT_CHARSHAREUUID, shareable_variables_uuid);
 
-			query = str(boost::format { "SELECT `classname`, `hitpoints`, "
-							"`variables`, `textures`, `gear`, `currentweapon`"
-							"FROM `charactershareables` "
-							"WHERE `charactershareables`.`uuid` = CAST(0x%s AS BINARY)"
-							} % shareable_variables_uuid);
+			query = str(boost::format{"SELECT `classname`, `hitpoints`, "
+									  "`variables`, `textures`, `gear`, `currentweapon`"
+									  "FROM `charactershareables` "
+									  "WHERE `charactershareables`.`uuid` = CAST(0x%s AS BINARY)"
+			} % shareable_variables_uuid);
 
 			this->rawquery(query, &result);
 
@@ -1513,20 +1660,20 @@ std::string mysql_db_handler::createChar(std::string &extFunction, ext_arguments
 		}
 
 		query = str(
-				boost::format { "INSERT INTO `character` (`animationstate`, `direction`, "
-						"`positiontype`, `positionx`, `positiony`, "
-						"`positionz`, `uuid`, `charactershareables_uuid`) "
-						"VALUES (?, ?, ?, ?, ?, ?, "
-						"UNHEX(?), CAST(0x%s AS BINARY))" } % shareable_variables_uuid);
+				boost::format{"INSERT INTO `character` (`animationstate`, `direction`, "
+							  "`positiontype`, `positionx`, `positiony`, "
+							  "`positionz`, `uuid`, `charactershareables_uuid`) "
+							  "VALUES (?, ?, ?, ?, ?, ?, "
+							  "UNHEX(?), CAST(0x%s AS BINARY))"} % shareable_variables_uuid);
 
 		this->preparedStatementQuery(query, character->mysql_bind);
 
-		query = str(boost::format { "INSERT INTO `player_on_world_has_character` (`player_uuid`, `world_uuid`, "
-				"`character_uuid`, `killinfo_uuid`) "
-				"VALUES (CAST(0x%s AS BINARY), "
-				"CAST(0x%s AS BINARY), "
-				"CAST(0x%s AS BINARY), "
-				"NULL)" } % playeruuid % worlduuid % charuuid);
+		query = str(boost::format{"INSERT INTO `player_on_world_has_character` (`player_uuid`, `world_uuid`, "
+								  "`character_uuid`, `killinfo_uuid`) "
+								  "VALUES (CAST(0x%s AS BINARY), "
+								  "CAST(0x%s AS BINARY), "
+								  "CAST(0x%s AS BINARY), "
+								  "NULL)"} % playeruuid % worlduuid % charuuid);
 
 		this->rawquery(query);
 	}
@@ -1534,13 +1681,13 @@ std::string mysql_db_handler::createChar(std::string &extFunction, ext_arguments
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + charuuid + "\"]";
 }
 
-std::string mysql_db_handler::updateChar(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::updateChar(std::string& extFunction, ext_arguments& extArgument) {
 	std::string charuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
 	character_mysql* character = 0;
 
 	auto it = charactercache.find(charuuid);
 	if (it != charactercache.end()) {
-		character = static_cast<character_mysql*>((void*)it->second);
+		character = static_cast<character_mysql*>((void*) it->second);
 	} else {
 		throw std::runtime_error("could not find character to update: " + charuuid);
 	}
@@ -1548,44 +1695,44 @@ std::string mysql_db_handler::updateChar(std::string &extFunction, ext_arguments
 	character->setData(extArgument);
 
 	std::string query = "UPDATE `character` "
-					"SET `animationstate` = ?, "
-					"`direction` = ?, "
-					"`positiontype` = ?, "
-					"`positionx` = ?, "
-					"`positiony` = ?, "
-					"`positionz` = ? "
-					" WHERE `character`.`uuid` = UNHEX(?)";
+						"SET `animationstate` = ?, "
+						"`direction` = ?, "
+						"`positiontype` = ?, "
+						"`positionx` = ?, "
+						"`positiony` = ?, "
+						"`positionz` = ? "
+						" WHERE `character`.`uuid` = UNHEX(?)";
 
 	this->preparedStatementQuery(query, character->mysql_bind);
 
 	query = "UPDATE `charactershareables` "
-					"SET `classname` = ?, "
-					"`hitpoints` = ?, "
-					"`variables` = ?, "
-					"`textures` = ?, "
-					"`gear` = ?, "
-					"`currentweapon` = ? "
-					" WHERE `charactershareables`.`uuid` = UNHEX(?)";
+			"SET `classname` = ?, "
+			"`hitpoints` = ?, "
+			"`variables` = ?, "
+			"`textures` = ?, "
+			"`gear` = ?, "
+			"`currentweapon` = ? "
+			" WHERE `charactershareables`.`uuid` = UNHEX(?)";
 
-	this->preparedStatementQuery(query, character->mysql_bind+7);
+	this->preparedStatementQuery(query, character->mysql_bind + 7);
 
 	query = "UPDATE `persistent_variables` "
 			"SET `persistentvariables` = ? "
 			"WHERE `persistent_variables`.`uuid` = UNHEX(?)";
 
-	this->preparedStatementQuery(query, character->mysql_bind+14);
+	this->preparedStatementQuery(query, character->mysql_bind + 14);
 
 	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_PARENTUUID)) {
 		std::string parentuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PARENTUUID);
-		char * charactershareablesuuid = (char *) character->mysql_bind[13].buffer;
+		char* charactershareablesuuid = (char*) character->mysql_bind[13].buffer;
 
 		std::string query;
 		if (parentuuid != "") {
-			query = str(boost::format { "UPDATE `charactershareables` SET `object_uuid` = CAST(0x%s AS BINARY) "
-										"WHERE `charactershareables`.`uuid` = CAST(0x%s AS BINARY);" } % parentuuid % charactershareablesuuid);
+			query = str(boost::format{"UPDATE `charactershareables` SET `object_uuid` = CAST(0x%s AS BINARY) "
+									  "WHERE `charactershareables`.`uuid` = CAST(0x%s AS BINARY);"} % parentuuid % charactershareablesuuid);
 		} else {
-			query = str(boost::format { "UPDATE `charactershareables` SET `object_uuid` = NULL "
-										"WHERE `charactershareables`.`uuid` = CAST(0x%s AS BINARY);" } % charactershareablesuuid);
+			query = str(boost::format{"UPDATE `charactershareables` SET `object_uuid` = NULL "
+									  "WHERE `charactershareables`.`uuid` = CAST(0x%s AS BINARY);"} % charactershareablesuuid);
 		}
 		this->rawquery(query);
 	}
@@ -1593,83 +1740,83 @@ std::string mysql_db_handler::updateChar(std::string &extFunction, ext_arguments
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + charuuid + "\"]";
 }
 
-std::string mysql_db_handler::killChar(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::killChar(std::string& extFunction, ext_arguments& extArgument) {
+	mysql_binds mysql_bind = mysql_binds(7);
 	std::string killuuid = orderedUUID();
 	std::string charuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CHARUUID);
 	std::string attackeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
-	std::string type = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_TYPE);
-	std::string weapon = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
+	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TYPE);
+	std::string weapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
 	float distance = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DISTANCE);
 
 	if (attackeruuid == "") {
-		attackeruuid = "NULL";
+		mysql_bind.addNull();
 	} else {
-		attackeruuid = "CAST(0x" + attackeruuid + " AS BINARY)";
+		mysql_bind.addData(attackeruuid);
 	}
 
 	if (type == "") {
-		type = "NULL";
+		mysql_bind.addNull();
 	} else {
-		type = "'" + type + "'";
+		mysql_bind.addData(type);
 	}
 
 	if (weapon == "") {
-		weapon = "NULL";
+		mysql_bind.addNull();
 	} else {
-		weapon = "'" + weapon + "'";
+		mysql_bind.addData(weapon);
 	}
 
-	std::string query = str(
-			boost::format {"INSERT INTO `killinfo` "
-							"(`uuid`, `date`, `attacker_uuid`, `type`, `weapon`, `distance`) "
-							"VALUES (CAST(0x%s AS BINARY), CURRENT_TIMESTAMP, %s, %s, %s, %s);" }
-							% killuuid % attackeruuid % type % weapon % distance);
+	mysql_bind.addData(distance);
 
+	mysql_bind.addData(killuuid);
+	mysql_bind.addData(charuuid);
 
-	this->rawquery(query);
+	std::string query = "INSERT INTO `killinfo` "
+						"(`date`, `attacker_uuid`, `type`, `weapon`, `distance`, `uuid`) "
+						"VALUES (CURRENT_TIMESTAMP, UNHEX(?), ?, ?, ?, UNHEX(?));";
+	this->preparedStatementQuery(query, mysql_bind.mysql_bind);
 
-	query = str(
-				boost::format {"UPDATE `player_on_world_has_character` "
-								"SET `killinfo_uuid` = CAST(0x%s AS BINARY) "
-								"WHERE `player_on_world_has_character`.`character_uuid` IN "
-								"(SELECT `character`.`uuid` FROM `character` WHERE `charactershareables_uuid` = "
-								"(SELECT `character`.`charactershareables_uuid` FROM `character` WHERE `uuid` = CAST(0x%s AS BINARY)));"}
-								% killuuid % charuuid);
+	query = "UPDATE `player_on_world_has_character` "
+			"SET `killinfo_uuid` = UNHEX(?) "
+			"WHERE `player_on_world_has_character`.`character_uuid` IN "
+			"(SELECT `character`.`uuid` FROM `character` WHERE `charactershareables_uuid` = "
+			"(SELECT `character`.`charactershareables_uuid` FROM `character` WHERE `uuid` = UNHEX(?)));";
 
-	this->rawquery(query);
+	this->preparedStatementQuery(query, mysql_bind.mysql_bind+4);
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + killuuid + "\"]";
 }
 
-std::string mysql_db_handler::loadObject(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::loadObject(std::string& extFunction, ext_arguments& extArgument) {
 	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 	object_mysql* object = 0;
 
-	MYSQL_RES *result;
+	MYSQL_RES* result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
 	std::string objinfo = "[]";
 
 	std::string query =
-	str(boost::format{"SELECT `object`.`classname`, `object`.`priority`, `object`.`type`, `object`.`accesscode`, "
-						"`object`.`locked`, HEX(`object`.`player_uuid`), `object`.`hitpoints`, `object`.`damage`, "
-						"`object`.`fuel`, `object`.`fuelcargo`, `object`.`repaircargo`, `object`.`items`, "
-						"`object`.`magazinesturret`, "
-						"`object`.`variables`, `object`.`animationstate`, `object`.`textures`, `object`.`direction`, "
-						"`object`.`positiontype`, `object`.`positionx`, `object`.`positiony`, `object`.`positionz`, "
-						"`object`.`positionadvanced`, `object`.`reservedone`, `object`.`reservedtwo`, "
-						"HEX(`object`.`uuid`), "
-						"HEX(`world_has_objects`.`parentobject_uuid`), "
-						"HEX(`player`.`uuid`) "
-						"FROM `world_has_objects` "
-						"INNER JOIN `object` "
-						" ON `world_has_objects`.`object_uuid` = `object`.`uuid` "
-						"LEFT JOIN `player` "
-						" ON `object`.`player_uuid` = `player`.`uuid` "
-						"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY) "
-						"AND `world_has_objects`.`killinfo_uuid` IS NULL "
-						"ORDER BY `object`.priority ASC, `world_has_objects`.`parentobject_uuid` ASC"} % objectuuid);
+			str(boost::format{"SELECT `object`.`classname`, `object`.`priority`, `object`.`type`, `object`.`accesscode`, "
+							  "`object`.`locked`, HEX(`object`.`player_uuid`), `object`.`hitpoints`, `object`.`damage`, "
+							  "`object`.`fuel`, `object`.`fuelcargo`, `object`.`repaircargo`, `object`.`items`, "
+							  "`object`.`magazinesturret`, "
+							  "`object`.`variables`, `object`.`animationstate`, `object`.`textures`, `object`.`direction`, "
+							  "`object`.`positiontype`, `object`.`positionx`, `object`.`positiony`, `object`.`positionz`, "
+							  "`object`.`positionadvanced`, `object`.`reservedone`, `object`.`reservedtwo`, "
+							  "HEX(`object`.`uuid`), "
+							  "HEX(`world_has_objects`.`parentobject_uuid`), "
+							  "HEX(`player`.`uuid`) "
+							  "FROM `world_has_objects` "
+							  "INNER JOIN `object` "
+							  " ON `world_has_objects`.`object_uuid` = `object`.`uuid` "
+							  "LEFT JOIN `player` "
+							  " ON `object`.`player_uuid` = `player`.`uuid` "
+							  "WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY) "
+							  "AND `world_has_objects`.`killinfo_uuid` IS NULL "
+							  "ORDER BY `object`.priority ASC, `world_has_objects`.`parentobject_uuid` ASC"} % objectuuid);
 
 	this->rawquery(query, &result);
 
@@ -1681,7 +1828,7 @@ std::string mysql_db_handler::loadObject(std::string &extFunction, ext_arguments
 		if (row[24] != NULL) {
 			auto it = objectcache.find(objectuuid);
 			if (it != objectcache.end()) {
-				object = static_cast<object_mysql*>((void*)it->second);
+				object = static_cast<object_mysql*>((void*) it->second);
 			} else {
 				object = new object_mysql;
 				objectcache.insert(std::make_pair(objectuuid, object));
@@ -1699,14 +1846,14 @@ std::string mysql_db_handler::loadObject(std::string &extFunction, ext_arguments
 
 	mysql_free_result(result);
 
-	if(object != 0) {
+	if (object != 0) {
 		objinfo = object->getAsArmaString();
 	}
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\"," + objinfo + "]";
 }
 
-std::string mysql_db_handler::createObject(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::createObject(std::string& extFunction, ext_arguments& extArgument) {
 	std::string objectuuid;
 
 	object_mysql* object = new object_mysql;
@@ -1714,7 +1861,8 @@ std::string mysql_db_handler::createObject(std::string &extFunction, ext_argumen
 
 	try {
 		objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
-	} catch (std::runtime_error const& e) {
+	}
+	catch (std::runtime_error const& e) {
 		objectuuid = orderedUUID();
 		object->setData(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID, objectuuid);
 	}
@@ -1722,34 +1870,34 @@ std::string mysql_db_handler::createObject(std::string &extFunction, ext_argumen
 	objectcache.insert(std::make_pair(objectuuid, object));
 
 	std::string query = "INSERT INTO `object` (`classname`, `priority`, `timelastused`, "
-							"`timecreated`, `type`, `accesscode`, `locked`, `player_uuid`, `hitpoints`, "
-							"`damage`, `fuel`, `fuelcargo`, `repaircargo`, `items`, `magazinesturret`, "
-							"`variables`, `animationstate`, `textures`, `direction`, `positiontype`, "
-							"`positionx`, `positiony`, `positionz`, "
-							"`positionadvanced`, `reservedone`, `reservedtwo`, `uuid`) "
-							"VALUES (?, ?, now(), "
-							"now(), ?, ?, ?, UNHEX(?), ?, "
-							"?, ?, ?, ?, ?, ?, ?, "
-							"?, ?, ?, ?, ?, ?, ?, "
-							"?, ?, ?, UNHEX(?))";
+						"`timecreated`, `type`, `accesscode`, `locked`, `player_uuid`, `hitpoints`, "
+						"`damage`, `fuel`, `fuelcargo`, `repaircargo`, `items`, `magazinesturret`, "
+						"`variables`, `animationstate`, `textures`, `direction`, `positiontype`, "
+						"`positionx`, `positiony`, `positionz`, "
+						"`positionadvanced`, `reservedone`, `reservedtwo`, `uuid`) "
+						"VALUES (?, ?, now(), "
+						"now(), ?, ?, ?, UNHEX(?), ?, "
+						"?, ?, ?, ?, ?, ?, ?, "
+						"?, ?, ?, ?, ?, ?, ?, "
+						"?, ?, ?, UNHEX(?))";
 
 	this->preparedStatementQuery(query, object->mysql_bind);
 
-	query = str(boost::format { "INSERT INTO `world_has_objects` (`world_uuid`, `object_uuid`) "
-			"VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY))" } % worlduuid % objectuuid);
+	query = str(boost::format{"INSERT INTO `world_has_objects` (`world_uuid`, `object_uuid`) "
+							  "VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY))"} % worlduuid % objectuuid);
 
 	this->rawquery(query);
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + objectuuid + "\"]";
 }
 
-std::string mysql_db_handler::updateObject(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::updateObject(std::string& extFunction, ext_arguments& extArgument) {
 	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 	object_mysql* object = 0;
 
 	auto it = objectcache.find(objectuuid);
 	if (it != objectcache.end()) {
-		object = static_cast<object_mysql*>((void*)it->second);
+		object = static_cast<object_mysql*>((void*) it->second);
 	} else {
 		throw std::runtime_error("could not find object to update: " + objectuuid);
 	}
@@ -1784,16 +1932,16 @@ std::string mysql_db_handler::updateObject(std::string &extFunction, ext_argumen
 						"    `reservedtwo` = ? "
 						"WHERE `object`.`uuid` = UNHEX(?);";
 	this->preparedStatementQuery(query, object->mysql_bind);
-	
+
 	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_PARENTUUID)) {
 		std::string parentuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PARENTUUID);
 		std::string query;
 		if (parentuuid != "") {
-			query = str(boost::format { "UPDATE `world_has_objects` SET `parentobject_uuid` = CAST(0x%s AS BINARY) "
-										"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);" } % parentuuid % objectuuid);
+			query = str(boost::format{"UPDATE `world_has_objects` SET `parentobject_uuid` = CAST(0x%s AS BINARY) "
+									  "WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);"} % parentuuid % objectuuid);
 		} else {
-			query = str(boost::format { "UPDATE `world_has_objects` SET `parentobject_uuid` = NULL "
-										"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);" } % objectuuid);
+			query = str(boost::format{"UPDATE `world_has_objects` SET `parentobject_uuid` = NULL "
+									  "WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);"} % objectuuid);
 		}
 		this->rawquery(query);
 	}
@@ -1801,76 +1949,75 @@ std::string mysql_db_handler::updateObject(std::string &extFunction, ext_argumen
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + objectuuid + "\"]";
 }
 
-std::string mysql_db_handler::killObject(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::killObject(std::string& extFunction, ext_arguments& extArgument) {
+	mysql_binds mysql_bind = mysql_binds(7);
+
 	std::string killuuid = orderedUUID();
 	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 	std::string attackeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_ATTACKER);
-	std::string type = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_TYPE);
-	std::string weapon = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
+	std::string type = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_TYPE);
+	std::string weapon = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_WEAPON);
 	float distance = extArgument.get<float>(PROTOCOL_DBCALL_ARGUMENT_DISTANCE);
 
 	if (attackeruuid == "") {
-		attackeruuid = "NULL";
+		mysql_bind.addNull();
 	} else {
-		attackeruuid = "CAST(0x" + attackeruuid + " AS BINARY)";
+		mysql_bind.addData(attackeruuid);
 	}
 
 	if (type == "") {
-		type = "NULL";
+		mysql_bind.addNull();
 	} else {
-		type = "'" + type + "'";
+		mysql_bind.addData(type);
 	}
 
 	if (weapon == "") {
-		weapon = "NULL";
+		mysql_bind.addNull();
 	} else {
-		weapon = "'" + weapon + "'";
+		mysql_bind.addData(weapon);
 	}
 
-	std::string query = str(
-			boost::format {"INSERT INTO `killinfo` "
-							"(`uuid`, `date`, `attacker_uuid`, `type`, `weapon`, `distance`) "
-							"VALUES (CAST(0x%s AS BINARY), CURRENT_TIMESTAMP, %s, %s, %s, %s);" }
-							% killuuid % attackeruuid % type % weapon % distance);
+	mysql_bind.addData(distance);
 
+	mysql_bind.addData(killuuid);
+	mysql_bind.addData(objectuuid);
 
-	this->rawquery(query);
+	std::string query = "INSERT INTO `killinfo` "
+						"(`date`, `attacker_uuid`, `type`, `weapon`, `distance`, `uuid`) "
+						"VALUES (CURRENT_TIMESTAMP, UNHEX(?), ?, ?, ?, UNHEX(?));";
+	this->preparedStatementQuery(query, mysql_bind.mysql_bind);
 
-	query = str(
-				boost::format {"UPDATE `world_has_objects` SET `killinfo_uuid` = CAST(0x%s AS BINARY) "
-								"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);"}
-								% killuuid % objectuuid);
-
-	this->rawquery(query);
+	query = "UPDATE `world_has_objects` SET `killinfo_uuid` = UNHEX(?) WHERE `world_has_objects`.`object_uuid` = UNHEX(?);";
+	this->preparedStatementQuery(query, mysql_bind.mysql_bind+4);
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",\"" + killuuid + "\"]";
 }
 
-std::vector<object_mysql *> mysql_db_handler::dumpObjects(ext_arguments &extArgument) {
-	std::vector<object_mysql *> objectList;
-	MYSQL_RES *result;
+std::vector<object_mysql*> mysql_db_handler::dumpObjects(ext_arguments& extArgument) {
+	std::vector<object_mysql*> objectList;
+	MYSQL_RES* result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
 	std::string query =
-	str(boost::format{"SELECT `object`.`classname`, `object`.`priority`, `object`.`type`, `object`.`accesscode`, "
-						"`object`.`locked`, HEX(`object`.`player_uuid`), `object`.`hitpoints`, `object`.`damage`, "
-						"`object`.`fuel`, `object`.`fuelcargo`, `object`.`repaircargo`, `object`.`items`, "
-						"`object`.`magazinesturret`, "
-						"`object`.`variables`, `object`.`animationstate`, `object`.`textures`, `object`.`direction`, "
-						"`object`.`positiontype`, `object`.`positionx`, `object`.`positiony`, `object`.`positionz`, "
-						"`object`.`positionadvanced`, `object`.`reservedone`, `object`.`reservedtwo`, "
-						"HEX(`object`.`uuid`), "
-						"HEX(`world_has_objects`.`parentobject_uuid`), "
-						"HEX(`player`.`mainclan_uuid`) "
-						"FROM `world_has_objects` "
-						"INNER JOIN `object` "
-						" ON `world_has_objects`.`object_uuid` = `object`.`uuid` "
-						"LEFT JOIN `player` "
-						" ON `object`.`player_uuid` = `player`.`uuid` "
-						"WHERE `world_has_objects`.`world_uuid` = CAST(0x%s AS BINARY) "
-						"AND `world_has_objects`.`killinfo_uuid` IS NULL "
-						"ORDER BY `object`.priority ASC, `world_has_objects`.`parentobject_uuid` ASC"} % worlduuid);
+			str(boost::format{"SELECT `object`.`classname`, `object`.`priority`, `object`.`type`, `object`.`accesscode`, "
+							  "`object`.`locked`, HEX(`object`.`player_uuid`), `object`.`hitpoints`, `object`.`damage`, "
+							  "`object`.`fuel`, `object`.`fuelcargo`, `object`.`repaircargo`, `object`.`items`, "
+							  "`object`.`magazinesturret`, "
+							  "`object`.`variables`, `object`.`animationstate`, `object`.`textures`, `object`.`direction`, "
+							  "`object`.`positiontype`, `object`.`positionx`, `object`.`positiony`, `object`.`positionz`, "
+							  "`object`.`positionadvanced`, `object`.`reservedone`, `object`.`reservedtwo`, "
+							  "HEX(`object`.`uuid`), "
+							  "HEX(`world_has_objects`.`parentobject_uuid`), "
+							  "HEX(`player`.`mainclan_uuid`) "
+							  "FROM `world_has_objects` "
+							  "INNER JOIN `object` "
+							  " ON `world_has_objects`.`object_uuid` = `object`.`uuid` "
+							  "LEFT JOIN `player` "
+							  " ON `object`.`player_uuid` = `player`.`uuid` "
+							  "WHERE `world_has_objects`.`world_uuid` = CAST(0x%s AS BINARY) "
+							  "AND `world_has_objects`.`killinfo_uuid` IS NULL "
+							  "ORDER BY `object`.priority ASC, `world_has_objects`.`parentobject_uuid` ASC"} % worlduuid);
 
 	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_OFFSET) && extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_LIMIT)) {
 		unsigned int offset = extArgument.get<unsigned int>(PROTOCOL_DBCALL_ARGUMENT_OFFSET);
@@ -1907,31 +2054,31 @@ std::vector<object_mysql *> mysql_db_handler::dumpObjects(ext_arguments &extArgu
 	return objectList;
 }
 
-std::string mysql_db_handler::createObjectWorldLink(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::createObjectWorldLink(std::string& extFunction, ext_arguments& extArgument) {
 	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 	std::string worlduuid = this->worlduuid;
-	MYSQL_RES *result;
+	MYSQL_RES* result;
 	unsigned long long int rowcount;
 
 	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID)) {
 		worlduuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID);
 	}
 
-	std::string query = str(boost::format { "SELECT HEX(`object_uuid`) "
-			"FROM `world_has_objects` "
-			"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY) "
-			"AND `world_has_objects`.`world_uuid` =  CAST(0x%s AS BINARY) "
-			"AND `world_has_objects`.`killinfo_uuid` IS NULL" } % objectuuid % worlduuid);
+	std::string query = str(boost::format{"SELECT HEX(`object_uuid`) "
+										  "FROM `world_has_objects` "
+										  "WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY) "
+										  "AND `world_has_objects`.`world_uuid` =  CAST(0x%s AS BINARY) "
+										  "AND `world_has_objects`.`killinfo_uuid` IS NULL"} % objectuuid % worlduuid);
 
 	this->rawquery(query, &result);
 
 	rowcount = mysql_num_rows(result);
-	mysql_free_result (result);
+	mysql_free_result(result);
 
 	if (rowcount < 1) {
 
-		std::string query = str(boost::format { "INSERT INTO `world_has_objects` (`world_uuid`, `object_uuid`) "
-				"VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY))" } % worlduuid % objectuuid);
+		std::string query = str(boost::format{"INSERT INTO `world_has_objects` (`world_uuid`, `object_uuid`) "
+											  "VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY))"} % worlduuid % objectuuid);
 
 		this->rawquery(query);
 	}
@@ -1939,7 +2086,7 @@ std::string mysql_db_handler::createObjectWorldLink(std::string &extFunction, ex
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + objectuuid + "\",\"" + worlduuid + "\"]]";
 }
 
-std::string mysql_db_handler::updateObjectWorldLink(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::updateObjectWorldLink(std::string& extFunction, ext_arguments& extArgument) {
 	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 	std::string worlduuid = this->worlduuid;
 
@@ -1947,47 +2094,47 @@ std::string mysql_db_handler::updateObjectWorldLink(std::string &extFunction, ex
 		worlduuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID);
 	}
 
-	std::string query = str(boost::format { "UPDATE `world_has_objects` SET `world_uuid` = CAST(0x%s AS BINARY) "
-			"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);" } % worlduuid % objectuuid);
+	std::string query = str(boost::format{"UPDATE `world_has_objects` SET `world_uuid` = CAST(0x%s AS BINARY) "
+										  "WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);"} % worlduuid % objectuuid);
 	this->rawquery(query);
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + objectuuid + "\",\"" + worlduuid + "\"]]";
 }
 
-std::string mysql_db_handler::deleteObjectWorldLink(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::deleteObjectWorldLink(std::string& extFunction, ext_arguments& extArgument) {
 	std::string objectuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_OBJECTUUID);
 	std::string worlduuid = "*";
 
-	std::string query = str(boost::format { "DELETE FROM `world_has_objects` "
-						"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);" } % objectuuid);
+	std::string query = str(boost::format{"DELETE FROM `world_has_objects` "
+										  "WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY);"} % objectuuid);
 
 	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID)) {
 		worlduuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_WORLDUUID);
-		query = str(boost::format { "DELETE FROM `world_has_objects` SET "
-					"WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY)"
-					"AND `world_uuid` = CAST(0x%s AS BINARY);" } % objectuuid % worlduuid );
+		query = str(boost::format{"DELETE FROM `world_has_objects` SET "
+								  "WHERE `world_has_objects`.`object_uuid` = CAST(0x%s AS BINARY)"
+								  "AND `world_uuid` = CAST(0x%s AS BINARY);"} % objectuuid % worlduuid);
 	}
-
 
 	this->rawquery(query);
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + objectuuid + "\",\"" + worlduuid + "\"]]";
 }
 
-
 void mysql_db_handler::failIfClanNotExists(std::string clanuuid) {
-	MYSQL_RES *result;
-	unsigned long long int rowcount;
+	MYSQL_RES* result;
+	unsigned long long int rowcount = 0;
 
-	std::string queryclaninfo =
-	str(boost::format{	"SELECT HEX(`clan`.`uuid`) "
-						"FROM `clan` "
-						"WHERE `clan`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid);
+	if (!clanuuid.empty()) {
+		std::string queryclaninfo =
+				str(boost::format{"SELECT HEX(`clan`.`uuid`) "
+								  "FROM `clan` "
+								  "WHERE `clan`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid);
 
-	this->rawquery(queryclaninfo, &result);
+		this->rawquery(queryclaninfo, &result);
 
-	rowcount = mysql_num_rows(result);
-	mysql_free_result(result);
+		rowcount = mysql_num_rows(result);
+		mysql_free_result(result);
+	}
 
 	if (rowcount < 1) {
 		throw std::runtime_error("could not find clan with uuid: " + clanuuid);
@@ -1997,13 +2144,13 @@ void mysql_db_handler::failIfClanNotExists(std::string clanuuid) {
 }
 
 void mysql_db_handler::failIfClanNameNotUnique(std::string clanname) {
-	MYSQL_RES *result;
+	MYSQL_RES* result;
 	unsigned long long int rowcount;
 
 	std::string queryclaninfo =
-	str(boost::format{	"SELECT HEX(`clan`.`uuid`) "
-						"FROM `clan` "
-						"WHERE LOWER(`clan`.`name`) = LOWER(\"%s\")"} % clanname);
+			str(boost::format{"SELECT HEX(`clan`.`uuid`) "
+							  "FROM `clan` "
+							  "WHERE LOWER(`clan`.`name`) = LOWER(\"%s\")"} % clanname);
 
 	this->rawquery(queryclaninfo, &result);
 
@@ -2018,19 +2165,20 @@ void mysql_db_handler::failIfClanNameNotUnique(std::string clanname) {
 }
 
 bool mysql_db_handler::playerMemberOfClan(std::string clanuuid, std::string playeruuid) {
-	MYSQL_RES *result;
-	unsigned long long int rowcount;
+	MYSQL_RES* result;
+	unsigned long long int rowcount = 0;
 
-	std::string query = str(boost::format { "SELECT HEX(`clan_uuid`) "
-			"FROM `clan_member` "
-			"WHERE `clan_member`.`clan_uuid` = CAST(0x%s AS BINARY) "
-			"AND `clan_member`.`player_uuid` =  CAST(0x%s AS BINARY) " } % clanuuid % playeruuid);
+	if (!clanuuid.empty()) {
+		std::string query = str(boost::format{"SELECT HEX(`clan_uuid`) "
+											  "FROM `clan_member` "
+											  "WHERE `clan_member`.`clan_uuid` = CAST(0x%s AS BINARY) "
+											  "AND `clan_member`.`player_uuid` =  CAST(0x%s AS BINARY) "} % clanuuid % playeruuid);
 
-	this->rawquery(query, &result);
+		this->rawquery(query, &result);
 
-	rowcount = mysql_num_rows(result);
-	mysql_free_result (result);
-
+		rowcount = mysql_num_rows(result);
+		mysql_free_result(result);
+	}
 	if (rowcount < 1) {
 		return false;
 	}
@@ -2038,8 +2186,7 @@ bool mysql_db_handler::playerMemberOfClan(std::string clanuuid, std::string play
 	return true;
 }
 
-
-std::string mysql_db_handler::getClan(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::getClan(std::string& extFunction, ext_arguments& extArgument) {
 	std::string clanuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CLAN_UUID);
 	std::string clanname = "";
 	std::string founderuuid = "";
@@ -2048,27 +2195,31 @@ std::string mysql_db_handler::getClan(std::string &extFunction, ext_arguments &e
 	std::string clanmemberlist = "";
 	std::string clanvariables = "[]";
 
-	MYSQL_RES *result;
+	MYSQL_RES* result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
-	unsigned long long int rowcount;
+	unsigned long long int rowcount = 0;
 
-	std::string queryclaninfo =
-	str(boost::format{	"SELECT HEX(`clan`.`name`) AS 'clan_name', HEX(`founder`.`uuid`) AS 'founder_uuid', `founder`.`steamid` AS 'founder_steamid', "
-		"`founder`.`lastnick` AS 'founder_nick', GROUP_CONCAT("
-		  "DISTINCT CONCAT('[\"', HEX(`player`.`uuid`), '\",\"' , `player`.`steamid`, '\",\"' , `player`.`lastnick`, '\",', "
-		  	  "`clan_member`.`rank`, ',\"', `clan_member`.`comment`, '\"]') "
-		  "SEPARATOR ','"
-		") AS 'clan_member_list'"
-		"FROM `clan` LEFT JOIN `player` AS `founder` ON `clan`.`founder_uuid` = `founder`.`uuid` "
-		"LEFT JOIN `clan_member` ON `clan`.`uuid` = `clan_member`.`clan_uuid` "
-		"LEFT JOIN `player` ON `clan_member`.`player_uuid` = `player`.`uuid`"
-						"WHERE `clan`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid);
+	if (!clanuuid.empty()) {
+		std::string queryclaninfo =
+				str(boost::format{"SELECT `clan`.`name` AS 'clan_name', HEX(`founder`.`uuid`) AS 'founder_uuid', `founder`.`steamid` AS 'founder_steamid', "
+								  "`founder`.`lastnick` AS 'founder_nick', GROUP_CONCAT("
+								  "DISTINCT CONCAT('[\"', HEX(`player`.`uuid`), '\",\"' , `player`.`steamid`, '\",\"' , `player`.`lastnick`, '\",', "
+								  "`clan_member`.`rank`, ',\"', `clan_member`.`comment`, '\"]') "
+								  "SEPARATOR ','"
+								  ") AS 'clan_member_list', `persistent_variables`.`persistentvariables` AS 'clan_variables' "
+								  "FROM `clan` "
+		                          "LEFT JOIN `player` AS `founder` ON `clan`.`founder_uuid` = `founder`.`uuid` "
+								  "LEFT JOIN `clan_member` ON `clan`.`uuid` = `clan_member`.`clan_uuid` "
+								  "LEFT JOIN `player` ON `clan_member`.`player_uuid` = `player`.`uuid`"
+								  "LEFT JOIN `clan_has_persistent_variables` ON `clan`.`uuid` = `clan_has_persistent_variables`.`clan_uuid`"
+								  "LEFT JOIN `persistent_variables` ON `persistent_variables`.`uuid` = `clan_has_persistent_variables`.`persistent_variables_uuid`"
+								  "WHERE `clan`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid);
 
-	this->rawquery(queryclaninfo, &result);
+		this->rawquery(queryclaninfo, &result);
 
-	rowcount = mysql_num_rows(result);
-
+		rowcount = mysql_num_rows(result);
+	}
 
 	if (rowcount < 1) {
 		throw std::runtime_error("could not find clan with uuid: " + clanuuid);
@@ -2096,33 +2247,39 @@ std::string mysql_db_handler::getClan(std::string &extFunction, ext_arguments &e
 		clanmemberlist = row[4];
 	}
 
-	mysql_free_result(result);
-
-	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + clanuuid + "\",\"" + clanname + "\",\"" + founderuuid + "\",\"" + foundersteamid + "\",\"" + foundernickname + "\"," + clanmemberlist + "," + clanvariables + "]]";
-}
-
-std::string mysql_db_handler::createClan(std::string &extFunction, ext_arguments &extArgument) {
-	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
-	std::string clanname = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CLANNAME);
-	std::string clanuuid = orderedUUID();
-	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_CLAN_UUID)) {
-		clanuuid = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLAN_UUID);
+	if (row[5] != NULL) {
+		clanvariables = row[5];
 	}
 
-	/* comment is not supported until the code was changed completely rely on prepared statements
-		if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_VARIABLES)) {
-			clanvariables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
-		}
-	*/
+	mysql_free_result(result);
 
-	MYSQL_RES *result;
+	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + clanuuid + "\",\"" + clanname + "\",\"" + founderuuid + "\",\"" + foundersteamid + "\",\"" + foundernickname + "\",[" + clanmemberlist + "]," + clanvariables + "]]";
+}
+
+std::string mysql_db_handler::createClan(std::string& extFunction, ext_arguments& extArgument) {
+	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
+	std::string clanname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLANNAME);
+	std::string clanvariables = "[]";
+	std::string clanuuid = orderedUUID();
+	std::string persistent_variables_uuid = orderedUUID();
+
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_CLAN_UUID)) {
+		clanuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CLAN_UUID);
+	}
+
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_VARIABLES)) {
+		clanvariables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
+	}
+
+
+	MYSQL_RES* result;
 	unsigned long long int rowcount;
 
 	// only create clan if owner actually exists
 	std::string queryplayerinfo =
-	str(boost::format{	"SELECT HEX(`player`.`uuid`) "
-						"FROM `player` "
-						"WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % playeruuid);
+			str(boost::format{"SELECT HEX(`player`.`uuid`) "
+							  "FROM `player` "
+							  "WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % playeruuid);
 
 	this->rawquery(queryplayerinfo, &result);
 
@@ -2136,62 +2293,87 @@ std::string mysql_db_handler::createClan(std::string &extFunction, ext_arguments
 	// prevent name duplication case insensitive
 	this->failIfClanNameNotUnique(clanname);
 
+	mysql_binds mysql_bind = mysql_binds(5);
+	mysql_bind.addData(playeruuid);
+	mysql_bind.addData(clanname);
+	mysql_bind.addData(clanuuid);
+
+	mysql_bind.addData(persistent_variables_uuid);
+	mysql_bind.addData(clanvariables);
 
 	// add clan
-	std::string query = str(boost::format { "INSERT INTO `clan` (`uuid`, `founder_uuid`, `name`) "
-											"VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY), \"%s\")" } % clanuuid % playeruuid % clanname);
-	this->rawquery(query);
+	std::string query = "INSERT INTO `clan` (`founder_uuid`, `name`, `uuid`) "
+						"VALUES (UNHEX(?), ?, UNHEX(?))";
+	this->preparedStatementQuery(query, mysql_bind.mysql_bind);
 
 	// add owner as member
-	query = str(boost::format { "INSERT INTO `clan_member` (`clan_uuid`, `player_uuid`, `rank`, `comment`) "
-											"VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY), 0, \"founder of %s\")" } % clanuuid % playeruuid % clanname);
-	this->rawquery(query);
+	query = "INSERT INTO `clan_member` (`player_uuid`, `rank`, `comment`, `clan_uuid`) "
+			"VALUES (UNHEX(?), 0, ?, UNHEX(?))";
+	this->preparedStatementQuery(query, mysql_bind.mysql_bind);
+
+	query = "INSERT INTO `persistent_variables` (`uuid`, `persistentvariables`) VALUES (UNHEX(?), ?)";
+	this->preparedStatementQuery(query, mysql_bind.mysql_bind+3);
+
+	query = "INSERT INTO `clan_has_persistent_variables` (`clan_uuid`, `persistent_variables_uuid`) VALUES (UNHEX(?), UNHEX(?));";
+	this->preparedStatementQuery(query, mysql_bind.mysql_bind+2);
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + clanuuid + "\"]]";
 }
 
-std::string mysql_db_handler::updateClan(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::updateClan(std::string& extFunction, ext_arguments& extArgument) {
 	std::string clanuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CLAN_UUID);
 	this->failIfClanNotExists(clanuuid);
 
-	/* comment is not supported until the code was changed completely rely on prepared statements
-		if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_VARIABLES)) {
-			clanvariables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
-		}
-	*/
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_VARIABLES)) {
+		std::string clanvariables = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_VARIABLES);
+		mysql_binds mysql_bind = mysql_binds(2);
+		mysql_bind.addData(clanvariables);
+		mysql_bind.addData(clanuuid);
+
+		// change variables
+		std::string query = "UPDATE `persistent_variables` SET `persistentvariables` = ? WHERE uuid = ("
+							"SELECT `persistent_variables_uuid` FROM `clan_has_persistent_variables` WHERE `clan_has_persistent_variables`.`clan_uuid` = UNHEX(?)"
+							");";
+
+		this->preparedStatementQuery(query, mysql_bind.mysql_bind);
+	}
 
 	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID)) {
 		std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
-		if(!this->playerMemberOfClan(clanuuid, playeruuid)) {
+		if (!this->playerMemberOfClan(clanuuid, playeruuid)) {
 			throw std::runtime_error("new owner " + playeruuid + " needs to be member of the clan " + clanuuid);
 		}
 
-		// change owner
-		std::string queryclaninfo =
-						str(boost::format{"UPDATE `clan` SET `founder_uuid` = CAST(0x%s AS BINARY) "
-										  "WHERE `clan`.`uuid` = CAST(0x%s AS BINARY) " } % playeruuid % clanuuid);
+		mysql_binds mysql_bind = mysql_binds(2);
+		mysql_bind.addData(playeruuid);
+		mysql_bind.addData(clanuuid);
 
-		this->rawquery(queryclaninfo);
+		// change owner
+		std::string query ="UPDATE `clan` SET `founder_uuid` = UNHEX(?) WHERE `clan`.`uuid` = UNHEX(?);";
+
+		this->preparedStatementQuery(query, mysql_bind.mysql_bind);
 	}
 
 	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_CLANNAME)) {
-			std::string clanname = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CLANNAME);
-			// prevent name duplication case insensitive
-			this->failIfClanNameNotUnique(clanname);
+		std::string clanname = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_CLANNAME);
+		// prevent name duplication case insensitive
+		this->failIfClanNameNotUnique(clanname);
 
-			// change name
-			std::string queryclaninfo =
-							str(boost::format{"UPDATE `clan` SET `name` = \"%s\" "
-											  "WHERE `clan`.`uuid` = CAST(0x%s AS BINARY) " } % clanname % clanuuid);
+		mysql_binds mysql_bind = mysql_binds(2);
+		mysql_bind.addData(clanname);
+		mysql_bind.addData(clanuuid);
 
-			this->rawquery(queryclaninfo);
+		// change name
+		std::string query = "UPDATE `clan` SET `name` = ? "
+							"WHERE `clan`.`uuid` = UNHEX(?);";
+
+		this->preparedStatementQuery(query, mysql_bind.mysql_bind);
 	}
-
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + clanuuid + "\"]]";
 }
 
-std::string mysql_db_handler::addClanPlayer(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::addClanPlayer(std::string& extFunction, ext_arguments& extArgument) {
 	std::string clanuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CLAN_UUID);
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 	int rank = 0;
@@ -2201,13 +2383,18 @@ std::string mysql_db_handler::addClanPlayer(std::string &extFunction, ext_argume
 		rank = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_RANK);
 	}
 
-	/* comment is not supported until the code was changed completely rely on prepared statements
 	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_COMMENT)) {
 		comment = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_COMMENT);
 	}
-	*/
 
-	MYSQL_RES *result;
+	mysql_binds mysql_bind = mysql_binds(4);
+
+	mysql_bind.addData(clanuuid);
+	mysql_bind.addData(playeruuid);
+	mysql_bind.addData(rank);
+	mysql_bind.addData(comment);
+
+	MYSQL_RES* result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
@@ -2215,12 +2402,12 @@ std::string mysql_db_handler::addClanPlayer(std::string &extFunction, ext_argume
 	this->failIfClanNotExists(clanuuid);
 
 	// only add player to clan, if it was not added before
-	if(!this->playerMemberOfClan(clanuuid, playeruuid)) {
+	if (!this->playerMemberOfClan(clanuuid, playeruuid)) {
 		// determine if player has a main clan, if not we will set it
 		std::string queryplayerinfo =
-		str(boost::format{"SELECT HEX(`player`.`mainclan_uuid`) "
-				"FROM `player` "
-				"WHERE `player`.`uuid` = CAST(0x%s AS BINARY)" } % playeruuid);
+				str(boost::format{"SELECT HEX(`player`.`mainclan_uuid`) "
+								  "FROM `player` "
+								  "WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % playeruuid);
 
 		this->rawquery(queryplayerinfo, &result);
 
@@ -2233,16 +2420,15 @@ std::string mysql_db_handler::addClanPlayer(std::string &extFunction, ext_argume
 
 
 		// add player only if he actually exists
-		std::string query = str(boost::format { "INSERT INTO `clan_member` (`clan_uuid`, `player_uuid`, `rank`, `comment`) "
-												"VALUES (CAST(0x%s AS BINARY), CAST(0x%s AS BINARY), %d, \"%s\")" } % clanuuid % playeruuid % rank % comment);
+		std::string query = "INSERT INTO `clan_member` (`clan_uuid`, `player_uuid`, `rank`, `comment`) VALUES (UNHEX(?), UNHEX(?), ?, ?)";
 
-		this->rawquery(query);
+		this->preparedStatementQuery(query, mysql_bind.mysql_bind);
 
-		// update players main clan if it wsa unset
+		// update players main clan if it was unset
 		if (row[0] == NULL) {
 			queryplayerinfo =
-						str(boost::format{"UPDATE `player` SET `mainclan_uuid` = CAST(0x%s AS BINARY) \
-											WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid % playeruuid);
+					str(boost::format{"UPDATE `player` SET `mainclan_uuid` = CAST(0x%s AS BINARY) "
+									  "WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid % playeruuid);
 
 			this->rawquery(queryplayerinfo);
 		}
@@ -2253,29 +2439,47 @@ std::string mysql_db_handler::addClanPlayer(std::string &extFunction, ext_argume
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + clanuuid + "\",\"" + playeruuid + "\"]]";
 }
 
-std::string mysql_db_handler::updateClanPlayer(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::updateClanPlayer(std::string& extFunction, ext_arguments& extArgument) {
 	std::string clanuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CLAN_UUID);
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 
 	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_RANK)) {
 		int rank = extArgument.get<int>(PROTOCOL_DBCALL_ARGUMENT_RANK);
-		std::string queryplayerinfo =
-				str(boost::format{"UPDATE `clan_member` SET `rank` = %d "
-								  "WHERE `clan_member`.`clan_uuid` = CAST(0x%s AS BINARY) "
-                                  "AND `clan_member`.`player_uuid` = CAST(0x%s AS BINARY)" } % rank % clanuuid % playeruuid);
 
-		this->rawquery(queryplayerinfo);
+		mysql_binds mysql_bind = mysql_binds(3);
+
+		mysql_bind.addData(rank);
+		mysql_bind.addData(clanuuid);
+		mysql_bind.addData(playeruuid);
+
+		std::string query ="UPDATE `clan_member` SET `rank` = ? WHERE `clan_member`.`clan_uuid` = UNHEX(?) AND `clan_member`.`player_uuid` = UNHEX(?)";
+
+		this->preparedStatementQuery(query, mysql_bind.mysql_bind);
+	}
+
+	if (extArgument.keyExists(PROTOCOL_DBCALL_ARGUMENT_COMMENT)) {
+		std::string comment = extArgument.get<std::string>(PROTOCOL_DBCALL_ARGUMENT_COMMENT);
+
+		mysql_binds mysql_bind = mysql_binds(3);
+
+		mysql_bind.addData(comment);
+		mysql_bind.addData(clanuuid);
+		mysql_bind.addData(playeruuid);
+
+		std::string query ="UPDATE `clan_member` SET `comment` = ? WHERE `clan_member`.`clan_uuid` = UNHEX(?) AND `clan_member`.`player_uuid` = UNHEX(?)";
+
+		this->preparedStatementQuery(query, mysql_bind.mysql_bind);
 	}
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + clanuuid + "\",\"" + playeruuid + "\"]]";
 }
 
-std::string mysql_db_handler::deleteClanPlayer(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::deleteClanPlayer(std::string& extFunction, ext_arguments& extArgument) {
 	std::string clanuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CLAN_UUID);
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 	int rank = 0;
 
-	MYSQL_RES *result;
+	MYSQL_RES* result;
 	MYSQL_ROW row;
 	unsigned int fieldcount;
 	unsigned long long int rowcount;
@@ -2283,18 +2487,18 @@ std::string mysql_db_handler::deleteClanPlayer(std::string &extFunction, ext_arg
 	this->failIfClanNotExists(clanuuid);
 
 	// only delete player from clan, if he was added before
-	if(this->playerMemberOfClan(clanuuid, playeruuid)) {
-		std::string query = str(boost::format { "DELETE FROM `clan_member` "
-												"WHERE `clan_member`.`clan_uuid` = CAST(0x%s AS BINARY) "
-												"AND `clan_member`.`player_uuid` = CAST(0x%s AS BINARY)"} % clanuuid % playeruuid);
+	if (this->playerMemberOfClan(clanuuid, playeruuid)) {
+		std::string query = str(boost::format{"DELETE FROM `clan_member` "
+											  "WHERE `clan_member`.`clan_uuid` = CAST(0x%s AS BINARY) "
+											  "AND `clan_member`.`player_uuid` = CAST(0x%s AS BINARY)"} % clanuuid % playeruuid);
 
 		this->rawquery(query);
 
 		// determine if player has a main clan, if not we will set it
 		std::string queryplayerinfo =
-		str(boost::format{"SELECT HEX(`player`.`mainclan_uuid`) "
-				"FROM `player` "
-				"WHERE `player`.`uuid` = CAST(0x%s AS BINARY)" } % playeruuid);
+				str(boost::format{"SELECT HEX(`player`.`mainclan_uuid`) "
+								  "FROM `player` "
+								  "WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % playeruuid);
 
 		this->rawquery(queryplayerinfo, &result);
 
@@ -2309,8 +2513,8 @@ std::string mysql_db_handler::deleteClanPlayer(std::string &extFunction, ext_arg
 		if (row[0] != NULL) {
 			if (clanuuid == row[0]) {
 				queryplayerinfo =
-							str(boost::format{"UPDATE `player` SET `mainclan_uuid` = NULL "
-											  "WHERE `player`.`uuid` = CAST(0x%s AS BINARY) "} % playeruuid);
+						str(boost::format{"UPDATE `player` SET `mainclan_uuid` = NULL "
+										  "WHERE `player`.`uuid` = CAST(0x%s AS BINARY) "} % playeruuid);
 
 				this->rawquery(queryplayerinfo);
 			}
@@ -2322,30 +2526,36 @@ std::string mysql_db_handler::deleteClanPlayer(std::string &extFunction, ext_arg
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + clanuuid + "\",\"" + playeruuid + "\"]]";
 }
 
-
-std::string mysql_db_handler::updatePlayerMainClan(std::string &extFunction, ext_arguments &extArgument) {
+std::string mysql_db_handler::updatePlayerMainClan(std::string& extFunction, ext_arguments& extArgument) {
 	std::string clanuuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_CLAN_UUID);
 	std::string playeruuid = extArgument.getUUID(PROTOCOL_DBCALL_ARGUMENT_PLAYER_UUID);
 
-	this->failIfClanNotExists(clanuuid);
+	if (!clanuuid.empty()) {
+		this->failIfClanNotExists(clanuuid);
 
-	// only add player to clan, if it was not added before
-	if(!this->playerMemberOfClan(clanuuid, playeruuid)) {
-		throw std::runtime_error("player " + playeruuid + " needs to be member of clan " + clanuuid + " to use it as main clan");
-	};
+		// only add player to clan, if it was not added before
+		if (!this->playerMemberOfClan(clanuuid, playeruuid)) {
+			throw std::runtime_error("player " + playeruuid + " needs to be member of clan " + clanuuid + " to use it as main clan");
+		};
 
-	std::string	queryplayerinfo =
-						str(boost::format{"UPDATE `player` SET `mainclan_uuid` = CAST(0x%s AS BINARY) \
-											WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid % playeruuid);
+		std::string queryplayerinfo =
+				str(boost::format{"UPDATE `player` SET `mainclan_uuid` = CAST(0x%s AS BINARY) "
+					  "WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % clanuuid % playeruuid);
 
-	this->rawquery(queryplayerinfo);
+		this->rawquery(queryplayerinfo);
+	} else {
+		std::string queryplayerinfo =
+				str(boost::format{"UPDATE `player` SET `mainclan_uuid` = NULL "
+					  "WHERE `player`.`uuid` = CAST(0x%s AS BINARY)"} % playeruuid);
+
+		this->rawquery(queryplayerinfo);
+	}
 
 	return "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_MESSAGE) + "\",[\"" + clanuuid + "\",\"" + playeruuid + "\"]]";
 }
 
-void mysql_db_handler::test_stmt_error(MYSQL_STMT *stmt, int status) {
-  if (status)
-  {
-	  throw std::runtime_error(std::string("MYSQLERROR") + std::string(mysql_stmt_error(stmt)) + std::string(" Errornumber: ") + std::to_string(mysql_stmt_errno(stmt)));
-  }
+void mysql_db_handler::test_stmt_error(MYSQL_STMT* stmt, int status) {
+	if (status) {
+		throw std::runtime_error(std::string("MYSQLERROR") + std::string(mysql_stmt_error(stmt)) + std::string(" Errornumber: ") + std::to_string(mysql_stmt_errno(stmt)));
+	}
 }

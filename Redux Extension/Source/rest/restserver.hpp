@@ -1,4 +1,4 @@
-/* randomlist.hpp
+/* restserver.hpp
  *
  * Copyright 2016-2020 Desolation Redux
  *
@@ -15,32 +15,38 @@
  * GNU Affero General Public License for more details.
  */
 
-#ifndef SOURCE_RANDOMLIST_HPP_
-#define SOURCE_RANDOMLIST_HPP_
+#ifndef REDEX_REST_SERVER_HPP
+#define REDEX_REST_SERVER_HPP
 
 #include <algorithm>
 #include <string>
+#include <thread>
 #include <map>
 #include <tuple>
-#include <boost/function.hpp>
+#include <boost/asio.hpp>
 
 #include "extbase.hpp"
-#include "constants.hpp"
-#include "randomlist/discrete_randomlist.hpp"
+#include "http_connection.hpp"
 
-class randomlist: public ext_base {
+class restserver: public ext_base {
 public:
-	randomlist(EXT_FUNCTIONS &extFunctions);
-	~randomlist();
+	restserver(EXT_FUNCTIONS &extFunctions);
+	~restserver();
+
+	std::string spawnHandler(std::string &extFunction, ext_arguments &extArgument);
+	void terminateHandler();
 
 private:
-	typedef std::map<std::string, discrete_list> DISCRETE_LIST_MAP;
-	DISCRETE_LIST_MAP DiscreteItemList;
+	bool serverinitialized = false;
+	
+	std::thread * serverThread = 0;
+	//std::string address;
+	boost::asio::ip::address address;
+	unsigned short port;
 
-	std::string addDiscreteItemList(std::string &extFunction, ext_arguments &extArguments);
-	std::string getDiscreteItemList(std::string &extFunction, ext_arguments &extArguments);
-	std::string getRandomNumberList(std::string &extFunction, ext_arguments &extArguments);
+	boost::asio::io_context serverReference{1};
+
+	void serverFunction();
 };
 
-
-#endif /* SOURCE_RANDOMLIST_HPP_ */
+#endif //REDEX_REST_SERVER_HPP
