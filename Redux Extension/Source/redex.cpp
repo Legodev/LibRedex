@@ -16,13 +16,9 @@
  */
 
 #include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
-#include <fstream>
 #include <iostream>
-#include <sstream>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -35,7 +31,8 @@
 
 extern int(*callbackPtr)(char const *name, char const *function, char const *data);
 #ifdef DEBUG
-	extern std::ofstream testfile;
+	#include "logger.hpp"
+	extern Logger logfile;
 #endif
 
 redex::redex() {
@@ -87,7 +84,7 @@ redex::redex() {
 
 	if (access(CONFIG_FILE_NAME, F_OK) == -1) {
 		std::ofstream logfile;
-		logfile.open("LibRedExErrorLogFile.txt", std::ios::out | std::ios::trunc);
+		logfile.open("libredex.log", std::ios::out | std::ios::trunc);
 		logfile << "cannot find config file: " << CONFIG_FILE_NAME << std::endl;
 		logfile.flush();
 		logfile.close();
@@ -140,8 +137,8 @@ redex::~redex() {
 
 void redex::terminate() {
 #ifdef DEBUG
-	testfile << "TERMINATE REDEX" << std::endl;
-	testfile.flush();
+	logfile << "TERMINATE REDEX" << std::endl;
+	logfile.flush();
 #endif
 
 	REDEXioServiceWork.reset(); // stop all idle work!
@@ -264,8 +261,8 @@ void redex::asyncCallProcessor(EXT_FUNCTION_INFO funcinfo, ext_arguments extArgu
 	} catch (std::exception const& e) {
 		std::string error = e.what();
 #ifdef DEBUG
-			testfile << "INTERNAL ERROR " << error << std::endl;
-			testfile.flush();
+			logfile << "INTERNAL ERROR " << error << std::endl;
+			logfile.flush();
 #endif
 		int i = 0;
 		while ((i = error.find("\"", i)) != std::string::npos) {
@@ -297,8 +294,8 @@ void redex::callbackCallProcessor(EXT_FUNCTION_INFO funcinfo, ext_arguments extA
 	} catch (std::exception const& e) {
 		std::string error = e.what();
 #ifdef DEBUG
-			testfile << "INTERNAL ERROR " << error << std::endl;
-			testfile.flush();
+			logfile << "INTERNAL ERROR " << error << std::endl;
+			logfile.flush();
 #endif
 		int i = 0;
 		while ((i = error.find("\"", i)) != std::string::npos) {

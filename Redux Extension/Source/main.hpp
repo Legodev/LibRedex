@@ -39,35 +39,32 @@
 #endif
 
 #ifdef DEBUG
-#include <fstream>
-#include <mutex>
-#include <ctime>
-#include <iomanip>
-#include <iostream>
+#include "logger.hpp"
 #endif
 
 #include <sstream>
 #include <string>
-#include <string.h>            // strcmp, strncpy
+#include <cstring>
 #include <map>
 
 #include "constants.hpp"
 
 #include "redex.hpp"
 
-redex * extension = 0;
+redex * extension = nullptr;
 int(*callbackPtr)(char const *name, char const *function, char const *data) = nullptr;
 
 #ifdef DEBUG
 std::mutex ThreadMutex;
 int attachedThreadCount = 0;
-extern std::ofstream testfile;
-std::ofstream testfile("LibRedExLogFile.txt", std::ios::out | std::ios::trunc);
+extern Logger logfile;
+std::ofstream logfilehandler("libredex.log", std::ios::out | std::ios::trunc);
+Logger logfile(logfilehandler);
 #endif
 
 static void init(void)
 {
-    if (extension == 0) {
+    if (extension == nullptr) {
         extension = new redex();
     }
 }
@@ -75,24 +72,24 @@ static void init(void)
 static void destroy(void)
 {
 #ifdef DEBUG
-    testfile << "starting destroy" << std::endl;
+    logfile << "starting destroy" << std::endl;
 #endif
     
-    if (extension != 0) {
+    if (extension != nullptr) {
 #ifdef DEBUG
-        testfile << "deleting extension object" << std::endl;
+        logfile << "deleting extension object" << std::endl;
 #endif
         delete extension;
 #ifdef DEBUG
-        testfile << "resetting extension pointer" << std::endl;
+        logfile << "resetting extension pointer" << std::endl;
 #endif
-        extension = 0;
+        extension = nullptr;
     }
 
 #ifdef DEBUG
-    testfile << "done destroy" << std::endl;
-    testfile.flush();
-    testfile.close();
+    logfile << "done destroy" << std::endl;
+    logfile.flush();
+    logfile.close();
 #endif
 }
 
@@ -128,8 +125,8 @@ static void destroy(void)
 #ifdef DEBUG
 				ThreadMutex.lock();
 				attachedThreadCount++;
-				testfile << "done thread attach Threadcount: " << attachedThreadCount << std::endl;
-				testfile.flush();
+				logfile << "done thread attach Threadcount: " << attachedThreadCount << std::endl;
+				logfile.flush();
 				ThreadMutex.unlock();
 #endif
                         break;
@@ -137,8 +134,8 @@ static void destroy(void)
 #ifdef DEBUG
 				ThreadMutex.lock();
 				attachedThreadCount--;
-				testfile << "done thread detach Threadcount: " << attachedThreadCount << std::endl;
-				testfile.flush();
+				logfile << "done thread detach Threadcount: " << attachedThreadCount << std::endl;
+				logfile.flush();
 				ThreadMutex.unlock();
 #endif
                         break;

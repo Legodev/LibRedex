@@ -33,10 +33,8 @@
 #include "mysql/migration/includeAllSchemas.hpp"
 
 #ifdef DEBUG
-#include <fstream>
-#include <iostream>
-#include <sstream>
-extern std::ofstream testfile;
+#include "logger.hpp"
+extern Logger logfile;
 #endif
 
 extern int (* callbackPtr)(char const* name, char const* function, char const* data);
@@ -424,8 +422,8 @@ std::string mysql_db_handler::spawnHandler(std::string& extFunction, ext_argumen
 		for (i = 0; i <= poolsize; i++) {
 			MYSQL* connection = connect();
 #ifdef DEBUG
-			testfile << "CREATED NEW DB POINTER " << static_cast<void*>(connection) << std::endl;
-			testfile.flush();
+			logfile << "CREATED NEW DB POINTER " << static_cast<void*>(connection) << std::endl;
+			logfile.flush();
 #endif
 
 			connectionpool.bounded_push((intptr_t) connection);
@@ -491,8 +489,8 @@ MYSQL* mysql_db_handler::getconnection() {
 	connection = (MYSQL*) connectionpointer;
 
 #ifdef DEBUG
-	testfile << "GOT DB POINTER " << static_cast<void*>(connection) << std::endl;
-	testfile.flush();
+	logfile << "GOT DB POINTER " << static_cast<void*>(connection) << std::endl;
+	logfile.flush();
 #endif
 
 	if (connection == 0) {
@@ -507,8 +505,8 @@ void mysql_db_handler::returnconnection(MYSQL* connection) {
 	connectionpool.bounded_push(connectionpointer);
 
 #ifdef DEBUG
-	testfile << "RETURNED DB POINTER " << static_cast<void*>(connection) << std::endl;
-	testfile.flush();
+	logfile << "RETURNED DB POINTER " << static_cast<void*>(connection) << std::endl;
+	logfile.flush();
 #endif
 
 	return;
@@ -520,8 +518,8 @@ void mysql_db_handler::rawmultiquerys(std::string query) {
 	mysql_set_server_option(connection, MYSQL_OPTION_MULTI_STATEMENTS_ON);
 
 #ifdef DEBUG
-	testfile << "MULTI QUERY: " << query << std::endl;
-	testfile.flush();
+	logfile << "MULTI QUERY: " << query << std::endl;
+	logfile.flush();
 #endif
 
 	if (mysql_real_query(connection, query.c_str(), query.size())) {
@@ -545,8 +543,8 @@ void mysql_db_handler::rawquery(std::string query) {
 	MYSQL* connection = getconnection();
 
 #ifdef DEBUG
-	testfile << "QUERY: " << query << std::endl;
-	testfile.flush();
+	logfile << "QUERY: " << query << std::endl;
+	logfile.flush();
 #endif
 
 	if (mysql_real_query(connection, query.c_str(), query.size())) {
@@ -565,8 +563,8 @@ void mysql_db_handler::rawquery(std::string query, MYSQL_RES** result) {
 	MYSQL* connection = getconnection();
 
 #ifdef DEBUG
-	testfile << "QUERY " << query << std::endl;
-	testfile.flush();
+	logfile << "QUERY " << query << std::endl;
+	logfile.flush();
 #endif
 
 	if (mysql_real_query(connection, query.c_str(), query.size())) {
@@ -596,8 +594,8 @@ void mysql_db_handler::preparedStatementQuery(std::string query, MYSQL_BIND inpu
 	int status;
 
 #ifdef DEBUG
-	testfile << "QUERY " << query << std::endl;
-	testfile.flush();
+	logfile << "QUERY " << query << std::endl;
+	logfile.flush();
 #endif
 
 	MYSQL_STMT* stmt;
@@ -707,8 +705,8 @@ void mysql_db_handler::checkMigration(ext_arguments& extArgument, std::string da
 	if (rowcount < 15) {
 		this->rawmultiquerys(schema_FullTable);
 #ifdef DEBUG
-		testfile << "CREATED INITIAL TABLES" << std::endl;
-		testfile.flush();
+		logfile << "CREATED INITIAL TABLES" << std::endl;
+		logfile.flush();
 #endif
 	}
 
@@ -733,14 +731,14 @@ void mysql_db_handler::checkMigration(ext_arguments& extArgument, std::string da
 		this->rawmultiquerys(schema_migration_0001);
 
 #ifdef DEBUG
-		testfile << "DONE APPLYING MIGRATION 0001" << std::endl;
-		testfile.flush();
+		logfile << "DONE APPLYING MIGRATION 0001" << std::endl;
+		logfile.flush();
 #endif
 	}
 #ifdef DEBUG
 	else {
-		testfile << "MIGRATION 0001 ALREADY APPLIED" << std::endl;
-		testfile.flush();
+		logfile << "MIGRATION 0001 ALREADY APPLIED" << std::endl;
+		logfile.flush();
 	}
 #endif
 
@@ -756,16 +754,16 @@ void mysql_db_handler::checkMigration(ext_arguments& extArgument, std::string da
 	}
 	catch (const std::logic_error& e) {
 #ifdef DEBUG
-		testfile << "IGNORED STRING ERROR FOR EMPTY DATABASE, error was: " << e.what() << std::endl;
-		testfile.flush();
+		logfile << "IGNORED STRING ERROR FOR EMPTY DATABASE, error was: " << e.what() << std::endl;
+		logfile.flush();
 #endif
 	}
 
 	switch (current_schema_Version) {
 		case 1: this->rawmultiquerys(schema_migration_0002);
 #ifdef DEBUG
-			testfile << "APPLIED MIGRATION 0002" << std::endl;
-			testfile.flush();
+			logfile << "APPLIED MIGRATION 0002" << std::endl;
+			logfile.flush();
 #endif
 			[[fallthrough]];
 
@@ -902,8 +900,8 @@ std::string mysql_db_handler::terminateHandler(std::string& extFunction, ext_arg
 void mysql_db_handler::terminateHandler() {
 	//std::cout << "TERMINATE MYSQL" << std::endl;
 #ifdef DEBUG
-	testfile << "TERMINATE MYSQL" << std::endl;
-	testfile.flush();
+	logfile << "TERMINATE MYSQL" << std::endl;
+	logfile.flush();
 #endif
 	disconnect();
 	return;
