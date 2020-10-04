@@ -153,7 +153,7 @@ redex::redex(std::string LibRedexFilePath) {
 		logfile << "initializing the fileio module" << std::endl;
 		logfile.flush();
 #endif
-		extModules.emplace_back(new fileio(extFunctions, configtree));
+		extModules.emplace_back(new fileio(extFunctions, configtree, LibRedexConfigFilePath.parent_path()));
 #ifdef DEBUG
 		logfile << "initializing the datetime module" << std::endl;
 		logfile.flush();

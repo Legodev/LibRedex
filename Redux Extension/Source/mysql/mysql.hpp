@@ -54,6 +54,7 @@ public:
 private:
 		boost::lockfree::queue<intptr_t, boost::lockfree::fixed_sized<false>> connectionpool{1};
 
+		boost::property_tree::ptree configtree;
 		std::string hostname;
 		std::string user;
 		std::string password;

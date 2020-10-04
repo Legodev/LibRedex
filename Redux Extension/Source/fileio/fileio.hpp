@@ -33,7 +33,7 @@
 
 class fileio: public ext_base {
 public:
-	fileio(EXT_FUNCTIONS &extFunctions, boost::property_tree::ptree configtree);
+	fileio(EXT_FUNCTIONS &extFunctions, boost::property_tree::ptree configtree, boost::filesystem::path basePath);
 	~fileio();
 	void terminateHandler();
 
@@ -44,7 +44,7 @@ private:
 
 	typedef std::map<std::string, std::ofstream *> FILE_WRITE_MAP;
 	FILE_WRITE_MAP writelist;
-	
+	boost::filesystem::path basePath  = ".";
 	boost::filesystem::path configPath = ".";
 
 	std::string readFile(std::string &extFunction, ext_arguments &extArguments);

@@ -45,6 +45,7 @@ extern std::map<std::string, unsigned int>* charactervariablemap;
 std::map<std::string, unsigned int>* charactervariablemap = 0;
 
 mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS& extFunctions, boost::property_tree::ptree configtree) {
+	this->configtree = configtree;
 	this->hostname = "";
 	this->user = "";
 	this->password = "";
@@ -371,9 +372,6 @@ std::string mysql_db_handler::spawnHandler(std::string& extFunction, ext_argumen
 		bool vaccheckban;
 		unsigned int vacmaxcount;
 		unsigned int vacignoredays;
-
-		boost::property_tree::ptree configtree;
-		boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);
 
 		unsigned int poolsize = configtree.get<unsigned int>("gamesettings.poolsize");
 

@@ -31,7 +31,7 @@
 
 #include "fileio/fileio.hpp"
 
-fileio::fileio(EXT_FUNCTIONS &extFunctions, boost::property_tree::ptree configtree) {
+fileio::fileio(EXT_FUNCTIONS &extFunctions, boost::property_tree::ptree configtree, boost::filesystem::path basePath) {
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_READ_FILE),
 					std::make_tuple(
@@ -57,6 +57,9 @@ fileio::fileio(EXT_FUNCTIONS &extFunctions, boost::property_tree::ptree configtr
 					std::make_tuple(
 							boost::bind(&fileio::GetCfgFile, this, _1, _2),
 							SYNC_MAGIC)));
+
+	this->basePath = basePath;
+	this->configPath = basePath;
 
 	for (auto& item : configtree.get_child("fileio.readonce")) {
 		readlist.insert(std::make_pair(item.second.get_value<std::string>(), 1));
