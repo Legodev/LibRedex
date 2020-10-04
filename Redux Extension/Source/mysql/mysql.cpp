@@ -44,7 +44,7 @@ std::map<std::string, unsigned int>* objectvariablemap = 0;
 extern std::map<std::string, unsigned int>* charactervariablemap;
 std::map<std::string, unsigned int>* charactervariablemap = 0;
 
-mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS& extFunctions) {
+mysql_db_handler::mysql_db_handler(EXT_FUNCTIONS& extFunctions, boost::property_tree::ptree configtree) {
 	this->hostname = "";
 	this->user = "";
 	this->password = "";

@@ -24,13 +24,14 @@
 #include <map>
 #include <tuple>
 #include <boost/asio.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 #include "extbase.hpp"
 #include "http_connection.hpp"
 
 class restserver: public ext_base {
 public:
-	restserver(EXT_FUNCTIONS &extFunctions);
+	restserver(EXT_FUNCTIONS &extFunctions, boost::property_tree::ptree configtree);
 	~restserver();
 
 	std::string spawnHandler(std::string &extFunction, ext_arguments &extArgument);

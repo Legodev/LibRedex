@@ -44,7 +44,7 @@
 class mysql_db_handler: public ext_base {
 	// https://dev.mysql.com/doc/connector-cpp/en/connector-cpp-examples-complete-example-1.html
 public:
-	mysql_db_handler(EXT_FUNCTIONS &extFunctions);
+	mysql_db_handler(EXT_FUNCTIONS &extFunctions, boost::property_tree::ptree configtree);
 	~mysql_db_handler();
 
 	std::string spawnHandler(std::string &extFunction, ext_arguments &extArgument);

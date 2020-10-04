@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
+#include <boost/filesystem.hpp>
 #include <iostream>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -35,7 +36,11 @@ extern int(*callbackPtr)(char const *name, char const *function, char const *dat
 	extern Logger logfile;
 #endif
 
-redex::redex() {
+redex::redex(std::string LibRedexFilePath) {
+#ifdef DEBUG
+	logfile << "initializing libredex core" << std::endl;
+	logfile.flush();
+#endif
 	extFunctions.insert(
 			std::make_pair(
 					std::string(PROTOCOL_LIBARY_FUNCTION_TERMINATE_ALL),
@@ -82,18 +87,42 @@ redex::redex() {
 							boost::bind(&redex::version, this, _1, _2),
 							CALLBACK_MAGIC)));
 
-	if (access(CONFIG_FILE_NAME, F_OK) == -1) {
+#ifdef DEBUG
+	logfile << "creating filepath from " << LibRedexFilePath << std::endl;
+	logfile.flush();
+#endif
+	LibRedexConfigFilePath = LibRedexFilePath;
+#ifdef DEBUG
+	logfile << "creating config file path using " << CONFIG_FILE_NAME << std::endl;
+	logfile.flush();
+#endif
+	LibRedexConfigFilePath = LibRedexConfigFilePath.parent_path() / CONFIG_FILE_NAME;
+
+#ifdef DEBUG
+	logfile << "checking if config file exists using path " << LibRedexConfigFilePath << std::endl;
+	logfile.flush();
+#endif
+	if (!boost::filesystem::exists(LibRedexConfigFilePath)) {
+#ifndef DEBUG		
 		std::ofstream logfile;
 		logfile.open("libredex.log", std::ios::out | std::ios::trunc);
-		logfile << "cannot find config file: " << CONFIG_FILE_NAME << std::endl;
+#endif
+		logfile << "cannot find config file: " << LibRedexConfigFilePath << std::endl;
+		logfile << "LibRedexFilePath: " << LibRedexFilePath << std::endl;
 		logfile.flush();
+#ifndef DEBUG
 		logfile.close();
+#endif
 	} else {
 		// spawn some idle work
 		REDEXioServiceWork.reset( new boost::asio::io_service::work(REDEXioService) );
 
+#ifdef DEBUG
+		logfile << "trying to read config file using path " << LibRedexConfigFilePath << std::endl;
+		logfile.flush();
+#endif
 		boost::property_tree::ptree configtree;
-		boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);
+		boost::property_tree::json_parser::read_json(LibRedexConfigFilePath.string(), configtree);
 
 		unsigned int poolsize = configtree.get<unsigned int>("gamesettings.poolsize");
 		std::string type = configtree.get<std::string>("database.type");
@@ -102,20 +131,48 @@ redex::redex() {
 			poolsize = 1;
 		}
 
+#ifdef DEBUG
+		logfile << "creating threads using the size of " << poolsize << std::endl;
+		logfile.flush();
+#endif
 		for (unsigned int i = 0; i < poolsize; i++) {
 			asyncthreadpool.create_thread(
 					boost::bind(static_cast<std::size_t (boost::asio::io_service::*)()>(&boost::asio::io_service::run), &REDEXioService)
 			);
 		}
 
+#ifdef DEBUG
+		logfile << "initializing the database module" << std::endl;
+		logfile.flush();
+#endif
 		if (boost::iequals(type, "MYSQL")) {
-			extModules.emplace_back(new mysql_db_handler(extFunctions));
+			extModules.emplace_back(new mysql_db_handler(extFunctions, configtree));
 		}
 
-		extModules.emplace_back(new fileio(extFunctions));
-		extModules.emplace_back(new datetime(extFunctions));
-		extModules.emplace_back(new randomlist(extFunctions));
-		extModules.emplace_back(new restserver(extFunctions));
+#ifdef DEBUG
+		logfile << "initializing the fileio module" << std::endl;
+		logfile.flush();
+#endif
+		extModules.emplace_back(new fileio(extFunctions, configtree));
+#ifdef DEBUG
+		logfile << "initializing the datetime module" << std::endl;
+		logfile.flush();
+#endif
+		extModules.emplace_back(new datetime(extFunctions, configtree));
+#ifdef DEBUG
+		logfile << "initializing the randomlist module" << std::endl;
+		logfile.flush();
+#endif
+		extModules.emplace_back(new randomlist(extFunctions, configtree));
+#ifdef DEBUG
+		logfile << "initializing the restserver module" << std::endl;
+		logfile.flush();
+#endif
+		extModules.emplace_back(new restserver(extFunctions, configtree));
+#ifdef DEBUG
+		logfile << "done initializing libredex core" << std::endl;
+		logfile.flush();
+#endif
 	}
 	return;
 }
@@ -201,7 +258,7 @@ std::string redex::processCallExtension(const char *function, const char **args,
 		returnString = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\",\"Don't know extFunction: ";
 		returnString += extFunction;
 		returnString += " - maybe you are missing the config file: ";
-		returnString += CONFIG_FILE_NAME;
+		returnString += LibRedexConfigFilePath.string();
 		returnString += " - see: libredex.log\"]";
 	}
 

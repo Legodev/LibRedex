@@ -40,7 +40,7 @@
 
 class redex {
 public:
-	redex();
+	redex(std::string LibRedexFilePath);
 	~redex();
 	std::string processCallExtension(const char *function, const char **args, int argsCnt, int outputSize);
 	void terminate();
@@ -51,6 +51,8 @@ private:
 	boost::asio::io_service REDEXioService;
 	boost::shared_ptr<boost::asio::io_service::work> REDEXioServiceWork;
 	boost::thread_group asyncthreadpool;
+
+	boost::filesystem::path LibRedexConfigFilePath;
 
 	typedef std::vector<std::unique_ptr<ext_base>> extModulesType;
 	extModulesType extModules;

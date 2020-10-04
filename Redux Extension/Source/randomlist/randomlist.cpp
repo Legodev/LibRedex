@@ -15,23 +15,21 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
  */
-
-#include "randomlist/randomlist.hpp"
-
 #include <unistd.h>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
-#include <boost/property_tree/ini_parser.hpp>
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/regex.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/regex.hpp>
 #include <cassert>
 #include <exception>
 #include <stdexcept>
 #include <fstream>
 
+#include "randomlist/randomlist.hpp"
 
-randomlist::randomlist(EXT_FUNCTIONS &extFunctions) {
+
+randomlist::randomlist(EXT_FUNCTIONS &extFunctions, boost::property_tree::ptree configtree) {
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_RANDOM_FUNCTION_ADD_DISCRETE_LIST),
 					std::make_tuple(
@@ -47,10 +45,6 @@ randomlist::randomlist(EXT_FUNCTIONS &extFunctions) {
 					std::make_tuple(
 							boost::bind(&randomlist::getRandomNumberList, this, _1, _2),
 							SYNC_MAGIC)));
-
-    boost::property_tree::ptree configtree;
-    boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);
-
 	return;
 }
 

@@ -23,6 +23,7 @@
 #include <map>
 #include <tuple>
 #include <boost/function.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 #include "extbase.hpp"
 #include "constants.hpp"
@@ -30,7 +31,7 @@
 
 class randomlist: public ext_base {
 public:
-	randomlist(EXT_FUNCTIONS &extFunctions);
+	randomlist(EXT_FUNCTIONS &extFunctions, boost::property_tree::ptree configtree);
 	~randomlist();
 
 private:

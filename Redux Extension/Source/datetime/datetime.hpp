@@ -23,13 +23,14 @@
 #include <map>
 #include <tuple>
 #include <boost/function.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 #include "extbase.hpp"
 #include "constants.hpp"
 
 class datetime: public ext_base {
 public:
-	datetime(EXT_FUNCTIONS &extFunctions);
+	datetime(EXT_FUNCTIONS &extFunctions, boost::property_tree::ptree configtree);
 	~datetime();
 
 private:

@@ -24,6 +24,7 @@
 #include <map>
 #include <tuple>
 #include <boost/function.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
@@ -32,7 +33,7 @@
 
 class fileio: public ext_base {
 public:
-	fileio(EXT_FUNCTIONS &extFunctions);
+	fileio(EXT_FUNCTIONS &extFunctions, boost::property_tree::ptree configtree);
 	~fileio();
 	void terminateHandler();
 

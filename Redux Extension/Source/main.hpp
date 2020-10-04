@@ -62,10 +62,21 @@ std::ofstream logfilehandler("libredex.log", std::ios::out | std::ios::trunc);
 Logger logfile(logfilehandler);
 #endif
 
-static void init(void)
+#ifndef __linux__
+static void init(char* filepath)
+#else
+static void init(TCHAR* filepath)
+#endif
 {
     if (extension == nullptr) {
-        extension = new redex();
+        std::stringstream basepath;
+        basepath << filepath;
+        std::string string = basepath.str();
+#ifdef DEBUG
+        logfile << "starting libredex with string: " << string << std::endl;
+        logfile.flush();
+#endif
+        extension = new redex(string);
     }
 }
 
@@ -97,7 +108,7 @@ static void destroy(void)
         static void __attribute__((constructor))
         extensioninit(void)
         {
-            init();
+            init("");
         }
 
         static void __attribute__((destructor))
@@ -113,19 +124,22 @@ static void destroy(void)
 	#ifdef _MSC_VER
 		#include <boost/config/compiler/visualc.hpp>
 	#endif
+	TCHAR LibRedexFilePath[512 + 1] = { 0 };
 
         BOOL APIENTRY DllMain( HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
         {
                 switch (ul_reason_for_call)
                 {
                         case DLL_PROCESS_ATTACH:
-				init();
+				GetModuleFileNameA(hModule, LibRedexFilePath, 512);
+				init(LibRedexFilePath);
                         break;
                         case DLL_THREAD_ATTACH:
 #ifdef DEBUG
 				ThreadMutex.lock();
 				attachedThreadCount++;
 				logfile << "done thread attach Threadcount: " << attachedThreadCount << std::endl;
+				logfile << "dll path is: " << LibRedexFilePath << std::endl;
 				logfile.flush();
 				ThreadMutex.unlock();
 #endif

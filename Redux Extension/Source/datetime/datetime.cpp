@@ -26,7 +26,7 @@
 
 #include "datetime/datetime.hpp"
 
-datetime::datetime(EXT_FUNCTIONS &extFunctions) {
+datetime::datetime(EXT_FUNCTIONS &extFunctions, boost::property_tree::ptree configtree) {
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_DTCALL_FUNCTION_GET_DATE_TIME_Array),
 					std::make_tuple(

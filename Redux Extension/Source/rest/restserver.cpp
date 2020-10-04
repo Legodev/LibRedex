@@ -25,7 +25,7 @@
 extern Logger logfile;
 #endif
 
-restserver::restserver(EXT_FUNCTIONS &extFunctions) {
+restserver::restserver(EXT_FUNCTIONS &extFunctions, boost::property_tree::ptree configtree) {
 	extFunctions.insert(
 			std::make_pair(
 					std::string(PROTOCOL_REST_FUNCTION_STARTSERVER),

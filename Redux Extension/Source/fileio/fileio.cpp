@@ -31,7 +31,7 @@
 
 #include "fileio/fileio.hpp"
 
-fileio::fileio(EXT_FUNCTIONS &extFunctions) {
+fileio::fileio(EXT_FUNCTIONS &extFunctions, boost::property_tree::ptree configtree) {
 	extFunctions.insert(
 			std::make_pair(std::string(PROTOCOL_IOCALL_FUNCTION_READ_FILE),
 					std::make_tuple(
@@ -57,9 +57,6 @@ fileio::fileio(EXT_FUNCTIONS &extFunctions) {
 					std::make_tuple(
 							boost::bind(&fileio::GetCfgFile, this, _1, _2),
 							SYNC_MAGIC)));
-
-	boost::property_tree::ptree configtree;
-	boost::property_tree::json_parser::read_json(CONFIG_FILE_NAME, configtree);
 
 	for (auto& item : configtree.get_child("fileio.readonce")) {
 		readlist.insert(std::make_pair(item.second.get_value<std::string>(), 1));
