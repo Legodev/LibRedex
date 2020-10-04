@@ -202,7 +202,7 @@ std::string redex::processCallExtension(const char *function, const char **args,
 		returnString += extFunction;
 		returnString += " - maybe you are missing the config file: ";
 		returnString += CONFIG_FILE_NAME;
-		returnString += " - see: LibRedExErrorLogFile.txt\"]";
+		returnString += " - see: libredex.log\"]";
 	}
 
 	if (returnString.length() > outputSize) {
