@@ -36,8 +36,8 @@ extern "C"
 	{
 		if (outputSize > 0) {
 #ifdef DEBUG
-			logfile << "### --> ARMAIO-REQ --> ### " << function << std::endl;
-			logfile.flush();
+			 (*logfile) << "### --> ARMAIO-REQ --> ### " << function << std::endl;
+			logfile->flush();
 #endif
 			std::string errstr = "[\"" + std::string(PROTOCOL_MESSAGE_TYPE_ERROR) + "\", \"";
 			errstr += "Sorry RVExtension is not supported anymore";
@@ -45,8 +45,8 @@ extern "C"
 			strncpy(output, errstr.c_str(), outputSize);
 			output[outputSize - 1] = '\0';
 #ifdef DEBUG
-			logfile << "### >_< ARMAIO-ERR >_< ### " << errstr << std::endl;
-			logfile.flush();
+			 (*logfile) << "### >_< ARMAIO-ERR >_< ### " << errstr << std::endl;
+			logfile->flush();
 #endif
 		}
 	}
@@ -62,17 +62,17 @@ extern "C"
 #endif
 			try {
 #ifdef DEBUG
-				logfile << "### --> ARMAIO-REQ --> ### " << function << std::endl;
-				logfile.flush();
+				 (*logfile) << "### --> ARMAIO-REQ --> ### " << function << std::endl;
+				logfile->flush();
 				for (int i = 0; i < argsCnt; i++) {
-					logfile << "### --- ARMAIO-ARG --- ### " << i << ": " << args[i] << std::endl;
-					logfile.flush();
+					 (*logfile) << "### --- ARMAIO-ARG --- ### " << i << ": " << args[i] << std::endl;
+					logfile->flush();
 				}
 #endif
 				std::string returnString = extension->processCallExtension(function, args, argsCnt, outputSize);
 #ifdef DEBUG
-				logfile << "### <-- ARMAIO-RET <-- ### " << returnString << std::endl;
-				logfile.flush();
+				 (*logfile) << "### <-- ARMAIO-RET <-- ### " << returnString << std::endl;
+				logfile->flush();
 #endif
 				strncpy(output, returnString.c_str(), outputSize);
 				return;
@@ -90,8 +90,8 @@ extern "C"
 				strncpy(output, errstr.c_str(), outputSize);
 				output[outputSize - 1] = '\0';
 #ifdef DEBUG
-				logfile << "### >_< ARMAIO-ERR >_< ### " << errstr << std::endl;
-				logfile.flush();
+				 (*logfile) << "### >_< ARMAIO-ERR >_< ### " << errstr << std::endl;
+				logfile->flush();
 #endif
 			}
 		}
@@ -105,8 +105,8 @@ extern "C"
 		callbackPtr = callbackProc;
 		#ifdef DEBUG
 				std::time_t result;
-				logfile << "### === ARMAIO-SET === ### " << "callbackPtr = " << callbackPtr << std::endl;
-				logfile.flush();
+				 (*logfile) << "### === ARMAIO-SET === ### " << "callbackPtr = " << callbackPtr << std::endl;
+				logfile->flush();
 		#endif
 	}
 }

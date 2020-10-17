@@ -38,9 +38,7 @@
 		#define RVExtensionRegisterCallback __stdcall RVExtensionRegisterCallback
 #endif
 
-#ifdef DEBUG
 #include "logger.hpp"
-#endif
 
 #include <sstream>
 #include <string>
@@ -52,18 +50,18 @@
 #include "redex.hpp"
 
 redex * extension = nullptr;
+Logger * logfile = nullptr;
+std::ofstream * logfilehandler = nullptr;
+
 int(*callbackPtr)(char const *name, char const *function, char const *data) = nullptr;
 
 #ifdef DEBUG
 std::mutex ThreadMutex;
 int attachedThreadCount = 0;
-extern Logger logfile;
-std::ofstream logfilehandler("libredex.log", std::ios::out | std::ios::trunc);
-Logger logfile(logfilehandler);
 #endif
 
-#ifndef __linux__
-static void init(char* filepath)
+#if defined(__linux__)
+static void init(const char* filepath)
 #else
 static void init(TCHAR* filepath)
 #endif
@@ -72,9 +70,19 @@ static void init(TCHAR* filepath)
         std::stringstream basepath;
         basepath << filepath;
         std::string string = basepath.str();
-#ifdef DEBUG
-        logfile << "starting libredex with string: " << string << std::endl;
-        logfile.flush();
+        fprintf(stderr, "starting libredex with string: %s \n", string.c_str());
+
+        if (logfile == nullptr) {
+          boost::filesystem::path LibRedexFilePath = string;
+          LibRedexFilePath = LibRedexFilePath.parent_path() / "libredex.log";
+          logfilehandler = new std::ofstream(LibRedexFilePath.string(), std::ios::out | std::ios::trunc);
+          logfile = new Logger(*logfilehandler);
+        }
+        (*logfile) << "starting libredex with string: " << string << std::endl;
+        logfile->flush();
+#ifndef DEBUG
+        (*logfile) << "DEBUG output is disabled, use debug libredex to enable the debug output!" << std::endl;
+        logfile->flush();
 #endif
         extension = new redex(string);
     }
@@ -82,33 +90,35 @@ static void init(TCHAR* filepath)
 
 static void destroy(void)
 {
-#ifdef DEBUG
-    logfile << "starting destroy" << std::endl;
-#endif
+     (*logfile) << "starting libredex shutdown" << std::endl;
     
-    if (extension != nullptr) {
+     if (extension != nullptr) {
 #ifdef DEBUG
-        logfile << "deleting extension object" << std::endl;
+        (*logfile) << "deleting extension object" << std::endl;
 #endif
         delete extension;
 #ifdef DEBUG
-        logfile << "resetting extension pointer" << std::endl;
+        (*logfile) << "resetting extension pointer" << std::endl;
 #endif
         extension = nullptr;
-    }
+     }
 
-#ifdef DEBUG
-    logfile << "done destroy" << std::endl;
-    logfile.flush();
-    logfile.close();
-#endif
+    (*logfile) << "finished libredex shutdown" << std::endl;
+    logfile->flush();
+    logfile->close();
+    delete logfile;
+    delete logfilehandler;
 }
 
 #if defined(__linux__)
+#include <dlfcn.h>
         static void __attribute__((constructor))
         extensioninit(void)
         {
-            init("");
+            Dl_info dl_info;
+            dladdr((void *)extensioninit, &dl_info);
+            fprintf(stderr, "module %s loaded\n", dl_info.dli_fname);
+            init(dl_info.dli_fname);
         }
 
         static void __attribute__((destructor))
@@ -138,9 +148,9 @@ static void destroy(void)
 #ifdef DEBUG
 				ThreadMutex.lock();
 				attachedThreadCount++;
-				logfile << "done thread attach Threadcount: " << attachedThreadCount << std::endl;
-				logfile << "dll path is: " << LibRedexFilePath << std::endl;
-				logfile.flush();
+				 (*logfile) << "done thread attach Threadcount: " << attachedThreadCount << std::endl;
+				 (*logfile) << "dll path is: " << LibRedexFilePath << std::endl;
+				logfile->flush();
 				ThreadMutex.unlock();
 #endif
                         break;
@@ -148,8 +158,8 @@ static void destroy(void)
 #ifdef DEBUG
 				ThreadMutex.lock();
 				attachedThreadCount--;
-				logfile << "done thread detach Threadcount: " << attachedThreadCount << std::endl;
-				logfile.flush();
+				 (*logfile) << "done thread detach Threadcount: " << attachedThreadCount << std::endl;
+				logfile->flush();
 				ThreadMutex.unlock();
 #endif
                         break;

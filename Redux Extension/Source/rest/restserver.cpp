@@ -22,7 +22,7 @@
 #include "constants.hpp"
 #ifdef DEBUG
 #include "logger.hpp"
-extern Logger logfile;
+extern Logger *logfile;
 #endif
 
 restserver::restserver(EXT_FUNCTIONS &extFunctions, boost::property_tree::ptree configtree) {
@@ -42,8 +42,8 @@ restserver::~restserver() {
 void restserver::terminateHandler() {
 	std::cout << "TERMINATE RESTSERVER" << std::endl;
 #ifdef DEBUG
-	logfile << "TERMINATE RESTSERVER" << std::endl;
-	logfile.flush();
+	 (*logfile) << "TERMINATE RESTSERVER" << std::endl;
+	logfile->flush();
 #endif
 	if (this->serverThread != 0) {
 		if (this->serverinitialized) {

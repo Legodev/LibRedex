@@ -31,15 +31,14 @@
 #include "utils/uuid.hpp"
 
 extern int(*callbackPtr)(char const *name, char const *function, char const *data);
-#ifdef DEBUG
-	#include "logger.hpp"
-	extern Logger logfile;
-#endif
+
+#include "logger.hpp"
+extern Logger *logfile;
 
 redex::redex(std::string LibRedexFilePath) {
 #ifdef DEBUG
-	logfile << "initializing libredex core" << std::endl;
-	logfile.flush();
+	 (*logfile) << "initializing libredex core" << std::endl;
+	logfile->flush();
 #endif
 	extFunctions.insert(
 			std::make_pair(
@@ -88,38 +87,34 @@ redex::redex(std::string LibRedexFilePath) {
 							CALLBACK_MAGIC)));
 
 #ifdef DEBUG
-	logfile << "creating filepath from " << LibRedexFilePath << std::endl;
-	logfile.flush();
+	 (*logfile) << "creating filepath from " << LibRedexFilePath << std::endl;
+	logfile->flush();
 #endif
 	LibRedexConfigFilePath = LibRedexFilePath;
 #ifdef DEBUG
-	logfile << "creating config file path using " << CONFIG_FILE_NAME << std::endl;
-	logfile.flush();
+	 (*logfile) << "creating config file path using " << CONFIG_FILE_NAME << std::endl;
+	logfile->flush();
 #endif
 	LibRedexConfigFilePath = LibRedexConfigFilePath.parent_path() / CONFIG_FILE_NAME;
 
 #ifdef DEBUG
-	logfile << "checking if config file exists using path " << LibRedexConfigFilePath << std::endl;
-	logfile.flush();
+	 (*logfile) << "checking if config file exists using path " << LibRedexConfigFilePath << std::endl;
+	logfile->flush();
 #endif
 	if (!boost::filesystem::exists(LibRedexConfigFilePath)) {
-#ifndef DEBUG		
-		std::ofstream logfile;
-		logfile.open("libredex.log", std::ios::out | std::ios::trunc);
-#endif
-		logfile << "cannot find config file: " << LibRedexConfigFilePath << std::endl;
-		logfile << "LibRedexFilePath: " << LibRedexFilePath << std::endl;
-		logfile.flush();
+		 (*logfile) << "cannot find config file: " << LibRedexConfigFilePath << std::endl;
+		 (*logfile) << "LibRedexFilePath: " << LibRedexFilePath << std::endl;
+		logfile->flush();
 #ifndef DEBUG
-		logfile.close();
+		logfile->close();
 #endif
 	} else {
 		// spawn some idle work
 		REDEXioServiceWork.reset( new boost::asio::io_service::work(REDEXioService) );
 
 #ifdef DEBUG
-		logfile << "trying to read config file using path " << LibRedexConfigFilePath << std::endl;
-		logfile.flush();
+		 (*logfile) << "trying to read config file using path " << LibRedexConfigFilePath << std::endl;
+		logfile->flush();
 #endif
 		boost::property_tree::ptree configtree;
 		boost::property_tree::json_parser::read_json(LibRedexConfigFilePath.string(), configtree);
@@ -132,8 +127,8 @@ redex::redex(std::string LibRedexFilePath) {
 		}
 
 #ifdef DEBUG
-		logfile << "creating threads using the size of " << poolsize << std::endl;
-		logfile.flush();
+		 (*logfile) << "creating threads using the size of " << poolsize << std::endl;
+		logfile->flush();
 #endif
 		for (unsigned int i = 0; i < poolsize; i++) {
 			asyncthreadpool.create_thread(
@@ -142,36 +137,36 @@ redex::redex(std::string LibRedexFilePath) {
 		}
 
 #ifdef DEBUG
-		logfile << "initializing the database module" << std::endl;
-		logfile.flush();
+		 (*logfile) << "initializing the database module" << std::endl;
+		logfile->flush();
 #endif
 		if (boost::iequals(type, "MYSQL")) {
 			extModules.emplace_back(new mysql_db_handler(extFunctions, configtree));
 		}
 
 #ifdef DEBUG
-		logfile << "initializing the fileio module" << std::endl;
-		logfile.flush();
+		 (*logfile) << "initializing the fileio module" << std::endl;
+		logfile->flush();
 #endif
 		extModules.emplace_back(new fileio(extFunctions, configtree, LibRedexConfigFilePath.parent_path()));
 #ifdef DEBUG
-		logfile << "initializing the datetime module" << std::endl;
-		logfile.flush();
+		 (*logfile) << "initializing the datetime module" << std::endl;
+		logfile->flush();
 #endif
 		extModules.emplace_back(new datetime(extFunctions, configtree));
 #ifdef DEBUG
-		logfile << "initializing the randomlist module" << std::endl;
-		logfile.flush();
+		 (*logfile) << "initializing the randomlist module" << std::endl;
+		logfile->flush();
 #endif
 		extModules.emplace_back(new randomlist(extFunctions, configtree));
 #ifdef DEBUG
-		logfile << "initializing the restserver module" << std::endl;
-		logfile.flush();
+		 (*logfile) << "initializing the restserver module" << std::endl;
+		logfile->flush();
 #endif
 		extModules.emplace_back(new restserver(extFunctions, configtree));
 #ifdef DEBUG
-		logfile << "done initializing libredex core" << std::endl;
-		logfile.flush();
+		 (*logfile) << "done initializing libredex core" << std::endl;
+		logfile->flush();
 #endif
 	}
 	return;
@@ -194,8 +189,8 @@ redex::~redex() {
 
 void redex::terminate() {
 #ifdef DEBUG
-	logfile << "TERMINATE REDEX" << std::endl;
-	logfile.flush();
+	 (*logfile) << "TERMINATE REDEX" << std::endl;
+	logfile->flush();
 #endif
 
 	REDEXioServiceWork.reset(); // stop all idle work!
@@ -318,8 +313,8 @@ void redex::asyncCallProcessor(EXT_FUNCTION_INFO funcinfo, ext_arguments extArgu
 	} catch (std::exception const& e) {
 		std::string error = e.what();
 #ifdef DEBUG
-			logfile << "INTERNAL ERROR " << error << std::endl;
-			logfile.flush();
+			 (*logfile) << "INTERNAL ERROR " << error << std::endl;
+			logfile->flush();
 #endif
 		int i = 0;
 		while ((i = error.find("\"", i)) != std::string::npos) {
@@ -351,8 +346,8 @@ void redex::callbackCallProcessor(EXT_FUNCTION_INFO funcinfo, ext_arguments extA
 	} catch (std::exception const& e) {
 		std::string error = e.what();
 #ifdef DEBUG
-			logfile << "INTERNAL ERROR " << error << std::endl;
-			logfile.flush();
+			 (*logfile) << "INTERNAL ERROR " << error << std::endl;
+			logfile->flush();
 #endif
 		int i = 0;
 		while ((i = error.find("\"", i)) != std::string::npos) {
